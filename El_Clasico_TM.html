@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcetto Team Manager</title>
+
+    <!-- 1. Carica React e ReactDOM dal CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+    <!-- 2. Carica Babel Standalone per compilare JSX nel browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 3. CSS Incorporato -->
+    <style>
+        /* === Stili Generali (da App.css) === */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        h1, h2, h3 {
+             color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            background-color: #28a745; /* Verde calcetto */
+            padding: 15px;
+            margin: -15px -15px 20px -15px; /* Estende al bordo del container */
+            border-radius: 8px 8px 0 0;
+        }
+         h2 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+         }
+         h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+         }
+
+
+        /* Separatore */
+        .section-divider {
+            border: none;
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 40px 0;
+        }
+
+        /* Stili comuni per bottoni */
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+         button:active {
+             transform: scale(0.98);
+         }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .btn-create { background-color: #007bff; }
+        .btn-save { background-color: #28a745; }
+        .btn-cancel, .btn-delete, .btn-clear-selection { background-color: #dc3545; }
+        .btn-edit { background-color: #ffc107; color: #333; }
+        .btn-select-players, .btn-generate, .btn-confirm { background-color: #17a2b8; }
+
+        /* Stili per form, input, select */
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%; /* Usa 100% per adattarsi */
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1em;
+            margin-bottom: 10px;
+            box-sizing: border-box; /* Include padding nel width */
+        }
+
+        /* === Stili PlayerForm (da PlayerForm.css) === */
+        .player-form-container { margin-bottom: 20px; }
+        .player-form {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            margin-top: 15px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group span { margin-left: 10px; font-weight: bold; }
+        .form-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .btn-toggle-form { display: block; width: auto; margin: 0 auto 15px auto;}
+
+        /* === Stili PlayerList/PlayerItem (da PlayerList.css / PlayerItem.css) === */
+        .player-list-container { margin-top: 20px; }
+        .player-list { list-style: none; padding: 0; margin: 0; }
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Per responsive */
+            padding: 12px 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+        .player-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .player-name { font-weight: bold; font-size: 1.1em; }
+        .player-role { font-style: italic; color: #555; }
+        .player-avg-score { font-size: 0.9em; background-color: #e9ecef; padding: 3px 8px; border-radius: 10px; color: #495057; }
+        .player-actions { display: flex; gap: 8px; margin-top: 5px; /* Spazio su mobile */}
+        .player-actions button { padding: 6px 12px; font-size: 0.9em; }
+
+        /* === Stili MatchSetup (da MatchSetup.css) === */
+        .match-setup-container { padding: 15px; background-color: #eef; border-radius: 8px; }
+        .match-type-selector { margin-bottom: 15px; }
+        .match-type-selector label { margin-right: 10px; font-weight: bold; }
+        .match-type-selector select { padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1em; display: inline-block; width: auto; }
+        .match-setup-container p { font-weight: bold; margin-bottom: 15px; }
+
+        /* === Stili PlayerSelectionModal (da PlayerSelectionModal.css) === */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+        .modal-content { background-color: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-content h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-player-list { list-style: none; padding: 0; margin: 0 0 20px 0; max-height: 50vh; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; }
+        .modal-player-item { padding: 10px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background-color 0.2s; }
+        .modal-player-item:last-child { border-bottom: none; }
+        .modal-player-item:hover { background-color: #f8f9fa; }
+        .modal-player-item.selected { background-color: #d4edda; font-weight: bold; }
+        .modal-player-item label { display: flex; align-items: center; width: 100%; cursor: pointer; }
+        .modal-player-item input[type="checkbox"] { margin-right: 12px; transform: scale(1.3); cursor: pointer; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+        /* === Stili TeamDisplay (da TeamDisplay.css) === */
+        .team-display-container { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 8px; }
+        .unpredictability-slider { margin: 15px 0; background-color: #e9ecef; padding: 10px; border-radius: 5px; }
+        .unpredictability-slider label { display: block; margin-bottom: 8px; font-weight: bold; }
+        .unpredictability-slider input[type="range"] { width: 100%; cursor: pointer; }
+        .team-display-container button { margin-right: 10px; margin-bottom: 15px; }
+        .teams-output { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
+        .teams-output h3 { text-align: center; margin-bottom: 15px; }
+        .team-columns { display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap; }
+        .team-column { flex: 1; min-width: 220px; background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 15px; }
+        .team-column h4 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
+        .team-column:first-child h4 { color: #007bff; } /* Blu Team A */
+        .team-column:last-child h4 { color: #dc3545; } /* Rosso Team B */
+        .team-column ul { list-style: none; padding: 0; margin: 0; }
+        .team-column li { padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 0.95em;}
+        .team-column li:last-child { border-bottom: none; }
+
+        /* Responsive Adjustments */
+         @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.6em;
+                padding: 12px;
+                margin: -10px -10px 15px -10px;
+            }
+             button {
+                 padding: 8px 14px;
+                 font-size: 0.95em;
+             }
+            input[type="text"], input[type="number"], select {
+                 padding: 8px;
+            }
+             .player-item {
+                 flex-direction: column;
+                 align-items: flex-start;
+             }
+             .player-actions {
+                 width: 100%;
+                 justify-content: flex-end; /* Pulsanti a dx anche su mobile */
+                 margin-top: 8px;
+             }
+            .team-columns {
+                flex-direction: column;
+            }
+            .modal-content {
+                 padding: 15px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 4. Elemento Root dove React monterà l'app -->
+    <div id="root"></div>
+
+    <!-- 5. Codice React (JSX) - Verrà compilato da Babel -->
+    <script type="text/babel">
+
+        // === Hook e Funzioni Utili ===
+        const { useState, useEffect, useCallback } = React;
+
+        // Hook per localStorage (semplificato)
+        function useLocalStorage(key, initialValue) {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    console.error("Error reading localStorage key “" + key + "”:", error);
+                    return initialValue;
+                }
+            });
+
+            const setValue = (value) => {
+                try {
+                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    setStoredValue(valueToStore);
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                } catch (error) {
+                    console.error("Error setting localStorage key “" + key + "”:", error);
+                }
+            };
+
+            return [storedValue, setValue];
+        }
+
+         // Funzioni di bilanciamento e utilità (da utils/teamBalancer.js)
+        const calculatePlayerScore = (player) => {
+            if (!player) return 0;
+            return (
+                (player.abilitaDifensiva || 0) +
+                (player.abilitaOffensiva || 0) +
+                (player.velocita || 0) +
+                (player.scatto || 0) +
+                (player.pressing || 0) +
+                (player.determinazione || 0) +
+                (player.robustezza || 0) +
+                ((player.peso || 0) / 10) +
+                ((player.altezza || 0) / 20)
+            );
+        };
+
+        const balanceTeams = (players, unpredictability) => {
+            if (!players || players.length % 2 !== 0) {
+                console.error("Numero di giocatori non valido per il bilanciamento.");
+                return { teamA: [], teamB: [] };
+            }
+
+            const playersWithScores = players.map(player => {
+                const baseScore = calculatePlayerScore(player);
+                const randomFactor = (Math.random() - 0.5) * 2 * unpredictability * 0.5;
+                return { ...player, score: baseScore + randomFactor };
+            });
+
+            const sortedPlayers = playersWithScores.sort((a, b) => b.score - a.score);
+
+            const teamA = [];
+            const teamB = [];
+            let scoreA = 0;
+            let scoreB = 0;
+
+            sortedPlayers.forEach(player => {
+                if (scoreA <= scoreB) {
+                    teamA.push(player);
+                    scoreA += player.score;
+                } else {
+                    teamB.push(player);
+                    scoreB += player.score;
+                }
+            });
+
+            const finalTeamA = teamA.map(({ score, ...player }) => player);
+            const finalTeamB = teamB.map(({ score, ...player }) => player);
+
+            return { teamA: finalTeamA, teamB: finalTeamB };
+        };
+
+        const getRequiredPlayers = (matchType) => {
+            switch (matchType) {
+                case '5': return 10;
+                case '6': return 12;
+                case '8': return 16;
+                case '11': return 22;
+                default: return 0;
+            }
+        };
+
+         const calculateTeamScore = (team) => {
+            return team.reduce((sum, player) => sum + calculatePlayerScore(player), 0);
+         };
+
+
+        // === Componenti React ===
+
+        // --- PlayerForm ---
+        function PlayerForm({ onSave, editingPlayer, onCancelEdit }) {
+            const initialFormData = {
+                nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5,
+                velocita: 5, scatto: 5, pressing: 5, determinazione: 5,
+                peso: 75, altezza: 175, robustezza: 5,
+            };
+            const [formData, setFormData] = useState(initialFormData);
+            const [isVisible, setIsVisible] = useState(false); // Stato locale per visibilità
+
+            useEffect(() => {
+                if (editingPlayer) {
+                    setFormData({ ...editingPlayer });
+                    setIsVisible(true); // Mostra form in modifica
+                } else {
+                    // Non resettare qui se non stiamo editando,
+                    // il reset avviene al submit o all'annulla
+                }
+            }, [editingPlayer]);
+
+            const handleChange = (e) => {
+                const { name, value, type } = e.target;
+                setFormData(prev => ({
+                    ...prev,
+                    [name]: type === 'number' ? parseFloat(value) || 0 : value
+                }));
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!formData.nome.trim()) {
+                    alert("Il nome è obbligatorio!");
+                    return;
+                }
+                onSave(formData); // Passa formData all'handler del genitore
+                setFormData(initialFormData); // Resetta form
+                setIsVisible(false); // Nascondi dopo salvataggio
+                 if(editingPlayer) onCancelEdit(); // Assicura che la modalità edit sia cancellata
+            };
+
+            const handleCancel = () => {
+                 setFormData(initialFormData);
+                 setIsVisible(false);
+                 onCancelEdit(); // Notifica al genitore di annullare l'edit
+            }
+
+            const toggleVisibility = () => {
+                 // Se stiamo editando, il toggle non fa nulla (si chiude con Salva/Annulla)
+                 if (!editingPlayer) {
+                     setIsVisible(!isVisible);
+                     if(isVisible) { // Se lo stiamo nascondendo
+                         setFormData(initialFormData); // Resetta
+                     }
+                 } else if (!isVisible) {
+                     // Caso strano: in modifica ma nascosto -> mostra
+                     setIsVisible(true);
+                 }
+            }
+
+            return (
+                <div className="player-form-container">
+                     {!isVisible && (
+                         <button onClick={toggleVisibility} className="btn-toggle-form btn-create">
+                             + Crea Nuovo Giocatore
+                         </button>
+                      )}
+
+                    {isVisible && (
+                        <form onSubmit={handleSubmit} className="player-form">
+                            <h3>{editingPlayer ? 'Modifica Giocatore' : 'Nuovo Giocatore'}</h3>
+                            {/* Nome */}
+                            <div className="form-group">
+                                <label htmlFor="nome">Nome:</label>
+                                <input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required />
+                            </div>
+                            {/* Ruolo */}
+                            <div className="form-group">
+                                <label htmlFor="ruolo">Ruolo:</label>
+                                <select id="ruolo" name="ruolo" value={formData.ruolo} onChange={handleChange}>
+                                    <option value="Portiere">Portiere</option>
+                                    <option value="Difensore">Difensore</option>
+                                    <option value="Centrocampista">Centrocampista</option>
+                                    <option value="Attaccante">Attaccante</option>
+                                </select>
+                            </div>
+                             {/* Abilità Numeriche */}
+                             {[
+                                { name: 'abilitaDifensiva', label: 'Difesa' }, { name: 'abilitaOffensiva', label: 'Attacco' },
+                                { name: 'velocita', label: 'Velocità' }, { name: 'scatto', label: 'Scatto' },
+                                { name: 'pressing', label: 'Pressing' }, { name: 'determinazione', label: 'Determ.' },
+                                { name: 'robustezza', label: 'Robustezza' }
+                            ].map(({ name, label }) => (
+                                <div className="form-group" key={name}>
+                                    <label htmlFor={name}>{label} (1-10):</label>
+                                    <input type="number" id={name} name={name} min="1" max="10" step="1" value={formData[name]} onChange={handleChange} required />
+                                    {/*<span>{formData[name]}</span>*/}
+                                </div>
+                             ))}
+                             {/* Peso e Altezza */}
+                            <div className="form-group">
+                                <label htmlFor="peso">Peso (kg):</label>
+                                <input type="number" id="peso" name="peso" min="30" max="150" step="0.1" value={formData.peso} onChange={handleChange} required />
+                            </div>
+                             <div className="form-group">
+                                <label htmlFor="altezza">Altezza (cm):</label>
+                                <input type="number" id="altezza" name="altezza" min="100" max="230" step="1" value={formData.altezza} onChange={handleChange} required />
+                            </div>
+
+                            <div className="form-actions">
+                                <button type="submit" className="btn-save">
+                                    {editingPlayer ? 'Salva Modifiche' : 'Aggiungi Giocatore'}
+                                </button>
+                                <button type="button" onClick={handleCancel} className="btn-cancel">
+                                    Annulla
+                                </button>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            );
+        }
+
+         // --- PlayerItem ---
+        function PlayerItem({ player, onEdit, onDelete }) {
+             const avgScore = (
+                ((player.abilitaDifensiva || 0) + (player.abilitaOffensiva || 0) + (player.velocita || 0) +
+                 (player.scatto || 0) + (player.pressing || 0) + (player.determinazione || 0) + (player.robustezza || 0)) / 7
+             ).toFixed(1);
+
+            return (
+                <li className="player-item">
+                    <div className="player-info">
+                        <span className="player-name">{player.nome}</span>
+                        <span className="player-role">{player.ruolo}</span>
+                        <span className="player-avg-score">Avg: {avgScore}</span>
+                    </div>
+                    <div className="player-actions">
+                        <button onClick={() => onEdit(player.id)} className="btn-edit">Modifica</button>
+                        <button onClick={() => onDelete(player.id)} className="btn-delete">Elimina</button>
+                    </div>
+                </li>
+            );
+        }
+
+         // --- PlayerList ---
+        function PlayerList({ players, onEdit, onDelete }) {
+            return (
+                <div className="player-list-container">
+                    <h2>Giocatori Disponibili ({players.length})</h2>
+                    {players.length === 0 ? (
+                        <p>Nessun giocatore creato. Aggiungine uno usando il form sopra!</p>
+                    ) : (
+                        <ul className="player-list">
+                            {players.map(player => (
+                                <PlayerItem key={player.id} player={player} onEdit={onEdit} onDelete={onDelete} />
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            );
+        }
+
+        // --- PlayerSelectionModal ---
+        function PlayerSelectionModal({ players, selectedPlayerIds, requiredCount, onToggleSelect, onConfirm, onClose }) {
+            const selectedCount = selectedPlayerIds.length;
+            const canConfirm = selectedCount === requiredCount;
+
+            return (
+                <div className="modal-overlay" onClick={onClose}> {/* Chiudi cliccando fuori */}
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}> {/* Evita che il click nel modal chiuda */}
+                        <h3>Seleziona Giocatori ({selectedCount} / {requiredCount})</h3>
+                        <p>Seleziona esattamente {requiredCount} giocatori per la partita.</p>
+                        <ul className="modal-player-list">
+                            {players.map(player => {
+                                const isSelected = selectedPlayerIds.includes(player.id);
+                                const isDisabled = !isSelected && selectedCount >= requiredCount;
+                                return (
+                                    <li key={player.id}
+                                        className={`modal-player-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                                        onClick={() => !isDisabled && onToggleSelect(player.id)} // Permetti click su li
+                                    >
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => onToggleSelect(player.id)}
+                                                disabled={isDisabled}
+                                            />
+                                            {player.nome} ({player.ruolo})
+                                        </label>
+                                    </li>
+                                );
+                             })}
+                        </ul>
+                        <div className="modal-actions">
+                             <button onClick={onConfirm} disabled={!canConfirm} className="btn-confirm">
+                                Conferma Selezione ({selectedCount}/{requiredCount})
+                            </button>
+                            <button onClick={onClose} className="btn-cancel">
+                                Annulla
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+
+        // --- MatchSetup ---
+        function MatchSetup({ matchType, onMatchTypeChange, onOpenSelection, availablePlayerCount }) {
+             const requiredPlayers = getRequiredPlayers(matchType);
+             const canOpenSelector = matchType && availablePlayerCount >= requiredPlayers;
+
+             const getMatchTypeLabel = (type) => {
+                switch (type) {
+                    case '5': return "Calcio a 5 (10 giocatori)";
+                    case '6': return "Calcio a 6 (12 giocatori)";
+                    case '8': return "Calciotto (16 giocatori)";
+                    case '11': return "Calcio a 11 (22 giocatori)";
+                    default: return "Seleziona tipo...";
+                }
+             };
+
+            return (
+                <div className="match-setup-container">
+                    <h2>Imposta Partita</h2>
+                    <div className="match-type-selector">
+                        <label htmlFor="matchType">Tipo di Partita:</label>
+                        <select id="matchType" value={matchType || ''} onChange={(e) => onMatchTypeChange(e.target.value)}>
+                            <option value="" disabled>Seleziona...</option>
+                            <option value="5">Calcio a 5 (10 gioc.)</option>
+                            <option value="6">Calcio a 6 (12 gioc.)</option>
+                            <option value="8">Calciotto (16 gioc.)</option>
+                            <option value="11">Calcio a 11 (22 gioc.)</option>
+                        </select>
+                    </div>
+
+                    {matchType && (
+                         <p>
+                             {availablePlayerCount < requiredPlayers
+                                ? `Servono ${requiredPlayers} giocatori, ma ne hai solo ${availablePlayerCount}. Aggiungine altri.`
+                                : `Servono ${requiredPlayers} giocatori.`
+                             }
+                          </p>
+                    )}
+
+                    <button
+                        onClick={onOpenSelection}
+                        disabled={!canOpenSelector}
+                        className="btn-select-players"
+                        title={!matchType ? "Seleziona prima il tipo di partita" : (availablePlayerCount < requiredPlayers ? "Giocatori insufficienti" : "Seleziona giocatori")}
+                    >
+                        Seleziona Giocatori
+                    </button>
+                </div>
+            );
+        }
+
+        // --- TeamDisplay ---
+        function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onGenerateTeams, onClearSelection }) {
+            const [unpredictability, setUnpredictability] = useState(1);
+            const selectedPlayersCount = selectedPlayerIds.length;
+            const requiredPlayers = getRequiredPlayers(matchType);
+            const canGenerate = selectedPlayersCount === requiredPlayers && requiredPlayers > 0;
+
+            const selectedPlayers = players.filter(p => selectedPlayerIds.includes(p.id));
+
+             const handleGenerate = () => {
+                 onGenerateTeams(selectedPlayers, unpredictability);
+             };
+
+             const scoreA = teams.teamA.length > 0 ? calculateTeamScore(teams.teamA).toFixed(1) : 0;
+             const scoreB = teams.teamB.length > 0 ? calculateTeamScore(teams.teamB).toFixed(1) : 0;
+
+             return (
+                <div className="team-display-container">
+                    <h2>Crea Squadre</h2>
+
+                    {requiredPlayers > 0 && selectedPlayersCount > 0 && (
+                         <p>Giocatori selezionati: {selectedPlayersCount} / {requiredPlayers}</p>
+                    )}
+                    {requiredPlayers > 0 && selectedPlayersCount !== requiredPlayers && selectedPlayersCount > 0 &&(
+                         <p style={{ color: 'orange', fontWeight:'bold' }}>Devi selezionare esattamente {requiredPlayers} giocatori.</p>
+                    )}
+
+                    {canGenerate && (
+                         <>
+                            <div className="unpredictability-slider">
+                                <label htmlFor="unpredictability">Imprevedibilità (0-5): {unpredictability}</label>
+                                <input
+                                    type="range" id="unpredictability" min="0" max="5" step="0.5"
+                                    value={unpredictability} onChange={(e) => setUnpredictability(parseFloat(e.target.value))}
+                                />
+                            </div>
+                            <button onClick={handleGenerate} className="btn-generate">
+                                Crea Squadre Equilibrate
+                            </button>
+                         </>
+                     )}
+
+                     {selectedPlayersCount > 0 && (
+                         <button onClick={onClearSelection} className="btn-clear-selection">
+                             Azzera Selezione
+                         </button>
+                     )}
+
+
+                    {(teams.teamA.length > 0 || teams.teamB.length > 0) && (
+                        <div className="teams-output">
+                            <h3>Squadre Generate</h3>
+                            <div className="team-columns">
+                                <div className="team-column">
+                                    <h4>Squadra A <small>(Punteggio: {scoreA})</small></h4>
+                                    <ul>
+                                        {teams.teamA.map(p => <li key={p.id}>{p.nome} ({p.ruolo})</li>)}
+                                    </ul>
+                                </div>
+                                <div className="team-column">
+                                    <h4>Squadra B <small>(Punteggio: {scoreB})</small></h4>
+                                    <ul>
+                                        {teams.teamB.map(p => <li key={p.id}>{p.nome} ({p.ruolo})</li>)}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+
+        // --- Componente Principale App ---
+        function App() {
+            const [players, setPlayers] = useLocalStorage('calcettoPlayers', []);
+            const [editingPlayer, setEditingPlayer] = useState(null); // ID del giocatore in modifica
+            const [matchType, setMatchType] = useLocalStorage('calcettoMatchType', null); // '5', '6', '8', '11'
+            const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
+            const [teams, setTeams] = useState({ teamA: [], teamB: [] });
+            const [isModalOpen, setIsModalOpen] = useState(false);
+
+            // Funzioni Gestione Giocatori
+            const handleSavePlayer = (playerData) => {
+                if (playerData.id) { // Modifica
+                    setPlayers(prevPlayers => prevPlayers.map(p => p.id === playerData.id ? { ...playerData } : p));
+                    setEditingPlayer(null); // Esci dalla modalità modifica
+                } else { // Creazione
+                    setPlayers(prevPlayers => [...prevPlayers, { ...playerData, id: crypto.randomUUID() }]);
+                }
+            };
+
+             const handleEditPlayer = (playerId) => {
+                 const playerToEdit = players.find(p => p.id === playerId);
+                 if (playerToEdit) {
+                    setEditingPlayer(playerToEdit);
+                    // Scrolla al form (opzionale, potrebbe non funzionare perfettamente)
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                 }
+             };
+
+             const handleDeletePlayer = (playerId) => {
+                  const playerToDelete = players.find(p => p.id === playerId);
+                  if (playerToDelete && window.confirm(`Sei sicuro di voler eliminare ${playerToDelete.nome}?`)) {
+                     setPlayers(prevPlayers => prevPlayers.filter(p => p.id !== playerId));
+                     // Rimuovi anche dai selezionati se presente
+                     setSelectedPlayerIds(prevSelected => prevSelected.filter(id => id !== playerId));
+                     // Se stavi modificando il giocatore eliminato, annulla la modifica
+                     if (editingPlayer && editingPlayer.id === playerId) {
+                         setEditingPlayer(null);
+                     }
+                 }
+             };
+
+             const handleCancelEdit = () => {
+                 setEditingPlayer(null);
+             };
+
+             // Funzioni Gestione Partita e Squadre
+             const handleMatchTypeChange = (type) => {
+                 setMatchType(type);
+                 setSelectedPlayerIds([]); // Resetta selezione
+                 setTeams({ teamA: [], teamB: [] }); // Resetta squadre
+             };
+
+             const handleOpenSelectionModal = () => {
+                 // La logica di controllo (abbastanza giocatori) è nel component MatchSetup
+                 setIsModalOpen(true);
+             };
+
+             const handleCloseSelectionModal = () => {
+                 setIsModalOpen(false);
+             };
+
+             const handleTogglePlayerSelection = (playerId) => {
+                  setSelectedPlayerIds(prevSelected => {
+                      const isSelected = prevSelected.includes(playerId);
+                      const required = getRequiredPlayers(matchType);
+                      if (isSelected) {
+                          return prevSelected.filter(id => id !== playerId);
+                      } else {
+                          // Aggiungi solo se non abbiamo raggiunto il limite
+                          if (prevSelected.length < required) {
+                              return [...prevSelected, playerId];
+                          } else {
+                               // alert(`Puoi selezionare al massimo ${required} giocatori.`); // Opzionale: avviso
+                               return prevSelected; // Non fare nulla se siamo al limite
+                          }
+                      }
+                  });
+             };
+
+             const handleConfirmSelection = () => {
+                  // La validazione (numero giusto) è nel modal
+                  handleCloseSelectionModal();
+                  // Le squadre verranno generate successivamente
+             };
+
+             const handleGenerateTeams = (selectedPlayersForBalancing, unpredictability) => {
+                 const balanced = balanceTeams(selectedPlayersForBalancing, unpredictability);
+                 setTeams(balanced);
+             };
+
+             const handleClearSelection = () => {
+                  setSelectedPlayerIds([]);
+                  setTeams({ teamA: [], teamB: [] });
+             };
+
+
+            // Render dell'App
+            return (
+                <div className="container">
+                    <h1>Calcetto Team Manager</h1>
+
+                    <section id="gestione-giocatori">
+                       <PlayerForm
+                            onSave={handleSavePlayer}
+                            editingPlayer={editingPlayer}
+                            onCancelEdit={handleCancelEdit}
+                        />
+                       <PlayerList
+                            players={players}
+                            onEdit={handleEditPlayer}
+                            onDelete={handleDeletePlayer}
+                        />
+                    </section>
+
+                    <hr className="section-divider" />
+
+                    <section id="imposta-partita">
+                        <MatchSetup
+                            matchType={matchType}
+                            onMatchTypeChange={handleMatchTypeChange}
+                            onOpenSelection={handleOpenSelectionModal}
+                            availablePlayerCount={players.length}
+                        />
+                    </section>
+
+                     {isModalOpen && (
+                          <PlayerSelectionModal
+                             players={players}
+                             selectedPlayerIds={selectedPlayerIds}
+                             requiredCount={getRequiredPlayers(matchType)}
+                             onToggleSelect={handleTogglePlayerSelection}
+                             onConfirm={handleConfirmSelection}
+                             onClose={handleCloseSelectionModal}
+                          />
+                     )}
+
+                    <hr className="section-divider" />
+
+                    <section id="crea-squadre">
+                        <TeamDisplay
+                            players={players}
+                            selectedPlayerIds={selectedPlayerIds}
+                            teams={teams}
+                            matchType={matchType}
+                            onGenerateTeams={handleGenerateTeams}
+                            onClearSelection={handleClearSelection}
+                        />
+                    </section>
+
+                </div>
+            );
+        }
+
+        // === Monta l'App React nel DOM ===
+        const rootElement = document.getElementById('root');
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<App />);
+
+    </script>
+
+</body>
+</html>
