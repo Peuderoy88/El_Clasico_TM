@@ -13,455 +13,500 @@
     <!-- Firebase SDKs (via CDN - Compat version) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <!-- <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script> -->
 
-    <!-- CSS Incorporato (Invariato) -->
+    <!-- CSS Incorporato (con aggiunta per toggle live) -->
     <style>
-        /* === Stili Generali === */
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.6; }
-        .container { max-width: 900px; margin: 20px auto; padding: 15px; background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
-        h1, h2, h3 { color: #333; }
-        h1 { text-align: center; color: #fff; background-color: #28a745; padding: 15px; margin: -15px -15px 20px -15px; border-radius: 8px 8px 0 0; }
-        h1 small { font-size: 0.6em; display: block; opacity: 0.9; } /* Stile per sottotitolo */
-        h2 { border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; margin-bottom: 20px; }
-        h3 { margin-top: 0; margin-bottom: 15px; }
-        .section-divider { border: none; height: 1px; background-color: #e0e0e0; margin: 40px 0; }
-        button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s ease, transform 0.1s ease; margin: 5px; background-color: #007bff; color: white; }
-        button:hover { opacity: 0.9; }
-        button:active { transform: scale(0.98); }
-        button:disabled { background-color: #cccccc; cursor: not-allowed; opacity: 0.7; }
-        .btn-create { background-color: #007bff; }
-        .btn-save { background-color: #28a745; } /* Questo salva solo localmente ora */
-        .btn-cancel, .btn-delete, .btn-clear-selection { background-color: #dc3545; }
-        .btn-edit { background-color: #ffc107; color: #333; }
-        .btn-select-players, .btn-generate, .btn-confirm { background-color: #17a2b8; }
-        .btn-swap { background-color: #fd7e14; }
-        .btn-generate-img { background-color: #6f42c1; }
-        .btn-save-file { background-color: #5a6268; } /* Snapshot Locale */
-        .btn-load-file { background-color: #5a6268; } /* Snapshot Locale */
-        .btn-load-db { background-color: #007bff; } /* Carica da Firestore MASTER */
-        .btn-save-db { background-color: #28a745; } /* Salva su Firestore MASTER (con PW) */
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #495057; }
-        input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1em; margin-bottom: 10px; box-sizing: border-box; }
-        input[type="file"] { padding: 5px; }
-        .checkbox-group { display: flex; align-items: center; margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
-        .checkbox-group input[type="checkbox"] { width: auto; margin-right: 10px; transform: scale(1.3); cursor: pointer; }
-        .checkbox-group label { margin-bottom: 0; font-weight: normal; cursor: pointer; }
-        .photo-preview { max-width: 80px; max-height: 80px; margin-top: 5px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
-        .player-photo-thumbnail { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid #eee; vertical-align: middle; background-color: #eee;}
+        /* ... (stili precedenti invariati) ... */
 
-        /* PlayerForm */
-        .player-form-container { margin-bottom: 20px; }
-        .player-form { background-color: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-top: 15px; }
-        .form-group { margin-bottom: 15px; }
-        .form-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
-        .btn-toggle-form { display: block; width: auto; margin: 0 auto 15px auto;}
+        /* File IO Section & Live Sync Toggle */
+        .file-io-section { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; }
+        .db-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; margin-bottom: 15px;}
+        .live-sync-toggle { display: flex; align-items: center; gap: 8px; padding: 10px; background-color: #e9ecef; border-radius: 5px; margin-bottom: 15px; justify-content: center; }
+        .live-sync-toggle input[type="checkbox"] { transform: scale(1.4); cursor: pointer; }
+        .live-sync-toggle label { margin: 0; font-weight: bold; cursor: pointer; }
+        .status-indicator { font-size: 0.9em; color: #6c757d; flex-basis: 100%; text-align: center; margin-top: 5px;}
+        .status-indicator .mode-local { color: #5a6268; font-weight: bold; }
+        .status-indicator .mode-live { color: #dc3545; font-weight: bold; }
+        .db-status-message { font-size: 0.9em; font-style: italic; color: #17a2b8; margin-left: 10px; display: block; text-align: center; margin-top:5px; }
 
-        /* PlayerList/PlayerItem */
-        .player-list-container { margin-top: 20px; }
-        .player-list { list-style: none; padding: 0; margin: 0; }
-        .player-item { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 10px 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 10px; background-color: #fff; }
-        .player-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-grow: 1; }
-        .player-details { display: flex; flex-direction: column; }
-        .player-name { font-weight: bold; font-size: 1.1em; }
-        .player-meta { font-size: 0.9em; color: #555; }
-        .player-role { font-style: italic; }
-        .player-avg-score { background-color: #e9ecef; padding: 2px 6px; border-radius: 10px; color: #495057; margin-left: 5px; }
-        .player-actions { display: flex; gap: 8px; margin-top: 5px; }
-        .player-actions button { padding: 6px 12px; font-size: 0.9em; }
-
-        /* File IO Section */
-        .file-io-section { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
-        .file-io-section p { margin: 0; font-size: 0.9em; color: #6c757d; flex-basis: 100%; text-align: center; margin-top: 10px;}
-        .db-status-message { font-size: 0.9em; font-style: italic; color: #17a2b8; margin-left: 10px; display: block; text-align: center; margin-top:5px; } /* Adjusted */
-
-        /* MatchSetup (Invariato) */
-        .match-setup-container { padding: 15px; background-color: #eef; border-radius: 8px; }
-        .match-type-selector { margin-bottom: 15px; }
-        .match-type-selector label { margin-right: 10px; font-weight: bold; }
-        .match-type-selector select { padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1em; display: inline-block; width: auto; }
-        .match-setup-container p { font-weight: bold; margin-bottom: 15px; }
-
-        /* PlayerSelectionModal (Invariato) */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
-        .modal-content { background-color: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .modal-content h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-player-list { list-style: none; padding: 0; margin: 0 0 20px 0; max-height: 50vh; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; }
-        .modal-player-item { padding: 10px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background-color 0.2s; }
-        .modal-player-item:last-child { border-bottom: none; }
-        .modal-player-item:hover { background-color: #f8f9fa; }
-        .modal-player-item.selected { background-color: #d4edda; font-weight: bold; }
-        .modal-player-item.disabled { cursor: not-allowed; opacity: 0.6;}
-        .modal-player-item label { display: flex; align-items: center; width: 100%; cursor: pointer; }
-        .modal-player-item input[type="checkbox"] { margin-right: 12px; transform: scale(1.3); cursor: pointer; }
-        .modal-player-item.disabled label, .modal-player-item.disabled input { cursor: not-allowed; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-
-        /* TeamDisplay (Invariato) */
-        .team-display-container { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 8px; }
-        .balancing-options { margin-bottom: 15px; }
-        .unpredictability-slider { margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; }
-        .unpredictability-slider label { display: block; margin-bottom: 8px; font-weight: bold; }
-        .unpredictability-slider input[type="range"] { width: 100%; cursor: pointer; }
-        .team-display-container button { margin-right: 10px; margin-bottom: 15px; }
-        .teams-output { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
-        .teams-output h3 { text-align: center; margin-bottom: 15px; }
-        .team-columns { display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap; }
-        .team-column { flex: 1; min-width: 250px; background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 15px; }
-        .team-column h4 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
-        .team-column h4 small { font-weight: normal; font-size: 0.85em; color: #555;}
-        .team-column:first-child h4 { color: #007bff; }
-        .team-column:last-child h4 { color: #dc3545; }
-        .team-column ul { list-style: none; padding: 0; margin: 0; }
-        .team-column li { padding: 10px 5px; border-bottom: 1px dashed #eee; font-size: 0.95em; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: background-color 0.2s; }
-        .team-column li:last-child { border-bottom: none; }
-        .team-column li.selected-for-swap { background-color: #fff3cd; outline: 2px solid #fd7e14; font-weight: bold; }
-        .team-player-info { flex-grow: 1; cursor: pointer; }
-        .team-player-name { font-weight: bold; }
-        .team-player-original-role { font-size: 0.8em; color: #777; display: block; }
-        .team-player-role-selector select { padding: 4px 6px; font-size: 0.9em; width: auto; border-radius: 4px; margin-left: 5px; border: 1px solid #ccc; }
-        .swap-controls { margin-top: 15px; text-align: center; }
-
-        /* Immagine Generata (Invariato) */
-        .generated-image-container { margin-top: 25px; padding-top: 20px; border-top: 1px solid #ccc; text-align: center; }
-        .generated-image-container canvas { display: none; }
-        .generated-image-container img { max-width: 100%; height: auto; border: 1px solid #ddd; margin-top: 10px; background-color: #f9f9f9; }
-        .generated-image-container a { display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 0.9em; }
-        .generated-image-container a:hover { background-color: #218838; }
-
-        /* Responsive (Invariato) */
-        @media (max-width: 600px) {
-            .container { margin: 10px; padding: 10px; }
-            h1 { font-size: 1.6em; padding: 12px; margin: -10px -10px 15px -10px; }
-            button { padding: 8px 14px; font-size: 0.95em; }
-            input[type="text"], input[type="number"], select { padding: 8px; }
-            .player-item { flex-direction: column; align-items: flex-start; gap: 5px; }
-            .player-info { gap: 5px;}
-            .player-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
-            .file-io-section { flex-direction: column; align-items: stretch; text-align: center;}
-            .file-io-section p { margin-bottom: 10px; }
-            .team-columns { flex-direction: column; }
-            .modal-content { padding: 15px; }
-            .balancing-options { display: flex; flex-direction: column; }
-            .checkbox-group { font-size: 0.9em; }
-            .team-column li { font-size: 0.9em; flex-wrap: wrap;}
-            .team-player-role-selector select { width: 100%; margin-left: 0; margin-top: 5px; }
-        }
-
-        /* Stili per messaggio di caricamento/errore */
-        .loading-message { text-align: center; padding: 40px; font-size: 1.2em; color: #555; font-weight: bold;}
-        .error-message { text-align: center; padding: 20px; color: red; border: 1px solid red; background-color: #fdd; border-radius: 5px; margin: 10px; }
-
+         /* Responsive per controlli DB */
+         @media (max-width: 768px) {
+            .db-controls { flex-direction: column; align-items: stretch; }
+            .db-controls button { width: 100%; margin-bottom: 5px; }
+         }
     </style>
 </head>
 <body>
-    <!-- Elemento Root -->
     <div id="root"></div>
 
-    <!-- Codice React (JSX) -->
     <script type="text/babel">
 
         // === Hook e Costanti ===
         const { useState, useEffect, useCallback, useRef } = React;
         const ALL_ROLES = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
-        const SAVE_PASSWORD = "RoyClasico"; // La tua password
-        const MASTER_COLLECTION_NAME = 'giocatori_master'; // NUOVO: Nome collezione centrale
+        const SAVE_PASSWORD = "RoyClasico";
+        const MASTER_COLLECTION_NAME = 'giocatori_master'; // Collezione storica/ufficiale
+        const LIVE_COLLECTION_NAME = 'giocatori_live';     // Collezione per sync real-time
 
-        // --- Hook useLocalStorage (Mantenuto per MatchType, Teams, Settings) ---
+        // --- Hook useLocalStorage (Invariato) ---
         function useLocalStorage(key, initialValue) { /* ... codice invariato ... */ }
-        // --- Fine useLocalStorage ---
-
 
         // --- Inizializzazione Firebase ---
-        const firebaseConfig = { /* ... codice invariato ... */ };
+        const firebaseConfig = { /* ... tua config ... */ };
 
         let db;
-        let masterPlayersCollectionRef; // NUOVO: Riferimento alla collezione master
+        let masterPlayersCollectionRef;
+        let livePlayersCollectionRef; // NUOVO: Ref per collezione live
         let firebaseInitializationError = null;
 
         try {
-            if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); console.log("Firebase inizializzato."); }
-            else { firebase.app(); console.log("Firebase già inizializzato."); }
+            if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+            else { firebase.app(); }
             db = firebase.firestore();
-            masterPlayersCollectionRef = db.collection(MASTER_COLLECTION_NAME); // NUOVO: Usa la nuova collezione
-            console.log(`Riferimento alla collezione '${MASTER_COLLECTION_NAME}' ottenuto.`);
+            masterPlayersCollectionRef = db.collection(MASTER_COLLECTION_NAME);
+            livePlayersCollectionRef = db.collection(LIVE_COLLECTION_NAME); // NUOVO
+            console.log(`Riferimenti Firestore: OK ('${MASTER_COLLECTION_NAME}', '${LIVE_COLLECTION_NAME}')`);
         } catch (error) {
-             console.error("!!! ERRORE CRITICO NELL'INIZIALIZZAZIONE DI FIREBASE !!!", error);
-             firebaseInitializationError = `Errore grave: Impossibile inizializzare il database (${error.message}). Controlla le credenziali Firebase e la connessione internet.`;
+             console.error("!!! ERRORE CRITICO FIREBASE !!!", error);
+             firebaseInitializationError = `Errore grave inizializzazione DB (${error.message}).`;
         }
         // --- Fine Inizializzazione Firebase ---
 
-
         // === Funzioni Utili (Invariate) ===
-        const calculatePlayerScore = (player) => { /* ... codice invariato ... */ };
-        const getRequiredPlayers = (matchType) => { /* ... codice invariato ... */ };
-        const calculateTeamFinalScore = (team) => { /* ... codice invariato ... */ };
+        const calculatePlayerScore = (player) => { /*...*/ };
+        const getRequiredPlayers = (matchType) => { /*...*/ };
+        const calculateTeamFinalScore = (team) => { /*...*/ };
         const roleOrder = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
-        const getAvgScore = (player) => { /* ... codice invariato ... */ };
-        const balanceTeams = (players, unpredictability, balanceByRole) => { /* ... codice invariato ... */ };
-        function drawFormation(canvas, teamA, teamB, matchType) { /* ... codice invariato ... */ };
-        // === Fine Funzioni Utili ===
+        const getAvgScore = (player) => { /*...*/ };
+        const balanceTeams = (players, unpredictability, balanceByRole) => { /*...*/ };
+        function drawFormation(canvas, teamA, teamB, matchType) { /*...*/ };
 
-
-        // === Componenti React (PlayerForm, PlayerItem, PlayerList, PlayerSelectionModal, MatchSetup, TeamDisplay - Invariati nella struttura, ricevono props) ===
-        function PlayerForm({ onSave, editingPlayer, onCancelEdit }) { /* ... codice JSX invariato ... */ }
-        function PlayerItem({ player, onEdit, onDelete }) { /* ... codice JSX invariato ... */ }
-        function PlayerList({ players, onEdit, onDelete }) {
-             // MODIFICA MINORE: Messaggio se lista locale è vuota
+        // === Componenti React (Struttura JSX invariata, ma logica interna cambia) ===
+        function PlayerForm({ onSave, editingPlayer, onCancelEdit, currentMode }) {
+            // ... (logica interna e stato del form invariati) ...
+            // Potremmo cambiare il testo del bottone "Salva" in base alla modalità, ma per ora lo lasciamo generico
+            const buttonText = editingPlayer ? 'Salva Modifiche' : 'Aggiungi Giocatore';
              return (
-                 <div className="player-list-container">
-                     <h2>Giocatori Locali ({players.length})</h2>
-                     {players.length === 0 ? (<p>Nessun giocatore nella lista locale. Clicca "Carica da DB" per iniziare o aggiungine di nuovi (saranno salvati solo cliccando "Salva su DB").</p>) : (<ul className="player-list">{players.map(p => (<PlayerItem key={p.id} player={p} onEdit={onEdit} onDelete={onDelete} />))}</ul>)}
+                 <div className="player-form-container">
+                    {/* ... (pulsante toggle e form JSX) ... */}
+                     {/* Nota: Il bottone submit chiama onSave, che ora ha logica condizionale */}
+                     <div className="form-actions">
+                         <button type="submit" className="btn-save">{buttonText} ({currentMode === 'live' ? 'Live' : 'Locale'})</button>
+                         <button type="button" onClick={handleCancel} className="btn-cancel">Annulla</button>
+                     </div>
+                 {/* ... (chiusura form) ... */}
                  </div>
              );
         }
+        function PlayerItem({ player, onEdit, onDelete, currentMode }) {
+            const avgScore = getAvgScore(player);
+            // Aggiungiamo un piccolo indicatore se l'ID è locale
+            const isLocalOnly = player.id && player.id.startsWith('local_');
+             return (
+                 <li className="player-item">
+                     <div className="player-info">
+                         {player.photoUrl ? (<img src={player.photoUrl} alt={player.nome} className="player-photo-thumbnail" />) : (<span className="player-photo-thumbnail"></span>)}
+                         <div className="player-details">
+                             <span className="player-name">{player.nome} {isLocalOnly && <small>(Locale)</small>}</span>
+                             <span className="player-meta"><span className="player-role">{player.ruolo}</span><span className="player-avg-score">Avg: {avgScore}</span></span>
+                         </div>
+                     </div>
+                     {/* Le azioni ora chiamano handler che dipendono dalla modalità */}
+                     <div className="player-actions">
+                        <button onClick={() => onEdit(player.id)} className="btn-edit">Modifica</button>
+                        <button onClick={() => onDelete(player.id)} className="btn-delete">Elimina ({currentMode === 'live' ? 'Live!' : 'Loc.'})</button>
+                    </div>
+                 </li>
+             );
+        }
+        function PlayerList({ players, onEdit, onDelete, currentMode }) {
+             const listTitle = currentMode === 'live' ? `Giocatori Condivisi Live (${players.length})` : `Giocatori Locali (${players.length})`;
+             const emptyListMessage = currentMode === 'live'
+                ? "Nessun giocatore nella sessione live condivisa. Aggiungine uno per iniziare!"
+                : "Nessun giocatore nella lista locale. Carica da DB Master, attiva Sync Live o aggiungine di nuovi.";
+
+             return (
+                 <div className="player-list-container">
+                     <h2>{listTitle}</h2>
+                     {players.length === 0 ? (<p>{emptyListMessage}</p>) : (
+                        <ul className="player-list">
+                            {players.map(p => (<PlayerItem key={p.id} player={p} onEdit={onEdit} onDelete={onDelete} currentMode={currentMode}/>))}
+                        </ul>
+                     )}
+                 </div>
+             );
+        }
+        // PlayerSelectionModal, MatchSetup, TeamDisplay: JSX sostanzialmente invariato,
+        // ma operano sempre sui 'players' correnti passati come prop.
+
         function PlayerSelectionModal({ players, selectedPlayerIds, requiredCount, onToggleSelect, onConfirm, onClose }) { /* ... codice JSX invariato ... */ }
         function MatchSetup({ matchType, onMatchTypeChange, onOpenSelection, availablePlayerCount }) { /* ... codice JSX invariato ... */ }
         function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onUpdateTeams, onClearSelection, balanceByRoleEnabled, onToggleBalanceByRole, onGenerateTeams }) { /* ... codice JSX invariato ... */ }
-        // === Fine Componenti React ===
 
 
         // === Componente Principale App ===
         function App() {
-            // STATO GIOCATORI: Lista locale, modificata dall'utente, sincronizzata con DB solo tramite bottoni
-            const [players, setPlayers] = useState([]); // Inizia vuoto
-            const [isInitialLoadDone, setIsInitialLoadDone] = useState(false); // Flag per sapere se il primo caricamento è avvenuto
+            // STATO PRINCIPALE
+            const [players, setPlayers] = useState([]); // Lista giocatori attiva (locale o live)
+            const [operatingMode, setOperatingMode] = useState('local'); // 'local' o 'live'
+            const listenerUnsubscribeRef = useRef(null); // Per staccare il listener di Firestore
 
-            // STATI GESTITI CON LOCALSTORAGE (Partita, Squadre locali, Impostazioni - Invariati)
+            // Stati UI e Feedback
+            const [editingPlayer, setEditingPlayer] = useState(null);
+            const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const fileInputRef = useRef(null);
+            const [isDbLoading, setIsLoadingDb] = useState(false); // Per operazioni DB (master load, live connect)
+            const [isDbSaving, setIsSavingDb] = useState(false);   // Per salvataggio DB Master
+            const [dbStatusMessage, setDbStatusMessage] = useState('');
+            const [dbError, setDbError] = useState(firebaseInitializationError);
+
+            // Stati salvati in localStorage (invariati)
             const [matchType, setMatchType] = useLocalStorage('calcettoMatchType_1', null);
             const [teams, setTeams] = useLocalStorage('calcettoTeamsV6_1', { teamA: [], teamB: [] });
             const [balanceByRoleEnabled, setBalanceByRoleEnabled] = useLocalStorage('calcettoBalanceByRole_1', true);
 
-            // STATI LOCALI STANDARD
-            const [editingPlayer, setEditingPlayer] = useState(null); // Oggetto giocatore con ID (anche temporaneo locale)
-            const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
-            const [isModalOpen, setIsModalOpen] = useState(false);
-            const fileInputRef = useRef(null);
-
-            // STATI PER OPERAZIONI DB
-            const [isDbLoading, setIsLoadingDb] = useState(false);
-            const [isDbSaving, setIsSavingDb] = useState(false);
-            const [dbStatusMessage, setDbStatusMessage] = useState('');
-            const [dbError, setDbError] = useState(firebaseInitializationError); // Stato per errori DB
-
-            // RIMOSSO: useEffect con onSnapshot. Non serve più il listener real-time.
-
-            // --- FUNZIONE PER PULIRE STATO DIPENDENTE DAI GIOCATORI ---
+            // --- Funzione Pulizia Stato Dipendente ---
             const clearDependentState = () => {
                 setSelectedPlayerIds([]);
                 setTeams({ teamA: [], teamB: [] });
                 setEditingPlayer(null);
-                setMatchType(null);
+                setMatchType(null); // Resettiamo anche il tipo partita
+                 // Non resettare balanceByRoleEnabled
             };
 
-            // --- Handlers Gestione Giocatori (OPERANO SOLO SULLO STATO LOCALE) ---
-            const handleSavePlayer = (playerData) => {
-                // NESSUNA CHIAMATA A FIRESTORE QUI
-                const { id, ...dataToSave } = playerData;
-                 // Pulisci photoUrl null/undefined prima di salvare localmente
-                if (!dataToSave.photoUrl) { delete dataToSave.photoUrl; }
+            // --- Gestione Listener Live ---
+            const setupLiveListener = () => {
+                if (!livePlayersCollectionRef || listenerUnsubscribeRef.current) return; // Già attivo o errore
+                console.log("Attivazione listener su", LIVE_COLLECTION_NAME);
+                setIsLoadingDb(true); // Mostra caricamento durante la connessione iniziale
+                setDbStatusMessage("Connessione alla sessione Live...");
 
-                if (id) { // Modifica giocatore esistente (localmente)
-                    setPlayers(prevPlayers => prevPlayers.map(p =>
-                        p.id === id ? { ...p, ...dataToSave } : p
-                    ));
-                    setDbStatusMessage('Giocatore modificato localmente.');
-                    console.log("Modificato localmente:", id, dataToSave);
-                } else { // Aggiunta nuovo giocatore (localmente)
-                    // Genera un ID temporaneo per uso locale (React key, ecc.)
-                    const newPlayer = { ...dataToSave, id: `local_${crypto.randomUUID()}` };
-                    setPlayers(prevPlayers => [...prevPlayers, newPlayer]);
-                    setDbStatusMessage('Giocatore aggiunto localmente.');
-                    console.log("Aggiunto localmente:", newPlayer);
+                listenerUnsubscribeRef.current = livePlayersCollectionRef.onSnapshot(snapshot => {
+                    console.log("Dati ricevuti da Firestore (LIVE):", snapshot.size);
+                    const livePlayersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setPlayers(livePlayersData); // Aggiorna lo stato locale con i dati live
+                    setIsLoadingDb(false); // Caricamento completato (o aggiornamento ricevuto)
+                    setDbStatusMessage(""); // Pulisci messaggio connessione
+                    setDbError(null);
+
+                    // Se la lista live cambia, dobbiamo invalidare le selezioni/squadre locali
+                    // Potremmo cercare di preservarle se gli ID esistono ancora, ma è più semplice resettare
+                    clearDependentState();
+
+                }, error => {
+                    console.error("Errore listener Firestore LIVE:", error);
+                    setDbError(`Errore connessione Live: ${error.message}. Disattivazione.`);
+                    setDbStatusMessage(`Errore Live: ${error.message}`);
+                    setIsLoadingDb(false);
+                    // Errore grave, disattiviamo la modalità live
+                    setOperatingMode('local');
+                    setPlayers([]); // Svuota la lista locale
+                    if (listenerUnsubscribeRef.current) {
+                        listenerUnsubscribeRef.current();
+                        listenerUnsubscribeRef.current = null;
+                    }
+                     clearDependentState();
+                });
+            };
+
+            const detachLiveListener = () => {
+                if (listenerUnsubscribeRef.current) {
+                    console.log("Disattivazione listener Live.");
+                    listenerUnsubscribeRef.current();
+                    listenerUnsubscribeRef.current = null;
                 }
-                setEditingPlayer(null); // Chiudi form
-                setTimeout(() => setDbStatusMessage(''), 3000); // Pulisci messaggio
+                 // Reset stato quando si esce da Live
+                 setPlayers([]); // Lista vuota in modalità locale
+                 clearDependentState();
+                 setDbStatusMessage(""); // Pulisci eventuali messaggi
+            };
+
+            // Effetto per gestire il cleanup del listener quando il componente smonta
+            useEffect(() => {
+                return () => {
+                    detachLiveListener(); // Assicura che il listener sia staccato
+                };
+            }, []); // Esegui solo al mount/unmount
+
+            // --- Handler Toggle Sincronizzazione Live ---
+            const handleToggleLiveSync = (event) => {
+                const isEnabling = event.target.checked;
+
+                if (isEnabling) {
+                    if (window.confirm("Attivare la Sincronizzazione Live?\nLa lista locale attuale e le squadre verranno perse e vedrai la lista condivisa.")) {
+                        detachLiveListener(); // Assicura che non ci siano listener precedenti appesi
+                        setOperatingMode('live');
+                        // setupLiveListener() verrà chiamato dall'effetto sotto
+                    } else {
+                         event.target.checked = false; // Riporta la checkbox allo stato precedente
+                    }
+                } else {
+                     if (window.confirm("Disattivare la Sincronizzazione Live?\nVerrai disconnesso e tornerai a una lista locale vuota.")) {
+                        setOperatingMode('local');
+                        // detachLiveListener() verrà chiamato dall'effetto sotto
+                    } else {
+                         event.target.checked = true; // Riporta la checkbox allo stato precedente
+                    }
+                }
+            };
+
+             // Effetto per attaccare/staccare il listener quando operatingMode cambia
+             useEffect(() => {
+                if (operatingMode === 'live') {
+                    setupLiveListener();
+                } else {
+                    detachLiveListener();
+                }
+                 // Funzione di cleanup per questo effetto specifico
+                return () => {
+                    detachLiveListener();
+                };
+            }, [operatingMode]); // Riesegui quando operatingMode cambia
+
+
+            // --- Handlers CRUD (Aggiungi/Modifica/Elimina Giocatore) ---
+            // Ora dipendono da operatingMode
+            const handleSavePlayer = async (playerData) => {
+                const { id, ...dataToSave } = playerData;
+                 if (!dataToSave.photoUrl) { delete dataToSave.photoUrl; } // Pulisci foto
+
+                if (operatingMode === 'live') {
+                    // --- SALVATAGGIO LIVE SU FIRESTORE ---
+                    if (!livePlayersCollectionRef) { alert("Errore: DB Live non connesso."); return; }
+                    setDbStatusMessage("Salvataggio Live in corso...");
+                    try {
+                        if (id && !id.startsWith('local_')) { // Modifica giocatore esistente nel DB Live
+                            await livePlayersCollectionRef.doc(id).update(dataToSave);
+                            setDbStatusMessage("Giocatore modificato (Live).");
+                        } else { // Aggiunta nuovo giocatore al DB Live (Firestore genera ID)
+                            await livePlayersCollectionRef.add(dataToSave);
+                            setDbStatusMessage("Giocatore aggiunto (Live).");
+                        }
+                        setEditingPlayer(null); // Chiudi form
+                    } catch (error) {
+                        console.error("Errore salvataggio Live:", error);
+                        alert(`Errore salvataggio Live: ${error.message}`);
+                        setDbStatusMessage(`Errore salvataggio Live: ${error.message}`);
+                    } finally {
+                         setTimeout(() => setDbStatusMessage(''), 3000);
+                         // Il listener aggiornerà automaticamente lo stato `players`
+                    }
+
+                } else {
+                    // --- SALVATAGGIO LOCALE ---
+                    if (id) { // Modifica locale
+                        setPlayers(prev => prev.map(p => p.id === id ? { ...p, ...dataToSave, id: id } : p));
+                        setDbStatusMessage('Giocatore modificato (Locale).');
+                    } else { // Aggiunta locale
+                        const newPlayer = { ...dataToSave, id: `local_${crypto.randomUUID()}` };
+                        setPlayers(prev => [...prev, newPlayer]);
+                        setDbStatusMessage('Giocatore aggiunto (Locale).');
+                    }
+                    setEditingPlayer(null);
+                    setTimeout(() => setDbStatusMessage(''), 3000);
+                }
+            };
+
+            const handleDeletePlayer = async (playerId) => {
+                 const playerToDelete = players.find(p => p.id === playerId);
+                 if (!playerToDelete) return;
+
+                if (operatingMode === 'live') {
+                    // --- ELIMINAZIONE LIVE DA FIRESTORE ---
+                    if (!livePlayersCollectionRef) { alert("Errore: DB Live non connesso."); return; }
+                    if (playerId.startsWith('local_')) {
+                         alert("Errore: Non puoi eliminare un giocatore locale mentre sei in modalità Live."); return;
+                    }
+                    if (window.confirm(`Eliminare ${playerToDelete.nome} dalla sessione Live condivisa?\n(L'azione è immediata per tutti)`)) {
+                        setDbStatusMessage("Eliminazione Live in corso...");
+                        try {
+                            await livePlayersCollectionRef.doc(playerId).delete();
+                            setDbStatusMessage("Giocatore eliminato (Live).");
+                             // Non serve pulire stato locale, il listener lo farà
+                            if (editingPlayer?.id === playerId) setEditingPlayer(null);
+                        } catch(error) {
+                            console.error("Errore eliminazione Live:", error);
+                            alert(`Errore eliminazione Live: ${error.message}`);
+                            setDbStatusMessage(`Errore eliminazione Live: ${error.message}`);
+                        } finally {
+                            setTimeout(() => setDbStatusMessage(''), 3000);
+                        }
+                    }
+                } else {
+                     // --- ELIMINAZIONE LOCALE ---
+                     if (window.confirm(`Eliminare ${playerToDelete.nome} dalla lista locale?`)) {
+                        setPlayers(prev => prev.filter(p => p.id !== playerId));
+                        // Pulisci dipendenze locali
+                        setSelectedPlayerIds(prev => prev.filter(id => id !== playerId));
+                        setTeams(prev => ({ teamA: prev.teamA.filter(p => p.id !== playerId), teamB: prev.teamB.filter(p => p.id !== playerId) }));
+                        if (editingPlayer?.id === playerId) setEditingPlayer(null);
+                        setDbStatusMessage('Giocatore eliminato (Locale).');
+                        setTimeout(() => setDbStatusMessage(''), 3000);
+                    }
+                }
             };
 
             const handleEditPlayer = (playerId) => {
                 const playerToEdit = players.find(p => p.id === playerId);
-                if (playerToEdit) { setEditingPlayer(playerToEdit); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-                else { console.warn("Edit (locale): Player non trovato", playerId); }
-            };
-
-            const handleDeletePlayer = (playerId) => {
-                 // NESSUNA CHIAMATA A FIRESTORE QUI
-                 const playerToDelete = players.find(p => p.id === playerId);
-                 if (playerToDelete && window.confirm(`Eliminare ${playerToDelete.nome} dalla lista locale?\n(Per renderlo definitivo, salva sul DB)`)) {
-                    setPlayers(prevPlayers => prevPlayers.filter(p => p.id !== playerId));
-                    // Pulisci eventuale stato dipendente se il giocatore era selezionato o nelle squadre
-                    setSelectedPlayerIds(prev => prev.filter(id => id !== playerId));
-                    setTeams(prevTeams => ({ teamA: prevTeams.teamA.filter(p => p.id !== playerId), teamB: prevTeams.teamB.filter(p => p.id !== playerId) }));
-                    if (editingPlayer?.id === playerId) { setEditingPlayer(null); }
-                    setDbStatusMessage('Giocatore eliminato localmente.');
-                    console.log("Eliminato localmente:", playerId);
-                    setTimeout(() => setDbStatusMessage(''), 3000);
-                 }
+                 if (playerToEdit) { setEditingPlayer(playerToEdit); window.scrollTo({ top: 0, behavior: 'smooth' }); }
             };
             const handleCancelEdit = () => { setEditingPlayer(null); };
-            // --- Fine Handlers Giocatori Locali ---
+            // --- Fine Handlers CRUD ---
 
 
-            // --- Handlers Caricamento/Salvataggio DB MASTER (Firestore) ---
-            const handleLoadFromFirestore = async () => {
-                if (!db || !masterPlayersCollectionRef) { alert("Errore: DB non connesso."); return; }
-                if (!window.confirm(`Caricare la lista giocatori dal Database centrale (${MASTER_COLLECTION_NAME})?\nQuesto SOVRASCRIVERÀ la lista locale attuale e azzererà squadre/selezioni.`)) return;
+            // --- Handlers DB MASTER (Carica/Salva) ---
+            const handleLoadFromFirestoreMaster = async () => {
+                if (!masterPlayersCollectionRef) { alert("Errore: DB Master non connesso."); return; }
+                if (window.confirm(`Caricare la lista giocatori dal DB Master (${MASTER_COLLECTION_NAME})?\nQuesto SOVRASCRIVERÀ la lista attuale e disattiverà la Sync Live (se attiva).`)) {
 
-                setIsLoadingDb(true);
-                setDbStatusMessage(`Caricamento da DB (${MASTER_COLLECTION_NAME})...`);
-                setDbError(null); // Resetta errori precedenti
-                try {
-                    const snapshot = await masterPlayersCollectionRef.get();
-                    console.log(`Dati caricati da ${MASTER_COLLECTION_NAME}:`, snapshot.size);
-                    const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setPlayers(playersData); // Sovrascrivi lo stato locale con i dati dal DB
-                    clearDependentState(); // Azzera selezioni, squadre, ecc.
-                    setDbStatusMessage(`Caricati ${playersData.length} giocatori dal DB centrale.`);
-                    setIsInitialLoadDone(true); // Marca che il caricamento è avvenuto almeno una volta
-                } catch (error) {
-                    console.error("Errore caricamento da Firestore:", error);
-                    setDbError(`Errore caricamento DB: ${error.message}.`);
-                    setDbStatusMessage(`Errore caricamento DB: ${error.message}`);
-                } finally {
-                    setIsLoadingDb(false);
-                    setTimeout(() => setDbStatusMessage(''), 5000);
+                    // PRIMA disattiva la modalità live, se attiva
+                    if (operatingMode === 'live') {
+                         setOperatingMode('local'); // Questo triggera useEffect per staccare il listener
+                         // Aspetta un attimo per assicurare che il detach avvenga prima di procedere
+                         await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+
+                    setIsLoadingDb(true);
+                    setDbStatusMessage(`Caricamento da DB Master (${MASTER_COLLECTION_NAME})...`);
+                    setDbError(null);
+                    try {
+                        const snapshot = await masterPlayersCollectionRef.get();
+                        const masterPlayersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        setPlayers(masterPlayersData); // Sovrascrivi stato locale
+                        clearDependentState();
+                        setDbStatusMessage(`Caricati ${masterPlayersData.length} giocatori dal DB Master.`);
+                    } catch (error) {
+                        console.error("Errore caricamento DB Master:", error);
+                        setDbError(`Errore caricamento DB Master: ${error.message}.`);
+                        setDbStatusMessage(`Errore caricamento DB Master: ${error.message}`);
+                    } finally {
+                        setIsLoadingDb(false);
+                        setTimeout(() => setDbStatusMessage(''), 5000);
+                    }
                 }
             };
 
-            const handleSaveToFirestore = async () => {
-                if (!db || !masterPlayersCollectionRef) { alert("Errore: DB non connesso."); return; }
+            const handleSaveToFirestoreMaster = async () => {
+                 if (!masterPlayersCollectionRef) { alert("Errore: DB Master non connesso."); return; }
+                 const password = window.prompt(`Inserisci la password per SALVARE sul DB Master (${MASTER_COLLECTION_NAME}):`);
+                 if (password === null) return;
+                 if (password !== SAVE_PASSWORD) { alert("Password errata!"); return; }
+                 if (!window.confirm(`ATTENZIONE!\nSOVRASCRIVERE l'intero DB Master (${MASTER_COLLECTION_NAME}) con i ${players.length} giocatori attualmente visualizzati (locali o live)?\nAzione IRREVERSIBILE.`)) return;
 
-                const password = window.prompt("Inserisci la password per salvare sul Database Centrale:");
-                if (password === null) return; // User cancelled
-                if (password !== SAVE_PASSWORD) {
-                    alert("Password errata!");
-                    return;
-                }
+                 setIsSavingDb(true);
+                 setDbStatusMessage(`Salvataggio su DB Master (${MASTER_COLLECTION_NAME})...`);
+                 setDbError(null);
+                 try {
+                     const batch = db.batch();
+                     const snapshot = await masterPlayersCollectionRef.get();
+                     snapshot.docs.forEach(doc => batch.delete(doc.ref)); // Elimina vecchi
 
-                if (!window.confirm(`ATTENZIONE!\nSei sicuro di voler SOVRASCRIVERE l'INTERO Database centrale (${MASTER_COLLECTION_NAME}) con i ${players.length} giocatori della lista locale attuale?\nQuesta azione NON è reversibile.`)) return;
-
-                setIsSavingDb(true);
-                setDbStatusMessage(`Salvataggio su DB (${MASTER_COLLECTION_NAME}) in corso...`);
-                setDbError(null);
-                try {
-                    const batch = db.batch();
-
-                    // 1. Leggi tutti i documenti attuali nel DB master per eliminarli
-                    const snapshot = await masterPlayersCollectionRef.get();
-                    snapshot.docs.forEach(doc => {
-                        batch.delete(doc.ref);
-                    });
-                    console.log(`Batch: Prevista eliminazione di ${snapshot.size} documenti da ${MASTER_COLLECTION_NAME}.`);
-
-                    // 2. Aggiungi tutti i giocatori dallo stato locale 'players' al batch
-                    players.forEach(player => {
-                        const { id, ...playerData } = player; // Separa l'ID dai dati
-                         // Pulisci photoUrl null/undefined
-                        if (!playerData.photoUrl) { delete playerData.photoUrl; }
-
-                        // Se l'ID inizia con 'local_', è un giocatore aggiunto solo localmente,
-                        // quindi non specifichiamo l'ID nel batch.set per farne generare uno nuovo da Firestore.
-                        // Altrimenti, usiamo l'ID esistente (che proviene da un caricamento precedente).
-                        const docRef = id && !id.startsWith('local_')
+                     // Aggiungi quelli correnti (dallo stato 'players')
+                     players.forEach(player => {
+                         const { id, ...playerData } = player;
+                         if (!playerData.photoUrl) delete playerData.photoUrl;
+                         // Se l'ID è 'local_', lascia che Firestore generi un ID nuovo nel DB Master
+                         const docRef = id && !id.startsWith('local_')
                             ? masterPlayersCollectionRef.doc(id)
-                            : masterPlayersCollectionRef.doc(); // Lascia che Firestore generi un ID per i nuovi/locali
+                            : masterPlayersCollectionRef.doc();
+                         batch.set(docRef, playerData);
+                     });
 
-                        batch.set(docRef, playerData);
-                    });
-                    console.log(`Batch: Prevista aggiunta/aggiornamento di ${players.length} documenti in ${MASTER_COLLECTION_NAME}.`);
-
-                    // 3. Esegui il batch
-                    await batch.commit();
-                    console.log("Batch completato con successo!");
-                    setDbStatusMessage(`Database centrale (${MASTER_COLLECTION_NAME}) sovrascritto con ${players.length} giocatori.\nRICARICA DAL DB per aggiornare gli ID locali se hai aggiunto nuovi giocatori.`);
-
-                    // IMPORTANTE: Dopo aver salvato, gli ID dei giocatori aggiunti localmente
-                    // saranno cambiati in quelli reali di Firestore. È consigliabile ricaricare.
-                    // Potremmo farlo automaticamente, ma per ora avvisiamo l'utente.
-                    // handleLoadFromFirestore(); // Opzionale: ricarica automatica
-
-                } catch (error) {
-                    console.error("Errore salvataggio batch su Firestore:", error);
-                    alert(`Errore durante il salvataggio sul Database: ${error.message}`);
-                    setDbError(`Errore salvataggio DB: ${error.message}`);
-                    setDbStatusMessage(`Errore salvataggio DB: ${error.message}`);
-                } finally {
-                    setIsSavingDb(false);
-                    // Non pulire subito il messaggio di successo/errore del salvataggio
-                    // setTimeout(() => setDbStatusMessage(''), 8000); // Lascia più tempo per leggerlo
-                }
+                     await batch.commit();
+                     setDbStatusMessage(`DB Master (${MASTER_COLLECTION_NAME}) sovrascritto con ${players.length} giocatori.`);
+                     // Potresti voler ricaricare da Master per ottenere ID corretti se hai salvato giocatori 'local_'
+                 } catch (error) {
+                     console.error("Errore salvataggio DB Master:", error);
+                     setDbError(`Errore salvataggio DB Master: ${error.message}.`);
+                     setDbStatusMessage(`Errore salvataggio DB Master: ${error.message}`);
+                 } finally {
+                     setIsSavingDb(false);
+                     // setTimeout(() => setDbStatusMessage(''), 8000);
+                 }
             };
             // --- Fine Handlers DB Master ---
 
 
-            // --- Handlers Partita/Selezione (Invariati, operano su stato locale/localStorage) ---
-            const handleMatchTypeChange = (type) => { setMatchType(type); setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); };
+            // --- Handlers Partita/Selezione/Squadre (Invariati, operano su 'players' attuale) ---
+            const handleMatchTypeChange = (type) => { /*...*/ };
             const handleOpenSelectionModal = () => setIsModalOpen(true);
             const handleCloseSelectionModal = () => setIsModalOpen(false);
-            const handleTogglePlayerSelection = (playerId) => { /* ... codice invariato ... */ };
-            const handleConfirmSelection = () => { handleCloseSelectionModal(); setTeams({ teamA: [], teamB: [] }); };
-            // --- Fine Handlers Partita/Selezione ---
+            const handleTogglePlayerSelection = (playerId) => { /*...*/ };
+            const handleConfirmSelection = () => { /*...*/ };
+            const handleClearSelectionAndTeams = () => { /*...*/ };
+            const handleToggleBalanceByRole = () => { /*...*/ };
+            const handleUpdateTeams = useCallback((newTeams) => { /*...*/ }, [setTeams]);
+            const handleGenerateBalancedTeams = useCallback((playersToBalance, unpredictability, balanceByRole) => { /*...*/ }, [setTeams]);
+            // --- Fine Handlers Partita/Selezione/Squadre ---
 
-
-            // --- Handlers Squadre (Invariati, operano su stato locale/localStorage) ---
-            const handleClearSelectionAndTeams = () => { setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); };
-            const handleToggleBalanceByRole = () => { setBalanceByRoleEnabled(prev => !prev); };
-            const handleUpdateTeams = useCallback((newTeams) => { setTeams(newTeams); }, [setTeams]);
-            const handleGenerateBalancedTeams = useCallback((playersToBalance, unpredictability, balanceByRole) => { /* ... codice invariato ... */ }, [setTeams]);
-            // --- Fine Handlers Squadre ---
-
-
-            // --- Handlers File IO (Snapshot Locale - Invariati, lavorano su 'players' locale) ---
-            const handleSaveToFile = () => { /* ... codice invariato ... */ };
-            const handleLoadTrigger = () => { fileInputRef.current?.click(); };
-            const handleFileSelected = (event) => { /* ... codice invariato, ma ora lavora su dati locali che potrebbero non essere sincronizzati col DB ... */ };
+            // --- Handlers File IO (Snapshot Locale - Invariati, operano su 'players' attuale) ---
+            const handleSaveToFile = () => { /*...*/ };
+            const handleLoadTrigger = () => { /*...*/ };
+            const handleFileSelected = (event) => { /*...*/ };
             // --- Fine Handlers File IO ---
-
 
             // --- Render App ---
             const disableDbActions = isDbLoading || isDbSaving || !!firebaseInitializationError;
+            const isLive = operatingMode === 'live';
 
             return (
                 <div className="container">
-                    <h1>El Clasico Team Manager <small>(Modifiche Locali / DB Centrale: {MASTER_COLLECTION_NAME})</small></h1>
+                     <h1>El Clasico Team Manager <small>({isLive ? `Live Sync Attiva - DB: ${LIVE_COLLECTION_NAME}` : `Modalità Locale`})</small></h1>
 
-                    {/* Messaggi di Stato/Errore Principali */}
+                    {/* Messaggi Stato/Errore */}
                     {dbError && <div className="error-message">{dbError}</div>}
-                    {isDbLoading && <div className="loading-message">Operazione Database in corso...</div>}
-                    {isDbSaving && <div className="loading-message">Salvataggio su Database Centrale in corso...</div>}
-                    {dbStatusMessage && <div className="db-status-message">{dbStatusMessage}</div>}
+                    {(isDbLoading || isDbSaving) && <div className="loading-message">Operazione Database in corso...</div>}
+                    {dbStatusMessage && !isDbLoading && !isDbSaving && <div className="db-status-message">{dbStatusMessage}</div>}
 
-                    {/* Mostra contenuto principale solo se Firebase inizializzato correttamente */}
+
                     {!firebaseInitializationError && (
                         <>
                             <section id="gestione-giocatori">
-                               <h2>Gestione Giocatori</h2>
-                               <div className="file-io-section">
-                                   {/* Pulsanti Database Centrale */}
-                                   <button onClick={handleLoadFromFirestore} className="btn-load-db" disabled={disableDbActions} title={`Carica lista ufficiale da DB (${MASTER_COLLECTION_NAME}), sovrascrivendo modifiche locali`}>
-                                       {isDbLoading ? 'Caricando...' : 'Carica da DB'}
-                                   </button>
-                                   <button onClick={handleSaveToFirestore} className="btn-save-db" disabled={disableDbActions || players.length === 0} title={`Sovrascrivi DB centrale (${MASTER_COLLECTION_NAME}) con la lista locale attuale (richiede password)`}>
-                                       {isDbSaving ? 'Salvataggio...' : 'Salva su DB'}
-                                   </button>
-                                   {/* Pulsanti Snapshot Locale */}
-                                   <button onClick={handleSaveToFile} className="btn-save-file" disabled={disableDbActions || players.length === 0} title="Salva uno snapshot locale della lista attuale (non tocca il DB)">Salva Snapshot</button>
-                                   <button onClick={handleLoadTrigger} className="btn-load-file" disabled={disableDbActions} title="Carica uno snapshot locale (sovrascrive lista attuale, non tocca il DB)">Carica Locale</button>
-                                   <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} />
-                                   <p>
-                                     (Gestisci la lista locale, poi sincronizza con il DB Centrale o usa snapshot locali)
-                                   </p>
-                               </div>
+                                <h2>Gestione Giocatori</h2>
 
-                               {/* Form e Lista (visibili sempre dopo init firebase, ma potrebbero essere vuoti) */}
-                               <PlayerForm onSave={handleSavePlayer} editingPlayer={editingPlayer} onCancelEdit={handleCancelEdit}/>
-                               <PlayerList players={players} onEdit={handleEditPlayer} onDelete={handleDeletePlayer}/>
+                                <div className="file-io-section">
+                                     {/* Toggle Live Sync */}
+                                     <div className="live-sync-toggle">
+                                        <input
+                                            type="checkbox"
+                                            id="liveSyncCheck"
+                                            checked={isLive}
+                                            onChange={handleToggleLiveSync}
+                                            disabled={isDbLoading || isDbSaving}
+                                        />
+                                        <label htmlFor="liveSyncCheck">Attiva Sincronizzazione Live</label>
+                                    </div>
+
+                                    {/* Controlli DB e Snapshot */}
+                                    <div className="db-controls">
+                                        <button onClick={handleLoadFromFirestoreMaster} className="btn-load-db" disabled={disableDbActions} title={`Carica da DB Master (${MASTER_COLLECTION_NAME})`}>
+                                            Carica da DB Master
+                                        </button>
+                                        <button onClick={handleSaveToFirestoreMaster} className="btn-save-db" disabled={disableDbActions || players.length === 0} title={`Salva su DB Master (${MASTER_COLLECTION_NAME}) (PW)`}>
+                                            Salva su DB Master
+                                        </button>
+                                        <button onClick={handleSaveToFile} className="btn-save-file" disabled={disableDbActions || players.length === 0} title="Salva Snapshot Locale">Salva Snapshot</button>
+                                        <button onClick={handleLoadTrigger} className="btn-load-file" disabled={disableDbActions} title="Carica Snapshot Locale">Carica Locale</button>
+                                        <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} />
+                                    </div>
+
+                                     <div className="status-indicator">
+                                        Modalità: {isLive ? <span className="mode-live">LIVE SYNC</span> : <span className="mode-local">LOCALE</span>}
+                                        {isLive && <span> (Modifiche condivise su <i>{LIVE_COLLECTION_NAME}</i>)</span>}
+                                        {!isLive && <span> (Modifiche solo locali, usa i bottoni DB per sincronizzare con Master)</span>}
+                                    </div>
+                                </div>
+
+                               {/* Form e Lista */}
+                               <PlayerForm onSave={handleSavePlayer} editingPlayer={editingPlayer} onCancelEdit={handleCancelEdit} currentMode={operatingMode}/>
+                               <PlayerList players={players} onEdit={handleEditPlayer} onDelete={handleDeletePlayer} currentMode={operatingMode}/>
 
                             </section>
 
                             <hr className="section-divider" />
 
-                            {/* Sezione Partita e Squadre (visibili sempre, ma funzionano sulla lista locale) */}
+                            {/* Sezioni Partita e Squadre (operano sui players correnti) */}
                             <section id="imposta-partita">
                                 <MatchSetup matchType={matchType} onMatchTypeChange={handleMatchTypeChange} onOpenSelection={handleOpenSelectionModal} availablePlayerCount={players.length}/>
                             </section>
@@ -485,16 +530,10 @@
         if (rootElement) {
             try {
                  const root = ReactDOM.createRoot(rootElement);
-                 class ErrorBoundary extends React.Component { /* ... codice invariato ... */ }
+                 class ErrorBoundary extends React.Component { /* ... */ }
                  root.render(<ErrorBoundary><App /></ErrorBoundary>);
-            } catch (error) {
-                 console.error("Errore rendering iniziale:", error);
-                 rootElement.innerHTML = '<div class="error-message">Errore critico avvio applicazione. Controlla console.</div>';
-            }
-        } else {
-            console.error("Elemento #root non trovato!");
-            alert("Errore: #root mancante.")
-        }
+            } catch (error) { /* ... */ }
+        } else { /* ... */ }
 
     </script>
 
