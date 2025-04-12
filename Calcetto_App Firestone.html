@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Clasico Team Manager</title>
+
+    <!-- React, ReactDOM, Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Firebase SDKs (via CDN - Compat version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script> -->
+
+    <!-- CSS Incorporato -->
+    <style>
+        /* === Stili Generali === */
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.6; }
+        .container { max-width: 900px; margin: 20px auto; padding: 15px; background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
+        h1, h2, h3 { color: #333; }
+        h1 { text-align: center; color: #fff; background-color: #28a745; padding: 15px; margin: -15px -15px 20px -15px; border-radius: 8px 8px 0 0; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; margin-bottom: 20px; }
+        h3 { margin-top: 0; margin-bottom: 15px; }
+        .section-divider { border: none; height: 1px; background-color: #e0e0e0; margin: 40px 0; }
+        button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s ease, transform 0.1s ease; margin: 5px; background-color: #007bff; color: white; }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; opacity: 0.7; }
+        .btn-create { background-color: #007bff; }
+        .btn-save { background-color: #28a745; }
+        .btn-cancel, .btn-delete, .btn-clear-selection { background-color: #dc3545; }
+        .btn-edit { background-color: #ffc107; color: #333; }
+        .btn-select-players, .btn-generate, .btn-confirm { background-color: #17a2b8; }
+        .btn-swap { background-color: #fd7e14; }
+        .btn-generate-img { background-color: #6f42c1; }
+        .btn-save-file { background-color: #5a6268; }
+        .btn-load-file { background-color: #5a6268; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #495057; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1em; margin-bottom: 10px; box-sizing: border-box; }
+        input[type="file"] { padding: 5px; }
+        .checkbox-group { display: flex; align-items: center; margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
+        .checkbox-group input[type="checkbox"] { width: auto; margin-right: 10px; transform: scale(1.3); cursor: pointer; }
+        .checkbox-group label { margin-bottom: 0; font-weight: normal; cursor: pointer; }
+        .photo-preview { max-width: 80px; max-height: 80px; margin-top: 5px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
+        .player-photo-thumbnail { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid #eee; vertical-align: middle; background-color: #eee;}
+
+        /* PlayerForm */
+        .player-form-container { margin-bottom: 20px; }
+        .player-form { background-color: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-top: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-toggle-form { display: block; width: auto; margin: 0 auto 15px auto;}
+
+        /* PlayerList/PlayerItem */
+        .player-list-container { margin-top: 20px; }
+        .player-list { list-style: none; padding: 0; margin: 0; }
+        .player-item { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 10px 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 10px; background-color: #fff; }
+        .player-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-grow: 1; }
+        .player-details { display: flex; flex-direction: column; }
+        .player-name { font-weight: bold; font-size: 1.1em; }
+        .player-meta { font-size: 0.9em; color: #555; }
+        .player-role { font-style: italic; }
+        .player-avg-score { background-color: #e9ecef; padding: 2px 6px; border-radius: 10px; color: #495057; margin-left: 5px; }
+        .player-actions { display: flex; gap: 8px; margin-top: 5px; }
+        .player-actions button { padding: 6px 12px; font-size: 0.9em; }
+
+        /* File IO Section */
+        .file-io-section { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .file-io-section p { margin: 0; font-size: 0.9em; color: #6c757d; }
+
+        /* MatchSetup */
+        .match-setup-container { padding: 15px; background-color: #eef; border-radius: 8px; }
+        .match-type-selector { margin-bottom: 15px; }
+        .match-type-selector label { margin-right: 10px; font-weight: bold; }
+        .match-type-selector select { padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1em; display: inline-block; width: auto; }
+        .match-setup-container p { font-weight: bold; margin-bottom: 15px; }
+
+        /* PlayerSelectionModal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+        .modal-content { background-color: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-content h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-player-list { list-style: none; padding: 0; margin: 0 0 20px 0; max-height: 50vh; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; }
+        .modal-player-item { padding: 10px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background-color 0.2s; }
+        .modal-player-item:last-child { border-bottom: none; }
+        .modal-player-item:hover { background-color: #f8f9fa; }
+        .modal-player-item.selected { background-color: #d4edda; font-weight: bold; }
+        .modal-player-item.disabled { cursor: not-allowed; opacity: 0.6;}
+        .modal-player-item label { display: flex; align-items: center; width: 100%; cursor: pointer; }
+        .modal-player-item input[type="checkbox"] { margin-right: 12px; transform: scale(1.3); cursor: pointer; }
+        .modal-player-item.disabled label, .modal-player-item.disabled input { cursor: not-allowed; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+        /* TeamDisplay */
+        .team-display-container { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 8px; }
+        .balancing-options { margin-bottom: 15px; }
+        .unpredictability-slider { margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; }
+        .unpredictability-slider label { display: block; margin-bottom: 8px; font-weight: bold; }
+        .unpredictability-slider input[type="range"] { width: 100%; cursor: pointer; }
+        .team-display-container button { margin-right: 10px; margin-bottom: 15px; }
+        .teams-output { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
+        .teams-output h3 { text-align: center; margin-bottom: 15px; }
+        .team-columns { display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap; }
+        .team-column { flex: 1; min-width: 250px; background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 15px; }
+        .team-column h4 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
+        .team-column h4 small { font-weight: normal; font-size: 0.85em; color: #555;}
+        .team-column:first-child h4 { color: #007bff; }
+        .team-column:last-child h4 { color: #dc3545; }
+        .team-column ul { list-style: none; padding: 0; margin: 0; }
+        .team-column li { padding: 10px 5px; border-bottom: 1px dashed #eee; font-size: 0.95em; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: background-color 0.2s; }
+        .team-column li:last-child { border-bottom: none; }
+        .team-column li.selected-for-swap { background-color: #fff3cd; outline: 2px solid #fd7e14; font-weight: bold; }
+        .team-player-info { flex-grow: 1; cursor: pointer; }
+        .team-player-name { font-weight: bold; }
+        .team-player-original-role { font-size: 0.8em; color: #777; display: block; }
+        .team-player-role-selector select { padding: 4px 6px; font-size: 0.9em; width: auto; border-radius: 4px; margin-left: 5px; border: 1px solid #ccc; }
+        .swap-controls { margin-top: 15px; text-align: center; }
+
+        /* Immagine Generata */
+        .generated-image-container { margin-top: 25px; padding-top: 20px; border-top: 1px solid #ccc; text-align: center; }
+        .generated-image-container canvas { display: none; }
+        .generated-image-container img { max-width: 100%; height: auto; border: 1px solid #ddd; margin-top: 10px; background-color: #f9f9f9; }
+        .generated-image-container a { display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 0.9em; }
+        .generated-image-container a:hover { background-color: #218838; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container { margin: 10px; padding: 10px; }
+            h1 { font-size: 1.6em; padding: 12px; margin: -10px -10px 15px -10px; }
+            button { padding: 8px 14px; font-size: 0.95em; }
+            input[type="text"], input[type="number"], select { padding: 8px; }
+            .player-item { flex-direction: column; align-items: flex-start; gap: 5px; }
+            .player-info { gap: 5px;}
+            .player-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
+            .file-io-section { flex-direction: column; align-items: stretch; text-align: center;}
+            .file-io-section p { margin-bottom: 10px; }
+            .team-columns { flex-direction: column; }
+            .modal-content { padding: 15px; }
+            .balancing-options { display: flex; flex-direction: column; }
+            .checkbox-group { font-size: 0.9em; }
+            .team-column li { font-size: 0.9em; flex-wrap: wrap;}
+            .team-player-role-selector select { width: 100%; margin-left: 0; margin-top: 5px; }
+        }
+
+        /* Stili per messaggio di caricamento/errore */
+        .loading-message { text-align: center; padding: 40px; font-size: 1.2em; color: #555; font-weight: bold;}
+        .error-message { text-align: center; padding: 20px; color: red; border: 1px solid red; background-color: #fdd; border-radius: 5px; margin: 10px; }
+
+    </style>
+</head>
+<body>
+    <!-- Elemento Root -->
+    <div id="root"></div>
+
+    <!-- Codice React (JSX) -->
+    <script type="text/babel">
+
+        // === Hook e Costanti ===
+        const { useState, useEffect, useCallback, useRef } = React;
+        const ALL_ROLES = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
+
+        // --- Hook useLocalStorage (Mantenuto per MatchType, Teams, Settings) ---
+        function useLocalStorage(key, initialValue) {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    console.error("Error reading localStorage key “"+key+"”:", error);
+                    return initialValue;
+                }
+            });
+            const setValue = useCallback((value) => {
+                try {
+                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    setStoredValue(valueToStore);
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                } catch (error) {
+                    console.error("Error setting localStorage key “"+key+"”:", error);
+                }
+            }, [key, storedValue]);
+            return [storedValue, setValue];
+        }
+        // --- Fine useLocalStorage ---
+
+
+        // --- Inizializzazione Firebase ---
+        // Configurazione Firebase fornita
+        const firebaseConfig = {
+          apiKey: "AIzaSyCl-0Ini6m3MKRN-qTfGp1kcXtW0z6qGEE", // <-- IMPORTANTE: Incolla la tua apiKey qui se l'hai rimossa
+          authDomain: "el-clasico-app.firebaseapp.com",
+          projectId: "el-clasico-app",
+          storageBucket: "el-clasico-app.appspot.com",
+          messagingSenderId: "816654567071",
+          appId: "1:816654567071:web:318425d18e9b224c4b04aa",
+          measurementId: "G-JVLZFP9PCR"
+        };
+
+        // Variabili globali per Firebase (inizializzate nel try-catch)
+        let db;
+        let playersCollectionRef;
+        let firebaseInitializationError = null; // Flag per errore iniziale
+
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                console.log("Firebase inizializzato.");
+            } else {
+                firebase.app(); // Usa l'app già inizializzata
+                console.log("Firebase già inizializzato.");
+            }
+            db = firebase.firestore(); // Ottieni Firestore
+            playersCollectionRef = db.collection('players'); // Riferimento alla collezione
+            console.log("Riferimento alla collezione 'players' ottenuto.");
+        } catch (error) {
+             console.error("!!! ERRORE CRITICO NELL'INIZIALIZZAZIONE DI FIREBASE !!!", error);
+             firebaseInitializationError = `Errore grave: Impossibile inizializzare il database (${error.message}). Controlla le credenziali Firebase e la connessione internet.`;
+             // Non mostrare alert qui, gestisci nel componente App
+        }
+        // --- Fine Inizializzazione Firebase ---
+
+
+        // === Funzioni Utili (Invariate) ===
+        const calculatePlayerScore = (player) => {
+            if (!player) return 0;
+            return (
+                (player.abilitaDifensiva || 0) * 1.0 +
+                (player.abilitaOffensiva || 0) * 1.0 +
+                (player.velocita || 0) * 0.8 +
+                (player.scatto || 0) * 0.8 +
+                (player.pressing || 0) * 0.7 +
+                (player.determinazione || 0) * 1.0 +
+                (player.robustezza || 0) * 0.7 +
+                ((player.peso || 75) / 20) +
+                ((player.altezza || 175) / 40)
+            );
+        };
+        const getRequiredPlayers = (matchType) => {
+            switch (matchType) {
+                case '5': return 10; case '6': return 12;
+                case '8': return 16; case '11': return 22;
+                default: return 0;
+            }
+        };
+        const calculateTeamFinalScore = (team) => {
+            return team.reduce((sum, player) => sum + calculatePlayerScore(player), 0);
+        };
+        const roleOrder = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
+        const getAvgScore = (player) => {
+            if (!player) return '0.0';
+            const scoreSum = ((player.abilitaDifensiva || 0) + (player.abilitaOffensiva || 0) + (player.velocita || 0) + (player.scatto || 0) + (player.pressing || 0) + (player.determinazione || 0) + (player.robustezza || 0));
+            return (scoreSum / 7).toFixed(1);
+        };
+        const balanceTeams = (players, unpredictability, balanceByRole) => {
+             if (!players || players.length === 0 || players.length % 2 !== 0) { console.error("Invalid player count for balancing:", players?.length); return { teamA: [], teamB: [] }; }
+             const playersWithScores = players.map(player => {
+                 const baseScore = calculatePlayerScore(player);
+                 const randomFactor = (Math.random() - 0.5) * 2 * unpredictability * (baseScore * 0.05); // Adjust randomness factor if needed
+                 return { ...player, tempScore: baseScore + randomFactor, baseScore: baseScore, currentRole: player.ruolo };
+             });
+             const sortedPlayers = playersWithScores.sort((a, b) => b.tempScore - a.tempScore);
+             const teamA = []; const teamB = []; let scoreA = 0; let scoreB = 0;
+             const rolesCountA = {}; const rolesCountB = {};
+             const rolesInGame = [...new Set(players.map(p => p.ruolo))];
+             rolesInGame.forEach(role => { rolesCountA[role] = 0; rolesCountB[role] = 0; });
+
+             sortedPlayers.forEach(player => {
+                 let assignToA = false;
+                 if (balanceByRole) {
+                     const role = player.ruolo; const countA = rolesCountA[role] || 0; const countB = rolesCountB[role] || 0;
+                     if (countA < countB) assignToA = true;
+                     else if (countB < countA) assignToA = false;
+                     else assignToA = scoreA <= scoreB; // Fallback to greedy if roles are equal
+                 } else { assignToA = scoreA <= scoreB; }
+
+                 if (assignToA) {
+                     teamA.push(player); scoreA += player.tempScore;
+                     if (balanceByRole) rolesCountA[player.ruolo]++;
+                 } else {
+                     teamB.push(player); scoreB += player.tempScore;
+                     if (balanceByRole) rolesCountB[player.ruolo]++;
+                 }
+             });
+             const finalTeamA = teamA.map(({ tempScore, baseScore, ...player }) => player);
+             const finalTeamB = teamB.map(({ tempScore, baseScore, ...player }) => player);
+             return { teamA: finalTeamA, teamB: finalTeamB };
+        };
+        function drawFormation(canvas, teamA, teamB, matchType) {
+             const ctx = canvas.getContext('2d'); if (!ctx) return;
+             const W = canvas.width = 700; const H = canvas.height = 450; const playerRadius = 15; const fieldColor = '#28a745'; const lineColor = '#FFFFFF'; const teamAColor = '#007bff'; const teamBColor = '#dc3545'; const playerNameColor = '#000000'; const defaultTextColor = '#FFFFFF';
+             const imageCache = {};
+             const loadImage = (url) => { if (!url) return null; if (imageCache[url]) return imageCache[url]; const img = new Image(); img.src = url; imageCache[url] = img; img.onerror = () => { imageCache[url] = null; }; return img; };
+             ctx.clearRect(0, 0, W, H); ctx.fillStyle = fieldColor; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = lineColor; ctx.lineWidth = 2; ctx.strokeRect(5, 5, W - 10, H - 10); ctx.beginPath(); ctx.moveTo(W / 2, 5); ctx.lineTo(W / 2, H - 5); ctx.stroke(); ctx.beginPath(); ctx.arc(W / 2, H / 2, 60, 0, 2 * Math.PI); ctx.stroke(); ctx.fillStyle = lineColor; ctx.beginPath(); ctx.arc(W / 2, H / 2, 4, 0, 2 * Math.PI); ctx.fill(); ctx.strokeRect(5, H * 0.2, W * 0.2, H * 0.6); ctx.strokeRect(W - 5 - W * 0.2, H * 0.2, W * 0.2, H * 0.6);
+
+             const getPositions = (team, isTeamA) => {
+                 const positions = {}; const sideXBase = isTeamA ? W * 0.25 : W * 0.75;
+                 const roleOffsets = { Portiere: -W * 0.18, Difensore: -W * 0.1, Centrocampista: 0, Attaccante: W * 0.1 };
+                 ALL_ROLES.forEach(role => {
+                     const playersInRole = team.filter(p => p.currentRole === role); if (playersInRole.length === 0) return;
+                     const baseX = sideXBase + (roleOffsets[role] || 0); const availableHeight = H * 0.8; const startY = H * 0.1;
+                     const yStep = playersInRole.length > 1 ? availableHeight / (playersInRole.length -1) : availableHeight / 2;
+                     playersInRole.forEach((player, index) => {
+                         let yPos = startY + (playersInRole.length === 1 ? availableHeight / 2 : index * yStep) + (Math.random() - 0.5) * 10;
+                         let xPos = baseX + (Math.random() - 0.5) * 20;
+                         positions[player.id] = { x: Math.max(playerRadius + 5, Math.min(W - playerRadius - 5, xPos)), y: Math.max(playerRadius + 5, Math.min(H - playerRadius - 5, yPos)) };
+                     });
+                 }); return positions;
+             };
+             const positionsA = getPositions(teamA, true); const positionsB = getPositions(teamB, false);
+
+             const drawPlayer = (player, pos, teamColor) => {
+                 if (!pos) return; const { x, y } = pos; ctx.save();
+                 ctx.beginPath(); ctx.arc(x, y, playerRadius, 0, 2 * Math.PI); ctx.fillStyle = teamColor; ctx.fill();
+                 if (player.photoUrl) {
+                     const img = loadImage(player.photoUrl);
+                     if (img && img.complete && img.naturalHeight !== 0) {
+                         ctx.clip(); const aspectRatio = img.naturalWidth / img.naturalHeight; let drawWidth, drawHeight, offsetX, offsetY;
+                         if (img.naturalWidth >= img.naturalHeight) { drawHeight = playerRadius * 2; drawWidth = drawHeight * aspectRatio; offsetX = x - drawWidth / 2; offsetY = y - playerRadius; }
+                         else { drawWidth = playerRadius * 2; drawHeight = drawWidth / aspectRatio; offsetX = x - playerRadius; offsetY = y - drawHeight / 2; }
+                         try { ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight); } catch (e) { console.warn("Error drawing image for", player.nome, e); }
+                         ctx.restore(); // Restore context AFTER potential clipping
+                     }
+                 }
+                 // Draw border AFTER fill/image
+                 ctx.beginPath(); ctx.arc(x, y, playerRadius, 0, 2 * Math.PI); ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.stroke();
+                 // Draw name below
+                 ctx.fillStyle = playerNameColor; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
+                 const displayName = player.nome.length > 12 ? player.nome.split(' ')[0] : player.nome; // Use first name if too long
+                 ctx.fillText(displayName, x, y + playerRadius + 12);
+                 // ctx.restore(); // Already restored after clip or remove if not needed
+             };
+             teamA.forEach(p => drawPlayer(p, positionsA[p.id], teamAColor));
+             teamB.forEach(p => drawPlayer(p, positionsB[p.id], teamBColor));
+        };
+        // === Fine Funzioni Utili ===
+
+
+        // === Componenti React (Largamente Invariati - Ricevono props aggiornate) ===
+        function PlayerForm({ onSave, editingPlayer, onCancelEdit }) {
+             const initialFormData = { nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5, velocita: 5, scatto: 5, pressing: 5, determinazione: 5, peso: 75, altezza: 175, robustezza: 5, photoUrl: null };
+             const [formData, setFormData] = useState(initialFormData);
+             const [isVisible, setIsVisible] = useState(false);
+             const [photoPreview, setPhotoPreview] = useState(null);
+
+             useEffect(() => {
+                 if (editingPlayer) {
+                     const dataToEdit = {...initialFormData, ...editingPlayer};
+                     setFormData(dataToEdit); setPhotoPreview(dataToEdit.photoUrl || null); setIsVisible(true);
+                 } else { setFormData(initialFormData); setPhotoPreview(null); }
+             }, [editingPlayer]);
+
+             const handleChange = (e) => { const { name, value, type } = e.target; setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value })); };
+             const handlePhotoChange = (e) => {
+                 const file = e.target.files[0];
+                 if (file) {
+                     if (file.size > 2 * 1024 * 1024) { alert("Immagine troppo grande! Max 2MB."); e.target.value = null; return; }
+                     const reader = new FileReader();
+                     reader.onloadend = () => { setFormData(prev => ({ ...prev, photoUrl: reader.result })); setPhotoPreview(reader.result); };
+                     reader.onerror = (error) => { console.error("File reading error:", error); alert("Errore nel caricamento dell'immagine."); };
+                     reader.readAsDataURL(file);
+                 }
+             };
+             const handleSubmit = (e) => { e.preventDefault(); if (!formData.nome.trim()) { alert("Il nome è obbligatorio!"); return; } onSave(formData); handleCancel(); };
+             const handleCancel = () => { setFormData(initialFormData); setPhotoPreview(null); setIsVisible(false); onCancelEdit(); };
+             const toggleVisibility = () => { if (!editingPlayer) { setIsVisible(!isVisible); if (isVisible) { handleCancel(); } } else if (!isVisible) { setIsVisible(true); } };
+
+             return (
+                 <div className="player-form-container">
+                     {!isVisible && (<button onClick={toggleVisibility} className="btn-toggle-form btn-create">+ Crea Nuovo Giocatore</button>)}
+                     {isVisible && (
+                         <form onSubmit={handleSubmit} className="player-form">
+                             <h3>{editingPlayer ? 'Modifica Giocatore' : 'Nuovo Giocatore'}</h3>
+                             <div className="form-group"><label htmlFor="nome">Nome:</label><input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required /></div>
+                             <div className="form-group"><label htmlFor="ruolo">Ruolo Preferito:</label><select id="ruolo" name="ruolo" value={formData.ruolo} onChange={handleChange}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+                             {[ { name: 'abilitaDifensiva', label: 'Difesa' }, { name: 'abilitaOffensiva', label: 'Attacco' }, { name: 'velocita', label: 'Velocità' }, { name: 'scatto', label: 'Scatto' }, { name: 'pressing', label: 'Pressing' }, { name: 'determinazione', label: 'Determ.' }, { name: 'robustezza', label: 'Robustezza' } ].map(({ name, label }) => ( <div className="form-group" key={name}><label htmlFor={name}>{label} (1-10):</label><input type="number" id={name} name={name} min="1" max="10" step="1" value={formData[name] ?? ''} onChange={handleChange} required /></div> ))}
+                             <div className="form-group"><label htmlFor="peso">Peso (kg):</label><input type="number" id="peso" name="peso" min="30" max="150" step="0.1" value={formData.peso ?? ''} onChange={handleChange} required /></div>
+                             <div className="form-group"><label htmlFor="altezza">Altezza (cm):</label><input type="number" id="altezza" name="altezza" min="100" max="230" step="1" value={formData.altezza ?? ''} onChange={handleChange} required /></div>
+                             <div className="form-group"><label htmlFor="photo">Foto (Max 2MB):</label><input type="file" id="photo" name="photo" accept="image/png, image/jpeg, image/webp" onChange={handlePhotoChange} /><br/>{photoPreview && <img src={photoPreview} alt="Anteprima" className="photo-preview" />}</div>
+                             <div className="form-actions"><button type="submit" className="btn-save">{editingPlayer ? 'Salva Modifiche' : 'Aggiungi Giocatore'}</button><button type="button" onClick={handleCancel} className="btn-cancel">Annulla</button></div>
+                         </form>
+                     )}
+                 </div>
+             );
+        }
+        function PlayerItem({ player, onEdit, onDelete }) {
+             const avgScore = getAvgScore(player);
+             return (
+                 <li className="player-item">
+                     <div className="player-info">
+                         {player.photoUrl ? (<img src={player.photoUrl} alt={player.nome} className="player-photo-thumbnail" />) : (<span className="player-photo-thumbnail"></span>)}
+                         <div className="player-details">
+                             <span className="player-name">{player.nome}</span>
+                             <span className="player-meta"><span className="player-role">{player.ruolo}</span><span className="player-avg-score">Avg: {avgScore}</span></span>
+                         </div>
+                     </div>
+                     <div className="player-actions"><button onClick={() => onEdit(player.id)} className="btn-edit">Modifica</button><button onClick={() => onDelete(player.id)} className="btn-delete">Elimina</button></div>
+                 </li>
+             );
+        }
+        function PlayerList({ players, onEdit, onDelete }) {
+             return (
+                 <div className="player-list-container">
+                     <h2>Giocatori Disponibili ({players.length})</h2>
+                     {players.length === 0 ? (<p>Nessun giocatore nel database. Aggiungine uno o carica da file.</p>) : (<ul className="player-list">{players.map(p => (<PlayerItem key={p.id} player={p} onEdit={onEdit} onDelete={onDelete} />))}</ul>)}
+                 </div>
+             );
+        }
+        function PlayerSelectionModal({ players, selectedPlayerIds, requiredCount, onToggleSelect, onConfirm, onClose }) {
+             const selectedCount = selectedPlayerIds.length; const canConfirm = selectedCount === requiredCount;
+             return (
+                 <div className="modal-overlay" onClick={onClose}>
+                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                         <h3>Seleziona Giocatori ({selectedCount} / {requiredCount})</h3><p>Seleziona esattamente {requiredCount} giocatori.</p>
+                         <ul className="modal-player-list">
+                             {players.map(player => {
+                                 const isSelected = selectedPlayerIds.includes(player.id); const isDisabled = !isSelected && selectedCount >= requiredCount;
+                                 return ( <li key={player.id} className={`modal-player-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`} onClick={() => !isDisabled && onToggleSelect(player.id)}><label className={isDisabled ? 'disabled' : ''}><input type="checkbox" checked={isSelected} onChange={() => {}} disabled={isDisabled}/>{player.nome} ({player.ruolo})</label></li> );
+                             })}
+                         </ul>
+                         <div className="modal-actions"><button onClick={onConfirm} disabled={!canConfirm} className="btn-confirm">Conferma Selezione ({selectedCount}/{requiredCount})</button><button onClick={onClose} className="btn-cancel">Annulla</button></div>
+                     </div>
+                 </div>
+             );
+        }
+        function MatchSetup({ matchType, onMatchTypeChange, onOpenSelection, availablePlayerCount }) {
+             const requiredPlayers = getRequiredPlayers(matchType); const canOpenSelector = matchType && availablePlayerCount >= requiredPlayers;
+             return (
+                 <div className="match-setup-container">
+                     <h2>Imposta Partita</h2>
+                     <div className="match-type-selector"><label htmlFor="matchType">Tipo:</label><select id="matchType" value={matchType || ''} onChange={(e) => onMatchTypeChange(e.target.value)}><option value="" disabled>Seleziona...</option><option value="5">Calcio a 5 (10)</option><option value="6">Calcio a 6 (12)</option><option value="8">Calciotto (16)</option><option value="11">Calcio a 11 (22)</option></select></div>
+                     {matchType && (<p>{availablePlayerCount < requiredPlayers ? `Servono ${requiredPlayers} giocatori (${availablePlayerCount} disp.).` : `Servono ${requiredPlayers} giocatori.`}</p>)}
+                     <button onClick={onOpenSelection} disabled={!canOpenSelector} className="btn-select-players" title={!matchType ? "Seleziona tipo" : (availablePlayerCount < requiredPlayers ? "Giocatori insuff." : "Seleziona giocatori")}>Seleziona Giocatori</button>
+                 </div>
+             );
+        }
+        function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onUpdateTeams, onClearSelection, balanceByRoleEnabled, onToggleBalanceByRole, onGenerateTeams }) {
+             const [unpredictability, setUnpredictability] = useState(1); const [playersToSwap, setPlayersToSwap] = useState({ teamA: null, teamB: null }); const [imageDataUrl, setImageDataUrl] = useState(null); const canvasRef = useRef(null);
+             const requiredPlayers = getRequiredPlayers(matchType); const teamsExist = teams.teamA.length > 0 || teams.teamB.length > 0; const correctPlayersSelectedForCreation = selectedPlayerIds.length === requiredPlayers && requiredPlayers > 0;
+             const generationPossible = teamsExist || correctPlayersSelectedForCreation; const buttonDisabled = !generationPossible; const swapButtonEnabled = playersToSwap.teamA !== null && playersToSwap.teamB !== null;
+
+             const handleGenerateOrRegenerate = () => {
+                 const playersForGeneration = teamsExist ? [...teams.teamA, ...teams.teamB] : players.filter(p => selectedPlayerIds.includes(p.id));
+                 if (playersForGeneration.length !== requiredPlayers) { alert(`Errore: Giocatori ${playersForGeneration.length}/${requiredPlayers} non corretti.`); return; }
+                 setImageDataUrl(null); setPlayersToSwap({ teamA: null, teamB: null });
+                 onGenerateTeams(playersForGeneration, unpredictability, balanceByRoleEnabled);
+             };
+             const handleSelectPlayerForSwap = (playerId, teamKey) => { setPlayersToSwap(prev => (prev[teamKey] === playerId ? { ...prev, [teamKey]: null } : { ...prev, [teamKey]: playerId })); };
+             const handleExecuteSwap = () => {
+                 if (!swapButtonEnabled) return; const playerA_ID = playersToSwap.teamA; const playerB_ID = playersToSwap.teamB;
+                 const playerA = teams.teamA.find(p => p.id === playerA_ID); const playerB = teams.teamB.find(p => p.id === playerB_ID); if (!playerA || !playerB) return;
+                 const newTeamA = teams.teamA.filter(p => p.id !== playerA_ID).concat(playerB); const newTeamB = teams.teamB.filter(p => p.id !== playerB_ID).concat(playerA);
+                 onUpdateTeams({ teamA: newTeamA, teamB: newTeamB }); setPlayersToSwap({ teamA: null, teamB: null }); setImageDataUrl(null);
+             };
+             const handleRoleChange = (playerId, newRole, teamKey) => {
+                 const currentTeams = { teamA: [...teams.teamA], teamB: [...teams.teamB] }; const team = currentTeams[teamKey]; const playerIndex = team.findIndex(p => p.id === playerId); if (playerIndex === -1) return;
+                 const updatedPlayer = { ...team[playerIndex], currentRole: newRole }; const updatedTeam = [...team.slice(0, playerIndex), updatedPlayer, ...team.slice(playerIndex + 1)];
+                 onUpdateTeams({ ...currentTeams, [teamKey]: updatedTeam }); setImageDataUrl(null);
+             };
+             const handleGenerateImage = () => { if (!canvasRef.current || !teamsExist) return; drawFormation(canvasRef.current, teams.teamA, teams.teamB, matchType); setImageDataUrl(canvasRef.current.toDataURL('image/png')); };
+
+             const scoreA = teams.teamA.length > 0 ? calculateTeamFinalScore(teams.teamA).toFixed(1) : 0; const scoreB = teams.teamB.length > 0 ? calculateTeamFinalScore(teams.teamB).toFixed(1) : 0;
+             const sortTeamForDisplay = (team) => [...team].sort((a, b) => (roleOrder.indexOf(a.currentRole ?? a.ruolo) === -1 ? 99 : roleOrder.indexOf(a.currentRole ?? a.ruolo)) - (roleOrder.indexOf(b.currentRole ?? b.ruolo) === -1 ? 99 : roleOrder.indexOf(b.currentRole ?? b.ruolo)));
+             const sortedTeamA = sortTeamForDisplay(teams.teamA); const sortedTeamB = sortTeamForDisplay(teams.teamB);
+
+             return (
+                 <div className="team-display-container">
+                     <h2>{teamsExist ? 'Modifica Squadre' : 'Crea Squadre'}</h2>
+                     {!teamsExist && !correctPlayersSelectedForCreation && requiredPlayers > 0 && (<p>Seleziona {requiredPlayers} giocatori.</p>)}
+                     {!teamsExist && correctPlayersSelectedForCreation && (<p>Hai selezionato {selectedPlayerIds.length} giocatori. Clicca 'Crea Squadre'.</p>)}
+                     {teamsExist && (<p>Squadre pronte. Clicca nome per scambio, cambia ruolo, o rigenera.</p>)}
+                     {requiredPlayers > 0 && (
+                         <div className="balancing-options">
+                             <div className="unpredictability-slider"><label htmlFor="unpredictability">Imprevedibilità (0-5): {unpredictability}</label><input type="range" id="unpredictability" min="0" max="5" step="0.5" value={unpredictability} onChange={(e) => setUnpredictability(parseFloat(e.target.value))} /></div>
+                             <div className="checkbox-group"><input type="checkbox" id="balanceByRole" checked={balanceByRoleEnabled} onChange={onToggleBalanceByRole} /><label htmlFor="balanceByRole">Tenta bilanciamento ruoli</label></div>
+                             <button onClick={handleGenerateOrRegenerate} className="btn-generate" disabled={buttonDisabled} title={buttonDisabled ? "Seleziona giocatori" : (teamsExist ? "Rigenera" : "Crea squadre")}>{teamsExist ? 'Rigenera Squadre' : 'Crea Squadre'}</button>
+                         </div>
+                     )}
+                     {teamsExist && (
+                         <React.Fragment>
+                             <div className="teams-output">
+                                 <h3>Squadre Attuali</h3>
+                                 <div className="team-columns">
+                                     <div className="team-column">
+                                         <h4>Squadra A <small>(Punteggio: {scoreA})</small></h4>
+                                         <ul>{sortedTeamA.map(p => (<li key={p.id} className={playersToSwap.teamA === p.id ? 'selected-for-swap' : ''}><div className="team-player-info" onClick={() => handleSelectPlayerForSwap(p.id, 'teamA')} title={`Seleziona ${p.nome} per scambio`}><span className="team-player-name">{p.nome}</span><span className="team-player-original-role">(Pref: {p.ruolo} - Avg: {getAvgScore(p)})</span></div><div className="team-player-role-selector"><select value={p.currentRole ?? p.ruolo} onChange={(e) => handleRoleChange(p.id, e.target.value, 'teamA')} title={`Cambia ruolo ${p.nome}`}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div></li>))}</ul>
+                                     </div>
+                                     <div className="team-column">
+                                         <h4>Squadra B <small>(Punteggio: {scoreB})</small></h4>
+                                         <ul>{sortedTeamB.map(p => (<li key={p.id} className={playersToSwap.teamB === p.id ? 'selected-for-swap' : ''}><div className="team-player-info" onClick={() => handleSelectPlayerForSwap(p.id, 'teamB')} title={`Seleziona ${p.nome} per scambio`}><span className="team-player-name">{p.nome}</span><span className="team-player-original-role">(Pref: {p.ruolo} - Avg: {getAvgScore(p)})</span></div><div className="team-player-role-selector"><select value={p.currentRole ?? p.ruolo} onChange={(e) => handleRoleChange(p.id, e.target.value, 'teamB')} title={`Cambia ruolo ${p.nome}`}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div></li>))}</ul>
+                                     </div>
+                                 </div>
+                                 <div className="swap-controls"><button onClick={handleExecuteSwap} className="btn-swap" disabled={!swapButtonEnabled} title={!swapButtonEnabled ? "Seleziona un giocatore da A e uno da B" : "Scambia selezionati"}>Scambia {playersToSwap.teamA ? '✅' : '⬜'}-{playersToSwap.teamB ? '✅' : '⬜'}</button></div>
+                             </div>
+                             <div className="generated-image-container"><button onClick={handleGenerateImage} className="btn-generate-img" disabled={!teamsExist}>Genera Img Campo</button><canvas ref={canvasRef}></canvas>{imageDataUrl && (<div><img src={imageDataUrl} alt="Formazione"/><br/><a href={imageDataUrl} download={`formazione_${matchType}.png`}>Scarica Img</a></div>)}</div>
+                         </React.Fragment>
+                     )}
+                     {(selectedPlayerIds.length > 0 || teamsExist) && (<button onClick={onClearSelection} className="btn-clear-selection" style={{ marginTop: '20px' }}>Azzera Selezione/Squadre</button>)}
+                 </div>
+             );
+        }
+        // === Fine Componenti React ===
+
+
+        // === Componente Principale App (Connesso a Firestore) ===
+        function App() {
+            // STATO GIOCATORI: Gestito da Firestore via useState
+            const [players, setPlayers] = useState([]);
+            const [isLoadingPlayers, setIsLoadingPlayers] = useState(true);
+            const [errorLoadingPlayers, setErrorLoadingPlayers] = useState(firebaseInitializationError); // Usa errore da inizializzazione
+
+            // STATI GESTITI CON LOCALSTORAGE (Partita, Squadre locali, Impostazioni)
+            const [matchType, setMatchType] = useLocalStorage('calcettoMatchType_1', null);
+            const [teams, setTeams] = useLocalStorage('calcettoTeamsV6_1', { teamA: [], teamB: [] });
+            const [balanceByRoleEnabled, setBalanceByRoleEnabled] = useLocalStorage('calcettoBalanceByRole_1', true);
+
+            // STATI LOCALI STANDARD
+            const [editingPlayer, setEditingPlayer] = useState(null); // Oggetto giocatore con ID Firestore
+            const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const fileInputRef = useRef(null);
+
+            // --- EFFETTO CARICAMENTO GIOCATORI DA FIRESTORE ---
+            useEffect(() => {
+                // Se c'è stato un errore di inizializzazione, non provare a caricare
+                if (firebaseInitializationError) {
+                    setIsLoadingPlayers(false);
+                    return;
+                }
+                // Se db o collectionRef non sono definiti (improbabile se init non ha fallito, ma per sicurezza)
+                if (!playersCollectionRef) {
+                    setErrorLoadingPlayers("Errore: Riferimento al database non valido.");
+                    setIsLoadingPlayers(false);
+                    return;
+                }
+
+                setIsLoadingPlayers(true);
+                setErrorLoadingPlayers(null); // Resetta errori precedenti
+
+                const unsubscribe = playersCollectionRef.onSnapshot(snapshot => {
+                    console.log("Dati ricevuti da Firestore:", snapshot.size);
+                    const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setPlayers(playersData);
+                    setIsLoadingPlayers(false);
+                }, error => {
+                    console.error("Errore listener Firestore:", error);
+                    setErrorLoadingPlayers(`Errore connessione DB: ${error.message}.`);
+                    setIsLoadingPlayers(false);
+                });
+
+                return () => { console.log("Unsubscribing listener."); unsubscribe(); };
+            }, []); // Esegui solo al mount
+
+
+            // --- Handlers Gestione Giocatori (Firestore) ---
+            const handleSavePlayer = async (playerData) => {
+                if (!db) { alert("Errore: DB non connesso."); return; }
+                const { id, ...dataToSave } = playerData;
+                if (!dataToSave.photoUrl) { delete dataToSave.photoUrl; } // Pulisci photoUrl null
+                // Aggiungi controllo dimensione foto qui se necessario
+
+                console.log("Salvataggio:", id ? `Modifica ${id}` : "Nuovo", dataToSave);
+                if (id) { // Modifica
+                    try { await db.collection('players').doc(id).update(dataToSave); setEditingPlayer(null); }
+                    catch (error) { console.error("Errore aggiornamento:", error); alert(`Errore: ${error.message}`); }
+                } else { // Creazione
+                    try { await playersCollectionRef.add(dataToSave); }
+                    catch (error) { console.error("Errore creazione:", error); alert(`Errore: ${error.message}`); }
+                }
+                 // onSnapshot aggiornerà lo stato players
+            };
+            const handleEditPlayer = (playerId) => {
+                const playerToEdit = players.find(p => p.id === playerId);
+                if (playerToEdit) { setEditingPlayer(playerToEdit); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+                else { console.warn("Edit: Player non trovato", playerId); }
+            };
+            const handleDeletePlayer = async (playerId) => {
+                if (!db) { alert("Errore: DB non connesso."); return; }
+                const playerToDelete = players.find(p => p.id === playerId);
+                if (playerToDelete && window.confirm(`Eliminare ${playerToDelete.nome}?`)) {
+                    try {
+                        await db.collection('players').doc(playerId).delete();
+                        // Pulisci stato locale per reattività immediata
+                        setSelectedPlayerIds(prev => prev.filter(id => id !== playerId));
+                        setTeams(prevTeams => ({ teamA: prevTeams.teamA.filter(p => p.id !== playerId), teamB: prevTeams.teamB.filter(p => p.id !== playerId) }));
+                        if (editingPlayer?.id === playerId) { setEditingPlayer(null); }
+                    } catch (error) { console.error("Errore eliminazione:", error); alert(`Errore: ${error.message}`); }
+                    // onSnapshot aggiornerà lo stato players
+                }
+            };
+            const handleCancelEdit = () => { setEditingPlayer(null); };
+            // --- Fine Handlers Giocatori ---
+
+
+            // --- Handlers Partita/Selezione (Operano su stato locale/localStorage) ---
+            const handleMatchTypeChange = (type) => { setMatchType(type); setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); };
+            const handleOpenSelectionModal = () => setIsModalOpen(true);
+            const handleCloseSelectionModal = () => setIsModalOpen(false);
+            const handleTogglePlayerSelection = (playerId) => {
+                setSelectedPlayerIds(prevSelected => {
+                    const isSelected = prevSelected.includes(playerId); const required = getRequiredPlayers(matchType);
+                    if (isSelected) return prevSelected.filter(id => id !== playerId);
+                    else return prevSelected.length < required ? [...prevSelected, playerId] : prevSelected;
+                });
+            };
+            const handleConfirmSelection = () => { handleCloseSelectionModal(); setTeams({ teamA: [], teamB: [] }); };
+            // --- Fine Handlers Partita/Selezione ---
+
+
+            // --- Handlers Squadre (Operano su stato locale/localStorage) ---
+            const handleClearSelectionAndTeams = () => { setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); };
+            const handleToggleBalanceByRole = () => { setBalanceByRoleEnabled(prev => !prev); };
+            const handleUpdateTeams = useCallback((newTeams) => { setTeams(newTeams); }, [setTeams]);
+            const handleGenerateBalancedTeams = useCallback((playersToBalance, unpredictability, balanceByRole) => {
+                const balanced = balanceTeams(playersToBalance, unpredictability, balanceByRole);
+                setTeams(balanced); // Salva in localStorage
+            }, [setTeams]);
+            // --- Fine Handlers Squadre ---
+
+
+            // --- Handlers File IO (Operano su stato locale 'players', non Firestore) ---
+            const handleSaveToFile = () => {
+                if (players.length === 0) { alert("Nessun giocatore da salvare."); return; }
+                try {
+                    const playersToSave = players.map(({ ...player }) => player); // Clona per sicurezza
+                    const dataStr = JSON.stringify(playersToSave, null, 2);
+                    const blob = new Blob([dataStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = "elclasico_players_snapshot.json"; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+                    // alert("Snapshot giocatori pronto per il download!"); // Meno invadente
+                } catch (error) { console.error("Errore salvataggio file:", error); alert("Errore durante la preparazione del file."); }
+            };
+            const handleLoadTrigger = () => { fileInputRef.current?.click(); };
+            const handleFileSelected = (event) => {
+                 const file = event.target.files?.[0]; if (!file) return;
+                 if (!file.name.endsWith('.json')) { alert("Seleziona un file .json."); event.target.value = null; return; }
+                 const reader = new FileReader();
+                 reader.onload = (e) => {
+                     try {
+                         if (!e.target?.result) throw new Error("File vuoto.");
+                         const loadedData = JSON.parse(e.target.result);
+                         if (!Array.isArray(loadedData)) throw new Error("Il file non è un elenco JSON.");
+                         if (window.confirm(`Caricare ${loadedData.length} giocatori?\nATTENZIONE: Sovrascriverà la lista locale (NON aggiorna il DB condiviso).`)) {
+                             const sanitizedPlayers = loadedData.map(p => ({ // Assicura campi base
+                                 id: p.id || crypto.randomUUID(), nome: p.nome || "Sconosciuto", ruolo: ALL_ROLES.includes(p.ruolo) ? p.ruolo : 'Centrocampista',
+                                 abilitaDifensiva: p.abilitaDifensiva || 5, abilitaOffensiva: p.abilitaOffensiva || 5, velocita: p.velocita || 5, scatto: p.scatto || 5,
+                                 pressing: p.pressing || 5, determinazione: p.determinazione || 5, peso: p.peso || 75, altezza: p.altezza || 175, robustezza: p.robustezza || 5, photoUrl: p.photoUrl || null
+                             }));
+                             setPlayers(sanitizedPlayers); // SOSTITUISCI STATO LOCALE
+                             setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); setEditingPlayer(null); setMatchType(null);
+                             alert("Giocatori caricati localmente!");
+                             // QUI potresti aggiungere logica per Sincronizzare con Firestore se lo desideri
+                         }
+                     } catch (error) { console.error("Errore caricamento file:", error); alert(`Errore caricamento: ${error.message}`); }
+                     finally { if(event.target) event.target.value = null; }
+                 };
+                 reader.onerror = () => { alert("Errore lettura file."); if(event.target) event.target.value = null; };
+                 reader.readAsText(file);
+            };
+            // --- Fine Handlers File IO ---
+
+
+            // --- Render App ---
+            return (
+                <div className="container">
+                    <h1>El Clasico Team Manager <small>(DB Online)</small></h1>
+
+                    {errorLoadingPlayers && <div className="error-message">{errorLoadingPlayers}</div>}
+                    {isLoadingPlayers && <div className="loading-message">Caricamento giocatori dal database...</div>}
+
+                    {/* Mostra contenuto solo se non in caricamento e senza errori iniziali */}
+                    {!isLoadingPlayers && !errorLoadingPlayers && (
+                        <>
+                            <section id="gestione-giocatori">
+                               <h2>Gestione Giocatori (Condivisa)</h2>
+                               <div className="file-io-section">
+                                   <button onClick={handleSaveToFile} className="btn-save-file" disabled={players.length === 0}>Salva Snapshot</button>
+                                   <button onClick={handleLoadTrigger} className="btn-load-file">Carica Locale</button>
+                                   <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} />
+                                   <p>(Salva stato attuale DB / Carica sovrascrivendo lista locale)</p>
+                               </div>
+                               <PlayerForm onSave={handleSavePlayer} editingPlayer={editingPlayer} onCancelEdit={handleCancelEdit}/>
+                               <PlayerList players={players} onEdit={handleEditPlayer} onDelete={handleDeletePlayer}/>
+                            </section>
+
+                            <hr className="section-divider" />
+
+                            <section id="imposta-partita">
+                                <MatchSetup matchType={matchType} onMatchTypeChange={handleMatchTypeChange} onOpenSelection={handleOpenSelectionModal} availablePlayerCount={players.length}/>
+                            </section>
+
+                            {isModalOpen && ( <PlayerSelectionModal players={players} selectedPlayerIds={selectedPlayerIds} requiredCount={getRequiredPlayers(matchType)} onToggleSelect={handleTogglePlayerSelection} onConfirm={handleConfirmSelection} onClose={handleCloseSelectionModal} /> )}
+
+                            <hr className="section-divider" />
+
+                            <section id="crea-squadre">
+                                <TeamDisplay players={players} selectedPlayerIds={selectedPlayerIds} teams={teams} matchType={matchType} onUpdateTeams={handleUpdateTeams} onClearSelection={handleClearSelectionAndTeams} balanceByRoleEnabled={balanceByRoleEnabled} onToggleBalanceByRole={handleToggleBalanceByRole} onGenerateTeams={handleGenerateBalancedTeams} />
+                            </section>
+                        </>
+                    )}
+                </div>
+            );
+        } // --- Fine App ---
+
+
+        // === Monta l'App React nel DOM con Error Boundary ===
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+            try {
+                 const root = ReactDOM.createRoot(rootElement);
+                 class ErrorBoundary extends React.Component {
+                     constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+                     static getDerivedStateFromError(error) { return { hasError: true, error }; }
+                     componentDidCatch(error, errorInfo) { console.error("React Error Boundary:", error, errorInfo); }
+                     render() {
+                         if (this.state.hasError) { return <div className="error-message">Oops! Errore applicazione. <br/> Dettagli: {this.state.error?.message}</div>; }
+                         return this.props.children;
+                     }
+                 }
+                 root.render(<ErrorBoundary><App /></ErrorBoundary>);
+            } catch (error) {
+                 console.error("Errore rendering iniziale:", error);
+                 rootElement.innerHTML = '<div class="error-message">Errore critico avvio applicazione. Controlla console.</div>';
+            }
+        } else {
+            console.error("Elemento #root non trovato!");
+            alert("Errore: #root mancante.")
+        }
+
+    </script>
+
+</body>
+</html>
