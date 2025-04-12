@@ -15,7 +15,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <!-- <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script> -->
 
-    <!-- CSS Incorporato -->
+    <!-- CSS Incorporato (Invariato) -->
     <style>
         /* === Stili Generali === */
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.6; }
@@ -36,10 +36,10 @@
         .btn-select-players, .btn-generate, .btn-confirm { background-color: #17a2b8; }
         .btn-swap { background-color: #fd7e14; }
         .btn-generate-img { background-color: #6f42c1; }
-        /* Stili per bottoni DB */
-        .btn-save-db { background-color: #e83e8c; } /* Rosa per Salva DB */
         .btn-save-file { background-color: #5a6268; }
         .btn-load-file { background-color: #5a6268; }
+        .btn-load-db { background-color: #007bff; } /* Nuovo */
+        .btn-save-db { background-color: #28a745; } /* Nuovo */
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #495057; }
         input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1em; margin-bottom: 10px; box-sizing: border-box; }
         input[type="file"] { padding: 5px; }
@@ -70,9 +70,9 @@
         .player-actions button { padding: 6px 12px; font-size: 0.9em; }
 
         /* File IO Section */
-        .file-io-section { margin-top: 20px; padding: 15px; background-color: #f0f0f0; /* Sfondo leggermente diverso per distinguere */ border: 1px solid #dee2e6; border-radius: 8px; display: flex; gap: 10px; /* Ridotto gap */ align-items: center; flex-wrap: wrap; justify-content: center; /* Centra i bottoni se vanno a capo */ }
-        .file-io-section p { margin: 0; font-size: 0.9em; color: #6c757d; flex-basis: 100%; text-align: center; margin-top: 5px; } /* Testo sotto */
-        .file-io-section button { flex-grow: 1; max-width: 200px; } /* Bottoni con larghezza massima */
+        .file-io-section { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; } /* Adjusted gap and justify */
+        .file-io-section p { margin: 0; font-size: 0.9em; color: #6c757d; flex-basis: 100%; text-align: center; margin-top: 10px;} /* Added text align and margin */
+        .db-status-message { font-size: 0.9em; font-style: italic; color: #17a2b8; margin-left: 10px; }
 
         /* MatchSetup */
         .match-setup-container { padding: 15px; background-color: #eef; border-radius: 8px; }
@@ -138,7 +138,6 @@
             .player-info { gap: 5px;}
             .player-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
             .file-io-section { flex-direction: column; align-items: stretch; text-align: center;}
-            .file-io-section button { max-width: none; } /* Rimuovi max-width su mobile */
             .file-io-section p { margin-bottom: 10px; }
             .team-columns { flex-direction: column; }
             .modal-content { padding: 15px; }
@@ -164,7 +163,7 @@
         // === Hook e Costanti ===
         const { useState, useEffect, useCallback, useRef } = React;
         const ALL_ROLES = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
-        const SECRET_CODE = "RoyClasico"; // Codice segreto per salvare su DB
+        const SAVE_PASSWORD = "RoyClasico"; // La tua password
 
         // --- Hook useLocalStorage (Mantenuto per MatchType, Teams, Settings) ---
         function useLocalStorage(key, initialValue) {
@@ -192,9 +191,8 @@
 
 
         // --- Inizializzazione Firebase ---
-        // Configurazione Firebase fornita
         const firebaseConfig = {
-          apiKey: "AIzaSyCl-0Ini6m3MKRN-qTfGp1kcXtW0z6qGEE", // <<< ASSICURATI CHE QUESTA SIA CORRETTA! >>>
+          apiKey: "AIzaSyCl-0Ini6m3MKRN-qTfGp1kcXtW0z6qGEE", // <-- Assicurati sia corretta
           authDomain: "el-clasico-app.firebaseapp.com",
           projectId: "el-clasico-app",
           storageBucket: "el-clasico-app.appspot.com",
@@ -203,21 +201,20 @@
           measurementId: "G-JVLZFP9PCR"
         };
 
-        // Variabili globali per Firebase (inizializzate nel try-catch)
         let db;
         let playersCollectionRef;
-        let firebaseInitializationError = null; // Flag per errore iniziale
+        let firebaseInitializationError = null;
 
         try {
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
                 console.log("Firebase inizializzato.");
             } else {
-                firebase.app(); // Usa l'app già inizializzata
+                firebase.app();
                 console.log("Firebase già inizializzato.");
             }
-            db = firebase.firestore(); // Ottieni Firestore
-            playersCollectionRef = db.collection('players'); // Riferimento alla collezione
+            db = firebase.firestore();
+            playersCollectionRef = db.collection('players');
             console.log("Riferimento alla collezione 'players' ottenuto.");
         } catch (error) {
              console.error("!!! ERRORE CRITICO NELL'INIZIALIZZAZIONE DI FIREBASE !!!", error);
@@ -227,33 +224,187 @@
 
 
         // === Funzioni Utili (Invariate) ===
-        const calculatePlayerScore = (player) => { /* ... codice ... */ };
-        const getRequiredPlayers = (matchType) => { /* ... codice ... */ };
-        const calculateTeamFinalScore = (team) => { /* ... codice ... */ };
+        const calculatePlayerScore = (player) => { if (!player) return 0; return ((player.abilitaDifensiva || 0) * 1.0 + (player.abilitaOffensiva || 0) * 1.0 + (player.velocita || 0) * 0.8 + (player.scatto || 0) * 0.8 + (player.pressing || 0) * 0.7 + (player.determinazione || 0) * 1.0 + (player.robustezza || 0) * 0.7 + ((player.peso || 75) / 20) + ((player.altezza || 175) / 40)); };
+        const getRequiredPlayers = (matchType) => { switch (matchType) { case '5': return 10; case '6': return 12; case '8': return 16; case '11': return 22; default: return 0; } };
+        const calculateTeamFinalScore = (team) => { return team.reduce((sum, player) => sum + calculatePlayerScore(player), 0); };
         const roleOrder = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
-        const getAvgScore = (player) => { /* ... codice ... */ };
-        const balanceTeams = (players, unpredictability, balanceByRole) => { /* ... codice ... */ };
-        function drawFormation(canvas, teamA, teamB, matchType) { /* ... codice ... */ };
-        // (Codice delle funzioni utili omesso per brevità, è identico a prima)
+        const getAvgScore = (player) => { if (!player) return '0.0'; const scoreSum = ((player.abilitaDifensiva || 0) + (player.abilitaOffensiva || 0) + (player.velocita || 0) + (player.scatto || 0) + (player.pressing || 0) + (player.determinazione || 0) + (player.robustezza || 0)); return (scoreSum / 7).toFixed(1); };
+        const balanceTeams = (players, unpredictability, balanceByRole) => { if (!players || players.length === 0 || players.length % 2 !== 0) { console.error("Invalid player count for balancing:", players?.length); return { teamA: [], teamB: [] }; } const playersWithScores = players.map(player => { const baseScore = calculatePlayerScore(player); const randomFactor = (Math.random() - 0.5) * 2 * unpredictability * (baseScore * 0.05); return { ...player, tempScore: baseScore + randomFactor, baseScore: baseScore, currentRole: player.ruolo }; }); const sortedPlayers = playersWithScores.sort((a, b) => b.tempScore - a.tempScore); const teamA = []; const teamB = []; let scoreA = 0; let scoreB = 0; const rolesCountA = {}; const rolesCountB = {}; const rolesInGame = [...new Set(players.map(p => p.ruolo))]; rolesInGame.forEach(role => { rolesCountA[role] = 0; rolesCountB[role] = 0; }); sortedPlayers.forEach(player => { let assignToA = false; if (balanceByRole) { const role = player.ruolo; const countA = rolesCountA[role] || 0; const countB = rolesCountB[role] || 0; if (countA < countB) assignToA = true; else if (countB < countA) assignToA = false; else assignToA = scoreA <= scoreB; } else { assignToA = scoreA <= scoreB; } if (assignToA) { teamA.push(player); scoreA += player.tempScore; if (balanceByRole) rolesCountA[player.ruolo]++; } else { teamB.push(player); scoreB += player.tempScore; if (balanceByRole) rolesCountB[player.ruolo]++; } }); const finalTeamA = teamA.map(({ tempScore, baseScore, ...player }) => player); const finalTeamB = teamB.map(({ tempScore, baseScore, ...player }) => player); return { teamA: finalTeamA, teamB: finalTeamB }; };
+        function drawFormation(canvas, teamA, teamB, matchType) { const ctx = canvas.getContext('2d'); if (!ctx) return; const W = canvas.width = 700; const H = canvas.height = 450; const playerRadius = 15; const fieldColor = '#28a745'; const lineColor = '#FFFFFF'; const teamAColor = '#007bff'; const teamBColor = '#dc3545'; const playerNameColor = '#000000'; const defaultTextColor = '#FFFFFF'; const imageCache = {}; const loadImage = (url) => { if (!url) return null; if (imageCache[url]) return imageCache[url]; const img = new Image(); img.src = url; imageCache[url] = img; img.onerror = () => { imageCache[url] = null; }; return img; }; ctx.clearRect(0, 0, W, H); ctx.fillStyle = fieldColor; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = lineColor; ctx.lineWidth = 2; ctx.strokeRect(5, 5, W - 10, H - 10); ctx.beginPath(); ctx.moveTo(W / 2, 5); ctx.lineTo(W / 2, H - 5); ctx.stroke(); ctx.beginPath(); ctx.arc(W / 2, H / 2, 60, 0, 2 * Math.PI); ctx.stroke(); ctx.fillStyle = lineColor; ctx.beginPath(); ctx.arc(W / 2, H / 2, 4, 0, 2 * Math.PI); ctx.fill(); ctx.strokeRect(5, H * 0.2, W * 0.2, H * 0.6); ctx.strokeRect(W - 5 - W * 0.2, H * 0.2, W * 0.2, H * 0.6); const getPositions = (team, isTeamA) => { const positions = {}; const sideXBase = isTeamA ? W * 0.25 : W * 0.75; const roleOffsets = { Portiere: -W * 0.18, Difensore: -W * 0.1, Centrocampista: 0, Attaccante: W * 0.1 }; ALL_ROLES.forEach(role => { const playersInRole = team.filter(p => p.currentRole === role); if (playersInRole.length === 0) return; const baseX = sideXBase + (roleOffsets[role] || 0); const availableHeight = H * 0.8; const startY = H * 0.1; const yStep = playersInRole.length > 1 ? availableHeight / (playersInRole.length -1) : availableHeight / 2; playersInRole.forEach((player, index) => { let yPos = startY + (playersInRole.length === 1 ? availableHeight / 2 : index * yStep) + (Math.random() - 0.5) * 10; let xPos = baseX + (Math.random() - 0.5) * 20; positions[player.id] = { x: Math.max(playerRadius + 5, Math.min(W - playerRadius - 5, xPos)), y: Math.max(playerRadius + 5, Math.min(H - playerRadius - 5, yPos)) }; }); }); return positions; }; const positionsA = getPositions(teamA, true); const positionsB = getPositions(teamB, false); const drawPlayer = (player, pos, teamColor) => { if (!pos) return; const { x, y } = pos; ctx.save(); ctx.beginPath(); ctx.arc(x, y, playerRadius, 0, 2 * Math.PI); ctx.fillStyle = teamColor; ctx.fill(); if (player.photoUrl) { const img = loadImage(player.photoUrl); if (img && img.complete && img.naturalHeight !== 0) { ctx.clip(); const aspectRatio = img.naturalWidth / img.naturalHeight; let drawWidth, drawHeight, offsetX, offsetY; if (img.naturalWidth >= img.naturalHeight) { drawHeight = playerRadius * 2; drawWidth = drawHeight * aspectRatio; offsetX = x - drawWidth / 2; offsetY = y - playerRadius; } else { drawWidth = playerRadius * 2; drawHeight = drawWidth / aspectRatio; offsetX = x - playerRadius; offsetY = y - drawHeight / 2; } try { ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight); } catch (e) { console.warn("Error drawing image for", player.nome, e); } ctx.restore(); } } ctx.beginPath(); ctx.arc(x, y, playerRadius, 0, 2 * Math.PI); ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = playerNameColor; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; const displayName = player.nome.length > 12 ? player.nome.split(' ')[0] : player.nome; ctx.fillText(displayName, x, y + playerRadius + 12); }; teamA.forEach(p => drawPlayer(p, positionsA[p.id], teamAColor)); teamB.forEach(p => drawPlayer(p, positionsB[p.id], teamBColor)); };
         // === Fine Funzioni Utili ===
 
 
-        // === Componenti React (Largamente Invariati) ===
-        function PlayerForm({ onSave, editingPlayer, onCancelEdit }) { /* ... codice ... */ }
-        function PlayerItem({ player, onEdit, onDelete }) { /* ... codice ... */ }
-        function PlayerList({ players, onEdit, onDelete }) { /* ... codice ... */ }
-        function PlayerSelectionModal({ players, selectedPlayerIds, requiredCount, onToggleSelect, onConfirm, onClose }) { /* ... codice ... */ }
-        function MatchSetup({ matchType, onMatchTypeChange, onOpenSelection, availablePlayerCount }) { /* ... codice ... */ }
-        function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onUpdateTeams, onClearSelection, balanceByRoleEnabled, onToggleBalanceByRole, onGenerateTeams }) { /* ... codice ... */ }
-        // (Codice dei componenti React omesso per brevità, è identico a prima)
+        // === Componenti React (PlayerForm, PlayerItem, PlayerList, PlayerSelectionModal, MatchSetup, TeamDisplay - Invariati) ===
+        function PlayerForm({ onSave, editingPlayer, onCancelEdit }) {
+             const initialFormData = { nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5, velocita: 5, scatto: 5, pressing: 5, determinazione: 5, peso: 75, altezza: 175, robustezza: 5, photoUrl: null };
+             const [formData, setFormData] = useState(initialFormData);
+             const [isVisible, setIsVisible] = useState(false);
+             const [photoPreview, setPhotoPreview] = useState(null);
+
+             useEffect(() => {
+                 if (editingPlayer) {
+                     const dataToEdit = {...initialFormData, ...editingPlayer};
+                     setFormData(dataToEdit); setPhotoPreview(dataToEdit.photoUrl || null); setIsVisible(true);
+                 } else { setFormData(initialFormData); setPhotoPreview(null); }
+             }, [editingPlayer]);
+
+             const handleChange = (e) => { const { name, value, type } = e.target; setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value })); };
+             const handlePhotoChange = (e) => {
+                 const file = e.target.files[0];
+                 if (file) {
+                     if (file.size > 2 * 1024 * 1024) { alert("Immagine troppo grande! Max 2MB."); e.target.value = null; return; }
+                     const reader = new FileReader();
+                     reader.onloadend = () => { setFormData(prev => ({ ...prev, photoUrl: reader.result })); setPhotoPreview(reader.result); };
+                     reader.onerror = (error) => { console.error("File reading error:", error); alert("Errore nel caricamento dell'immagine."); };
+                     reader.readAsDataURL(file);
+                 }
+             };
+             const handleSubmit = (e) => { e.preventDefault(); if (!formData.nome.trim()) { alert("Il nome è obbligatorio!"); return; } onSave(formData); handleCancel(); };
+             const handleCancel = () => { setFormData(initialFormData); setPhotoPreview(null); setIsVisible(false); onCancelEdit(); };
+             const toggleVisibility = () => { if (!editingPlayer) { setIsVisible(!isVisible); if (isVisible) { handleCancel(); } } else if (!isVisible) { setIsVisible(true); } };
+
+             return (
+                 <div className="player-form-container">
+                     {!isVisible && (<button onClick={toggleVisibility} className="btn-toggle-form btn-create">+ Crea Nuovo Giocatore</button>)}
+                     {isVisible && (
+                         <form onSubmit={handleSubmit} className="player-form">
+                             <h3>{editingPlayer ? 'Modifica Giocatore' : 'Nuovo Giocatore'}</h3>
+                             <div className="form-group"><label htmlFor="nome">Nome:</label><input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required /></div>
+                             <div className="form-group"><label htmlFor="ruolo">Ruolo Preferito:</label><select id="ruolo" name="ruolo" value={formData.ruolo} onChange={handleChange}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+                             {[ { name: 'abilitaDifensiva', label: 'Difesa' }, { name: 'abilitaOffensiva', label: 'Attacco' }, { name: 'velocita', label: 'Velocità' }, { name: 'scatto', label: 'Scatto' }, { name: 'pressing', label: 'Pressing' }, { name: 'determinazione', label: 'Determ.' }, { name: 'robustezza', label: 'Robustezza' } ].map(({ name, label }) => ( <div className="form-group" key={name}><label htmlFor={name}>{label} (1-10):</label><input type="number" id={name} name={name} min="1" max="10" step="1" value={formData[name] ?? ''} onChange={handleChange} required /></div> ))}
+                             <div className="form-group"><label htmlFor="peso">Peso (kg):</label><input type="number" id="peso" name="peso" min="30" max="150" step="0.1" value={formData.peso ?? ''} onChange={handleChange} required /></div>
+                             <div className="form-group"><label htmlFor="altezza">Altezza (cm):</label><input type="number" id="altezza" name="altezza" min="100" max="230" step="1" value={formData.altezza ?? ''} onChange={handleChange} required /></div>
+                             <div className="form-group"><label htmlFor="photo">Foto (Max 2MB):</label><input type="file" id="photo" name="photo" accept="image/png, image/jpeg, image/webp" onChange={handlePhotoChange} /><br/>{photoPreview && <img src={photoPreview} alt="Anteprima" className="photo-preview" />}</div>
+                             <div className="form-actions"><button type="submit" className="btn-save">{editingPlayer ? 'Salva Modifiche' : 'Aggiungi Giocatore'}</button><button type="button" onClick={handleCancel} className="btn-cancel">Annulla</button></div>
+                         </form>
+                     )}
+                 </div>
+             );
+        }
+        function PlayerItem({ player, onEdit, onDelete }) {
+             const avgScore = getAvgScore(player);
+             return (
+                 <li className="player-item">
+                     <div className="player-info">
+                         {player.photoUrl ? (<img src={player.photoUrl} alt={player.nome} className="player-photo-thumbnail" />) : (<span className="player-photo-thumbnail"></span>)}
+                         <div className="player-details">
+                             <span className="player-name">{player.nome}</span>
+                             <span className="player-meta"><span className="player-role">{player.ruolo}</span><span className="player-avg-score">Avg: {avgScore}</span></span>
+                         </div>
+                     </div>
+                     <div className="player-actions"><button onClick={() => onEdit(player.id)} className="btn-edit">Modifica</button><button onClick={() => onDelete(player.id)} className="btn-delete">Elimina</button></div>
+                 </li>
+             );
+        }
+        function PlayerList({ players, onEdit, onDelete }) {
+             return (
+                 <div className="player-list-container">
+                     <h2>Giocatori Disponibili ({players.length})</h2>
+                     {players.length === 0 ? (<p>Nessun giocatore nel database. Aggiungine uno o carica da file/DB.</p>) : (<ul className="player-list">{players.map(p => (<PlayerItem key={p.id} player={p} onEdit={onEdit} onDelete={onDelete} />))}</ul>)}
+                 </div>
+             );
+        }
+        function PlayerSelectionModal({ players, selectedPlayerIds, requiredCount, onToggleSelect, onConfirm, onClose }) {
+             const selectedCount = selectedPlayerIds.length; const canConfirm = selectedCount === requiredCount;
+             return (
+                 <div className="modal-overlay" onClick={onClose}>
+                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                         <h3>Seleziona Giocatori ({selectedCount} / {requiredCount})</h3><p>Seleziona esattamente {requiredCount} giocatori.</p>
+                         <ul className="modal-player-list">
+                             {players.map(player => {
+                                 const isSelected = selectedPlayerIds.includes(player.id); const isDisabled = !isSelected && selectedCount >= requiredCount;
+                                 return ( <li key={player.id} className={`modal-player-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`} onClick={() => !isDisabled && onToggleSelect(player.id)}><label className={isDisabled ? 'disabled' : ''}><input type="checkbox" checked={isSelected} onChange={() => {}} disabled={isDisabled}/>{player.nome} ({player.ruolo})</label></li> );
+                             })}
+                         </ul>
+                         <div className="modal-actions"><button onClick={onConfirm} disabled={!canConfirm} className="btn-confirm">Conferma Selezione ({selectedCount}/{requiredCount})</button><button onClick={onClose} className="btn-cancel">Annulla</button></div>
+                     </div>
+                 </div>
+             );
+        }
+        function MatchSetup({ matchType, onMatchTypeChange, onOpenSelection, availablePlayerCount }) {
+             const requiredPlayers = getRequiredPlayers(matchType); const canOpenSelector = matchType && availablePlayerCount >= requiredPlayers;
+             return (
+                 <div className="match-setup-container">
+                     <h2>Imposta Partita</h2>
+                     <div className="match-type-selector"><label htmlFor="matchType">Tipo:</label><select id="matchType" value={matchType || ''} onChange={(e) => onMatchTypeChange(e.target.value)}><option value="" disabled>Seleziona...</option><option value="5">Calcio a 5 (10)</option><option value="6">Calcio a 6 (12)</option><option value="8">Calciotto (16)</option><option value="11">Calcio a 11 (22)</option></select></div>
+                     {matchType && (<p>{availablePlayerCount < requiredPlayers ? `Servono ${requiredPlayers} giocatori (${availablePlayerCount} disp.).` : `Servono ${requiredPlayers} giocatori.`}</p>)}
+                     <button onClick={onOpenSelection} disabled={!canOpenSelector} className="btn-select-players" title={!matchType ? "Seleziona tipo" : (availablePlayerCount < requiredPlayers ? "Giocatori insuff." : "Seleziona giocatori")}>Seleziona Giocatori</button>
+                 </div>
+             );
+        }
+        function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onUpdateTeams, onClearSelection, balanceByRoleEnabled, onToggleBalanceByRole, onGenerateTeams }) {
+             const [unpredictability, setUnpredictability] = useState(1); const [playersToSwap, setPlayersToSwap] = useState({ teamA: null, teamB: null }); const [imageDataUrl, setImageDataUrl] = useState(null); const canvasRef = useRef(null);
+             const requiredPlayers = getRequiredPlayers(matchType); const teamsExist = teams.teamA.length > 0 || teams.teamB.length > 0; const correctPlayersSelectedForCreation = selectedPlayerIds.length === requiredPlayers && requiredPlayers > 0;
+             const generationPossible = teamsExist || correctPlayersSelectedForCreation; const buttonDisabled = !generationPossible; const swapButtonEnabled = playersToSwap.teamA !== null && playersToSwap.teamB !== null;
+
+             const handleGenerateOrRegenerate = () => {
+                 const playersForGeneration = teamsExist ? [...teams.teamA, ...teams.teamB] : players.filter(p => selectedPlayerIds.includes(p.id));
+                 if (playersForGeneration.length !== requiredPlayers) { alert(`Errore: Giocatori ${playersForGeneration.length}/${requiredPlayers} non corretti.`); return; }
+                 setImageDataUrl(null); setPlayersToSwap({ teamA: null, teamB: null });
+                 onGenerateTeams(playersForGeneration, unpredictability, balanceByRoleEnabled);
+             };
+             const handleSelectPlayerForSwap = (playerId, teamKey) => { setPlayersToSwap(prev => (prev[teamKey] === playerId ? { ...prev, [teamKey]: null } : { ...prev, [teamKey]: playerId })); };
+             const handleExecuteSwap = () => {
+                 if (!swapButtonEnabled) return; const playerA_ID = playersToSwap.teamA; const playerB_ID = playersToSwap.teamB;
+                 const playerA = teams.teamA.find(p => p.id === playerA_ID); const playerB = teams.teamB.find(p => p.id === playerB_ID); if (!playerA || !playerB) return;
+                 const newTeamA = teams.teamA.filter(p => p.id !== playerA_ID).concat(playerB); const newTeamB = teams.teamB.filter(p => p.id !== playerB_ID).concat(playerA);
+                 onUpdateTeams({ teamA: newTeamA, teamB: newTeamB }); setPlayersToSwap({ teamA: null, teamB: null }); setImageDataUrl(null);
+             };
+             const handleRoleChange = (playerId, newRole, teamKey) => {
+                 const currentTeams = { teamA: [...teams.teamA], teamB: [...teams.teamB] }; const team = currentTeams[teamKey]; const playerIndex = team.findIndex(p => p.id === playerId); if (playerIndex === -1) return;
+                 const updatedPlayer = { ...team[playerIndex], currentRole: newRole }; const updatedTeam = [...team.slice(0, playerIndex), updatedPlayer, ...team.slice(playerIndex + 1)];
+                 onUpdateTeams({ ...currentTeams, [teamKey]: updatedTeam }); setImageDataUrl(null);
+             };
+             const handleGenerateImage = () => { if (!canvasRef.current || !teamsExist) return; drawFormation(canvasRef.current, teams.teamA, teams.teamB, matchType); setImageDataUrl(canvasRef.current.toDataURL('image/png')); };
+
+             const scoreA = teams.teamA.length > 0 ? calculateTeamFinalScore(teams.teamA).toFixed(1) : 0; const scoreB = teams.teamB.length > 0 ? calculateTeamFinalScore(teams.teamB).toFixed(1) : 0;
+             const sortTeamForDisplay = (team) => [...team].sort((a, b) => (roleOrder.indexOf(a.currentRole ?? a.ruolo) === -1 ? 99 : roleOrder.indexOf(a.currentRole ?? a.ruolo)) - (roleOrder.indexOf(b.currentRole ?? b.ruolo) === -1 ? 99 : roleOrder.indexOf(b.currentRole ?? b.ruolo)));
+             const sortedTeamA = sortTeamForDisplay(teams.teamA); const sortedTeamB = sortTeamForDisplay(teams.teamB);
+
+             return (
+                 <div className="team-display-container">
+                     <h2>{teamsExist ? 'Modifica Squadre' : 'Crea Squadre'}</h2>
+                     {!teamsExist && !correctPlayersSelectedForCreation && requiredPlayers > 0 && (<p>Seleziona {requiredPlayers} giocatori.</p>)}
+                     {!teamsExist && correctPlayersSelectedForCreation && (<p>Hai selezionato {selectedPlayerIds.length} giocatori. Clicca 'Crea Squadre'.</p>)}
+                     {teamsExist && (<p>Squadre pronte. Clicca nome per scambio, cambia ruolo, o rigenera.</p>)}
+                     {requiredPlayers > 0 && (
+                         <div className="balancing-options">
+                             <div className="unpredictability-slider"><label htmlFor="unpredictability">Imprevedibilità (0-5): {unpredictability}</label><input type="range" id="unpredictability" min="0" max="5" step="0.5" value={unpredictability} onChange={(e) => setUnpredictability(parseFloat(e.target.value))} /></div>
+                             <div className="checkbox-group"><input type="checkbox" id="balanceByRole" checked={balanceByRoleEnabled} onChange={onToggleBalanceByRole} /><label htmlFor="balanceByRole">Tenta bilanciamento ruoli</label></div>
+                             <button onClick={handleGenerateOrRegenerate} className="btn-generate" disabled={buttonDisabled} title={buttonDisabled ? "Seleziona giocatori" : (teamsExist ? "Rigenera" : "Crea squadre")}>{teamsExist ? 'Rigenera Squadre' : 'Crea Squadre'}</button>
+                         </div>
+                     )}
+                     {teamsExist && (
+                         <React.Fragment>
+                             <div className="teams-output">
+                                 <h3>Squadre Attuali</h3>
+                                 <div className="team-columns">
+                                     <div className="team-column">
+                                         <h4>Squadra A <small>(Punteggio: {scoreA})</small></h4>
+                                         <ul>{sortedTeamA.map(p => (<li key={p.id} className={playersToSwap.teamA === p.id ? 'selected-for-swap' : ''}><div className="team-player-info" onClick={() => handleSelectPlayerForSwap(p.id, 'teamA')} title={`Seleziona ${p.nome} per scambio`}><span className="team-player-name">{p.nome}</span><span className="team-player-original-role">(Pref: {p.ruolo} - Avg: {getAvgScore(p)})</span></div><div className="team-player-role-selector"><select value={p.currentRole ?? p.ruolo} onChange={(e) => handleRoleChange(p.id, e.target.value, 'teamA')} title={`Cambia ruolo ${p.nome}`}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div></li>))}</ul>
+                                     </div>
+                                     <div className="team-column">
+                                         <h4>Squadra B <small>(Punteggio: {scoreB})</small></h4>
+                                         <ul>{sortedTeamB.map(p => (<li key={p.id} className={playersToSwap.teamB === p.id ? 'selected-for-swap' : ''}><div className="team-player-info" onClick={() => handleSelectPlayerForSwap(p.id, 'teamB')} title={`Seleziona ${p.nome} per scambio`}><span className="team-player-name">{p.nome}</span><span className="team-player-original-role">(Pref: {p.ruolo} - Avg: {getAvgScore(p)})</span></div><div className="team-player-role-selector"><select value={p.currentRole ?? p.ruolo} onChange={(e) => handleRoleChange(p.id, e.target.value, 'teamB')} title={`Cambia ruolo ${p.nome}`}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div></li>))}</ul>
+                                     </div>
+                                 </div>
+                                 <div className="swap-controls"><button onClick={handleExecuteSwap} className="btn-swap" disabled={!swapButtonEnabled} title={!swapButtonEnabled ? "Seleziona un giocatore da A e uno da B" : "Scambia selezionati"}>Scambia {playersToSwap.teamA ? '✅' : '⬜'}-{playersToSwap.teamB ? '✅' : '⬜'}</button></div>
+                             </div>
+                             <div className="generated-image-container"><button onClick={handleGenerateImage} className="btn-generate-img" disabled={!teamsExist}>Genera Img Campo</button><canvas ref={canvasRef}></canvas>{imageDataUrl && (<div><img src={imageDataUrl} alt="Formazione"/><br/><a href={imageDataUrl} download={`formazione_${matchType}.png`}>Scarica Img</a></div>)}</div>
+                         </React.Fragment>
+                     )}
+                     {(selectedPlayerIds.length > 0 || teamsExist) && (<button onClick={onClearSelection} className="btn-clear-selection" style={{ marginTop: '20px' }}>Azzera Selezione/Squadre</button>)}
+                 </div>
+             );
+        }
         // === Fine Componenti React ===
 
 
         // === Componente Principale App (Connesso a Firestore) ===
         function App() {
-            // STATO GIOCATORI: Gestito da Firestore via useState
+            // STATO GIOCATORI: Gestito da Firestore via useState + listener
             const [players, setPlayers] = useState([]);
-            const [isLoadingPlayers, setIsLoadingPlayers] = useState(true);
+            const [isLoadingPlayers, setIsLoadingPlayers] = useState(true); // Listener iniziale
             const [errorLoadingPlayers, setErrorLoadingPlayers] = useState(firebaseInitializationError);
 
             // STATI GESTITI CON LOCALSTORAGE (Partita, Squadre locali, Impostazioni)
@@ -266,174 +417,324 @@
             const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
             const [isModalOpen, setIsModalOpen] = useState(false);
             const fileInputRef = useRef(null);
-            const [isSavingToDb, setIsSavingToDb] = useState(false); // Stato per feedback durante salvataggio DB
 
-            // --- EFFETTO CARICAMENTO GIOCATORI DA FIRESTORE ---
+            // STATI PER OPERAZIONI DB AGGIUNTIVE
+            const [isLoadingDb, setIsLoadingDb] = useState(false); // Per caricamento manuale
+            const [isSavingDb, setIsSavingDb] = useState(false);   // Per salvataggio manuale
+            const [dbStatusMessage, setDbStatusMessage] = useState(''); // Messaggi feedback DB
+
+            // --- EFFETTO CARICAMENTO GIOCATORI DA FIRESTORE (LISTENER) ---
             useEffect(() => {
-                if (firebaseInitializationError) { setIsLoadingPlayers(false); return; }
-                if (!playersCollectionRef) { setErrorLoadingPlayers("DB non inizializzato."); setIsLoadingPlayers(false); return; }
+                if (firebaseInitializationError) {
+                    setIsLoadingPlayers(false); return; // Non fare nulla se l'init è fallita
+                }
+                if (!playersCollectionRef) {
+                    setErrorLoadingPlayers("Errore: Riferimento al database non valido."); setIsLoadingPlayers(false); return;
+                }
 
                 setIsLoadingPlayers(true); setErrorLoadingPlayers(null);
                 const unsubscribe = playersCollectionRef.onSnapshot(snapshot => {
-                    console.log("Dati da Firestore:", snapshot.size);
+                    console.log("Dati ricevuti da Firestore (listener):", snapshot.size);
                     const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setPlayers(playersData); setIsLoadingPlayers(false);
+                    setPlayers(playersData);
+                    setIsLoadingPlayers(false);
+                    // Pulisci stati dipendenti dai giocatori se la lista cambia drasticamente (es. svuotata)
+                    if (playersData.length === 0) {
+                        setSelectedPlayerIds([]);
+                        setTeams({ teamA: [], teamB: [] });
+                    } else {
+                        // Verifica se i giocatori selezionati o nelle squadre esistono ancora
+                        const currentPlayerIds = new Set(playersData.map(p => p.id));
+                        setSelectedPlayerIds(prev => prev.filter(id => currentPlayerIds.has(id)));
+                        setTeams(prev => ({
+                            teamA: prev.teamA.filter(p => currentPlayerIds.has(p.id)),
+                            teamB: prev.teamB.filter(p => currentPlayerIds.has(p.id))
+                        }));
+                    }
                 }, error => {
-                    console.error("Errore listener Firestore:", error); setErrorLoadingPlayers(`Errore connessione DB: ${error.message}.`); setIsLoadingPlayers(false);
+                    console.error("Errore listener Firestore:", error);
+                    setErrorLoadingPlayers(`Errore connessione DB: ${error.message}. Ricarica la pagina o controlla la console.`);
+                    setIsLoadingPlayers(false);
                 });
+
                 return () => { console.log("Unsubscribing listener."); unsubscribe(); };
-            }, []);
+            }, []); // Esegui solo al mount
+
+            // --- FUNZIONE PER PULIRE STATO DIPENDENTE DAI GIOCATORI ---
+            const clearDependentState = () => {
+                setSelectedPlayerIds([]);
+                setTeams({ teamA: [], teamB: [] });
+                setEditingPlayer(null);
+                setMatchType(null); // Potrebbe essere opzionale
+            };
 
 
-            // --- Handlers Gestione Giocatori (Firestore - CRUD base) ---
-            const handleSavePlayer = async (playerData) => { /* ... codice identico a prima ... */ };
-            const handleEditPlayer = (playerId) => { /* ... codice identico a prima ... */ };
-            const handleDeletePlayer = async (playerId) => { /* ... codice identico a prima ... */ };
+            // --- Handlers Gestione Giocatori (Firestore - Add/Update/Delete Singolo) ---
+            const handleSavePlayer = async (playerData) => {
+                if (!db || !playersCollectionRef) { alert("Errore: DB non connesso."); return; }
+                setDbStatusMessage('Salvataggio giocatore...');
+                const { id, ...dataToSave } = playerData;
+                if (!dataToSave.photoUrl) { delete dataToSave.photoUrl; }
+
+                console.log("Salvataggio singolo:", id ? `Modifica ${id}` : "Nuovo", dataToSave);
+                try {
+                    if (id) { // Modifica
+                        await playersCollectionRef.doc(id).update(dataToSave);
+                        setEditingPlayer(null);
+                        setDbStatusMessage('Giocatore modificato con successo!');
+                    } else { // Creazione
+                        await playersCollectionRef.add(dataToSave);
+                        setDbStatusMessage('Giocatore aggiunto con successo!');
+                    }
+                } catch (error) {
+                    console.error("Errore salvataggio giocatore:", error);
+                    alert(`Errore: ${error.message}`);
+                    setDbStatusMessage(`Errore salvataggio: ${error.message}`);
+                } finally {
+                     // Il listener aggiornerà `players`, non serve `setPlayers` qui.
+                    setTimeout(() => setDbStatusMessage(''), 3000); // Pulisci messaggio dopo 3 sec
+                }
+            };
+
+            const handleEditPlayer = (playerId) => {
+                const playerToEdit = players.find(p => p.id === playerId);
+                if (playerToEdit) { setEditingPlayer(playerToEdit); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+                else { console.warn("Edit: Player non trovato", playerId); }
+            };
+
+            const handleDeletePlayer = async (playerId) => {
+                 if (!db || !playersCollectionRef) { alert("Errore: DB non connesso."); return; }
+                 const playerToDelete = players.find(p => p.id === playerId);
+                 if (playerToDelete && window.confirm(`Eliminare ${playerToDelete.nome} dal database condiviso?`)) {
+                    setDbStatusMessage('Eliminazione giocatore...');
+                     try {
+                         await playersCollectionRef.doc(playerId).delete();
+                         // Pulisci stato locale che potrebbe riferirsi a questo ID
+                         // setSelectedPlayerIds(prev => prev.filter(id => id !== playerId)); // Listener lo farà
+                         // setTeams(prevTeams => ({ teamA: prevTeams.teamA.filter(p => p.id !== playerId), teamB: prevTeams.teamB.filter(p => p.id !== playerId) })); // Listener lo farà
+                         if (editingPlayer?.id === playerId) { setEditingPlayer(null); }
+                         setDbStatusMessage('Giocatore eliminato!');
+                     } catch (error) {
+                         console.error("Errore eliminazione:", error);
+                         alert(`Errore: ${error.message}`);
+                         setDbStatusMessage(`Errore eliminazione: ${error.message}`);
+                     } finally {
+                         setTimeout(() => setDbStatusMessage(''), 3000);
+                         // Il listener aggiornerà `players`
+                     }
+                 }
+            };
             const handleCancelEdit = () => { setEditingPlayer(null); };
-            // --- Fine Handlers CRUD Giocatori ---
+            // --- Fine Handlers Giocatori Singoli ---
 
 
-            // --- NUOVO Handler: Salvataggio Lista Attuale su Firestore (con codice segreto) ---
+            // --- Handlers Caricamento/Salvataggio DB COMPLETO ---
+            const handleLoadFromFirestore = async () => {
+                if (!db || !playersCollectionRef) { alert("Errore: DB non connesso."); return; }
+                if (!window.confirm("Caricare tutti i giocatori dal Database?\nQuesto SOVRASCRIVERÀ la lista locale e azzererà squadre/selezioni.")) return;
+
+                setIsLoadingDb(true);
+                setDbStatusMessage('Caricamento dal DB...');
+                setErrorLoadingPlayers(null); // Resetta errori precedenti specifici del caricamento
+                try {
+                    const snapshot = await playersCollectionRef.get();
+                    console.log("Dati caricati manualmente da Firestore:", snapshot.size);
+                    const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setPlayers(playersData); // Sovrascrivi lo stato locale
+                    clearDependentState(); // Azzera selezioni, squadre, ecc.
+                    setDbStatusMessage(`Caricati ${playersData.length} giocatori dal DB.`);
+                } catch (error) {
+                    console.error("Errore caricamento manuale Firestore:", error);
+                    setErrorLoadingPlayers(`Errore caricamento DB: ${error.message}.`); // Usa lo stato di errore principale
+                    setDbStatusMessage(`Errore caricamento DB: ${error.message}`);
+                } finally {
+                    setIsLoadingDb(false);
+                    setTimeout(() => setDbStatusMessage(''), 5000);
+                }
+            };
+
             const handleSaveToFirestore = async () => {
                 if (!db || !playersCollectionRef) { alert("Errore: DB non connesso."); return; }
-                if (isSavingToDb) return; // Previene doppi click
 
-                // 1. Chiedi il codice segreto
-                const enteredCode = prompt("Inserisci il codice segreto per salvare la lista attuale nel Database condiviso (ATTENZIONE: sovrascriverà i dati esistenti):");
-
-                // 2. Verifica il codice
-                if (enteredCode === null) { // Utente ha annullato
-                    return;
-                }
-                if (enteredCode !== SECRET_CODE) {
-                    alert("Codice segreto errato!");
+                const password = window.prompt("Inserisci la password per salvare sul Database:");
+                if (password === null) return; // User cancelled
+                if (password !== SAVE_PASSWORD) {
+                    alert("Password errata!");
                     return;
                 }
 
-                // 3. Conferma ulteriore (opzionale ma consigliata)
-                if (!window.confirm(`Sei SICURO di voler SOVRASCRIVERE il database condiviso con i ${players.length} giocatori attualmente visualizzati? Questa azione è irreversibile.`)) {
-                    return;
-                }
+                if (!window.confirm(`Sei sicuro di voler SOVRASCRIVERE l'INTERO Database con i ${players.length} giocatori attualmente visualizzati?\nQuesta azione NON è reversibile.`)) return;
 
-                setIsSavingToDb(true); // Mostra feedback
-                alert("Salvataggio nel database in corso... Potrebbe richiedere qualche istante."); // Feedback iniziale
-
+                setIsSavingDb(true);
+                setDbStatusMessage('Salvataggio su DB in corso...');
                 try {
-                    console.log("Inizio sovrascrittura Firestore con stato locale...");
                     const batch = db.batch();
 
-                    // Step A: Leggi tutti gli ID dei documenti attuali per cancellarli
-                    console.log("Recupero documenti esistenti da eliminare...");
+                    // 1. Leggi tutti i documenti attuali nel DB per eliminarli
                     const snapshot = await playersCollectionRef.get();
-                    console.log(`Trovati ${snapshot.size} documenti da eliminare.`);
                     snapshot.docs.forEach(doc => {
                         batch.delete(doc.ref);
                     });
+                    console.log(`Batch: Prevista eliminazione di ${snapshot.size} documenti.`);
 
-                    // Step B: Aggiungi tutti i giocatori dallo stato React attuale al batch
-                    console.log(`Aggiunta di ${players.length} giocatori dallo stato locale al batch...`);
+                    // 2. Aggiungi tutti i giocatori dallo stato locale 'players' al batch
                     players.forEach(player => {
-                        const { id, ...playerData } = player; // Separa l'ID dai dati
-                        // IMPORTANTE: Usiamo l'ID esistente (che proviene da Firestore o dal file caricato)
-                        // come ID del nuovo documento per mantenere la coerenza, se possibile.
-                        // Se l'ID non esistesse (improbabile con la logica attuale), Firestore ne genererebbe uno.
-                        const docRef = db.collection('players').doc(id);
-                        // Usiamo set invece di add per specificare l'ID
+                        const { id, ...playerData } = player; // Separa l'ID dal resto dei dati
+                        // Pulisci photoUrl null/undefined prima di salvare
+                        if (!playerData.photoUrl) { delete playerData.photoUrl; }
+                        // Usa l'ID esistente se presente, altrimenti Firestore ne genera uno nuovo
+                        const docRef = id ? playersCollectionRef.doc(id) : playersCollectionRef.doc();
                         batch.set(docRef, playerData);
                     });
+                    console.log(`Batch: Prevista aggiunta di ${players.length} documenti.`);
 
-                    // Step C: Esegui tutte le operazioni (delete + set) nel batch
-                    console.log("Invio batch a Firestore...");
+                    // 3. Esegui il batch
                     await batch.commit();
-
-                    console.log("Salvataggio su Firestore completato con successo!");
-                    alert("Lista giocatori salvata con successo nel database condiviso!");
+                    console.log("Batch completato con successo!");
+                    setDbStatusMessage(`Database sovrascritto con successo con ${players.length} giocatori.`);
 
                 } catch (error) {
-                    console.error("Errore durante il salvataggio batch su Firestore:", error);
-                    alert(`ERRORE durante il salvataggio nel database:\n${error.message}\n\nI dati potrebbero essere parzialmente salvati o eliminati. Controlla Firestore.`);
+                    console.error("Errore salvataggio batch su Firestore:", error);
+                    alert(`Errore durante il salvataggio sul Database: ${error.message}`);
+                    setDbStatusMessage(`Errore salvataggio DB: ${error.message}`);
                 } finally {
-                    setIsSavingToDb(false); // Nascondi feedback
+                    setIsSavingDb(false);
+                    setTimeout(() => setDbStatusMessage(''), 5000);
                 }
             };
-             // --- Fine Handler Salvataggio su Firestore ---
+            // --- Fine Handlers DB Completo ---
 
 
-            // --- Handlers Partita/Selezione (Invariati) ---
-            const handleMatchTypeChange = (type) => { /* ... */ };
-            const handleOpenSelectionModal = () => { /* ... */ };
-            const handleCloseSelectionModal = () => { /* ... */ };
-            const handleTogglePlayerSelection = (playerId) => { /* ... */ };
-            const handleConfirmSelection = () => { /* ... */ };
+            // --- Handlers Partita/Selezione (Operano su stato locale/localStorage) ---
+            const handleMatchTypeChange = (type) => { setMatchType(type); setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); };
+            const handleOpenSelectionModal = () => setIsModalOpen(true);
+            const handleCloseSelectionModal = () => setIsModalOpen(false);
+            const handleTogglePlayerSelection = (playerId) => {
+                setSelectedPlayerIds(prevSelected => {
+                    const isSelected = prevSelected.includes(playerId); const required = getRequiredPlayers(matchType);
+                    if (isSelected) return prevSelected.filter(id => id !== playerId);
+                    else return prevSelected.length < required ? [...prevSelected, playerId] : prevSelected;
+                });
+            };
+            const handleConfirmSelection = () => { handleCloseSelectionModal(); setTeams({ teamA: [], teamB: [] }); };
             // --- Fine Handlers Partita/Selezione ---
 
 
-            // --- Handlers Squadre (Invariati) ---
-            const handleClearSelectionAndTeams = () => { /* ... */ };
-            const handleToggleBalanceByRole = () => { /* ... */ };
-            const handleUpdateTeams = useCallback((newTeams) => { /* ... */ }, [setTeams]);
-            const handleGenerateBalancedTeams = useCallback((playersToBalance, unpredictability, balanceByRole) => { /* ... */ }, [setTeams]);
+            // --- Handlers Squadre (Operano su stato locale/localStorage) ---
+            const handleClearSelectionAndTeams = () => { setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); };
+            const handleToggleBalanceByRole = () => { setBalanceByRoleEnabled(prev => !prev); };
+            const handleUpdateTeams = useCallback((newTeams) => { setTeams(newTeams); }, [setTeams]);
+            const handleGenerateBalancedTeams = useCallback((playersToBalance, unpredictability, balanceByRole) => {
+                const balanced = balanceTeams(playersToBalance, unpredictability, balanceByRole);
+                setTeams(balanced); // Salva in localStorage
+            }, [setTeams]);
             // --- Fine Handlers Squadre ---
 
 
-            // --- Handlers File IO (Invariati - Operano su stato locale) ---
-            const handleSaveToFile = () => { /* ... codice identico a prima ... */ };
-            const handleLoadTrigger = () => { /* ... codice identico a prima ... */ };
-            const handleFileSelected = (event) => { /* ... codice identico a prima ... */ };
+            // --- Handlers File IO (Snapshot Locale) ---
+            const handleSaveToFile = () => {
+                if (players.length === 0) { alert("Nessun giocatore da salvare nello snapshot."); return; }
+                try {
+                    const playersToSave = players.map(({ ...player }) => player);
+                    const dataStr = JSON.stringify(playersToSave, null, 2);
+                    const blob = new Blob([dataStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = "elclasico_players_snapshot.json"; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+                } catch (error) { console.error("Errore salvataggio file:", error); alert("Errore durante la preparazione del file snapshot."); }
+            };
+            const handleLoadTrigger = () => { fileInputRef.current?.click(); };
+            const handleFileSelected = (event) => {
+                 const file = event.target.files?.[0]; if (!file) return;
+                 if (!file.name.endsWith('.json')) { alert("Seleziona un file .json."); event.target.value = null; return; }
+                 const reader = new FileReader();
+                 reader.onload = (e) => {
+                     try {
+                         if (!e.target?.result) throw new Error("File vuoto.");
+                         const loadedData = JSON.parse(e.target.result);
+                         if (!Array.isArray(loadedData)) throw new Error("Il file non è un elenco JSON.");
+                         if (window.confirm(`Caricare ${loadedData.length} giocatori dallo snapshot locale?\nATTENZIONE: Sovrascriverà la lista attuale e azzererà squadre/selezioni. Non influisce sul DB condiviso.`)) {
+                             const sanitizedPlayers = loadedData.map(p => ({
+                                 id: p.id || crypto.randomUUID(), // Usa ID dal file o ne genera uno nuovo
+                                 nome: p.nome || "Sconosciuto", ruolo: ALL_ROLES.includes(p.ruolo) ? p.ruolo : 'Centrocampista',
+                                 abilitaDifensiva: p.abilitaDifensiva ?? 5, abilitaOffensiva: p.abilitaOffensiva ?? 5, velocita: p.velocita ?? 5, scatto: p.scatto ?? 5,
+                                 pressing: p.pressing ?? 5, determinazione: p.determinazione ?? 5, peso: p.peso ?? 75, altezza: p.altezza ?? 175, robustezza: p.robustezza ?? 5, photoUrl: p.photoUrl || null
+                             }));
+                             setPlayers(sanitizedPlayers); // SOSTITUISCI STATO LOCALE
+                             clearDependentState(); // Azzera dipendenze
+                             alert("Giocatori caricati localmente dallo snapshot!");
+                             setDbStatusMessage('Caricato snapshot locale.');
+                             setTimeout(() => setDbStatusMessage(''), 3000);
+                         }
+                     } catch (error) { console.error("Errore caricamento file:", error); alert(`Errore caricamento snapshot: ${error.message}`); }
+                     finally { if(event.target) event.target.value = null; }
+                 };
+                 reader.onerror = () => { alert("Errore lettura file snapshot."); if(event.target) event.target.value = null; };
+                 reader.readAsText(file);
+            };
             // --- Fine Handlers File IO ---
 
 
             // --- Render App ---
+            const disableDbActions = isLoadingDb || isSavingDb || isLoadingPlayers || !!firebaseInitializationError;
+
             return (
                 <div className="container">
                     <h1>El Clasico Team Manager <small>(DB Online)</small></h1>
 
+                    {/* Messaggi di Stato/Errore Principali */}
+                    {firebaseInitializationError && <div className="error-message">{firebaseInitializationError}</div>}
                     {errorLoadingPlayers && <div className="error-message">{errorLoadingPlayers}</div>}
-                    {isLoadingPlayers && <div className="loading-message">Caricamento giocatori dal database...</div>}
+                    {isLoadingPlayers && <div className="loading-message">Connessione al database e caricamento iniziale...</div>}
 
-                    {!isLoadingPlayers && !errorLoadingPlayers && (
+                    {/* Mostra contenuto principale solo se Firebase inizializzato correttamente */}
+                    {!firebaseInitializationError && (
                         <>
                             <section id="gestione-giocatori">
                                <h2>Gestione Giocatori (Condivisa)</h2>
-                               {/* Sezione I/O File e DB */}
                                <div className="file-io-section">
-                                   {/* Salva stato attuale letto da DB in un file JSON */}
-                                   <button onClick={handleSaveToFile} className="btn-save-file" disabled={players.length === 0} title="Salva la lista giocatori attuale (dal DB) in un file JSON locale.">
-                                       Salva Snap DB
+                                   {/* Pulsanti Database */}
+                                   <button onClick={handleLoadFromFirestore} className="btn-load-db" disabled={disableDbActions} title="Forza ricarica dal DB Firestore">
+                                       {isLoadingDb ? 'Caricando...' : 'Carica da DB'}
                                    </button>
-                                   {/* Carica da file JSON locale (sovrascrive SOLO la vista locale) */}
-                                   <button onClick={handleLoadTrigger} className="btn-load-file" title="Carica giocatori da un file JSON locale (sovrascrive la lista visualizzata, NON il DB).">
-                                       Carica Locale
+                                   <button onClick={handleSaveToFirestore} className="btn-save-db" disabled={disableDbActions || players.length === 0} title="Sovrascrivi il DB Firestore con la lista locale (richiede password)">
+                                       {isSavingDb ? 'Salvataggio...' : 'Salva su DB'}
                                    </button>
-                                   {/* NUOVO: Salva stato locale ATTUALE su Firestore (con codice) */}
-                                   <button
-                                        onClick={handleSaveToFirestore}
-                                        className="btn-save-db"
-                                        disabled={isSavingToDb || players.length === 0} // Disabilita se sta salvando o non ci sono giocatori
-                                        title="Salva la lista giocatori ATTUALE (anche se caricata da file) nel database condiviso (richiede codice segreto)."
-                                    >
-                                        {isSavingToDb ? 'Salvataggio DB...' : 'Salva su DB'}
-                                    </button>
+                                   {/* Pulsanti Snapshot Locale */}
+                                   <button onClick={handleSaveToFile} className="btn-save-file" disabled={disableDbActions || players.length === 0} title="Salva uno snapshot locale della lista attuale">Salva Snapshot</button>
+                                   <button onClick={handleLoadTrigger} className="btn-load-file" disabled={disableDbActions} title="Carica uno snapshot locale (sovrascrive lista attuale)">Carica Locale</button>
                                    <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} />
-                                   <p>(Gestisci la lista condivisa o usa file locali)</p>
+                                   <p>
+                                       {dbStatusMessage && <span className="db-status-message">{dbStatusMessage}</span>}
+                                       {!dbStatusMessage && `(Carica/Salva da/su Database condiviso o gestisci snapshot locali)`}
+                                   </p>
                                </div>
-                               <PlayerForm onSave={handleSavePlayer} editingPlayer={editingPlayer} onCancelEdit={handleCancelEdit}/>
-                               <PlayerList players={players} onEdit={handleEditPlayer} onDelete={handleDeletePlayer}/>
+
+                                {/* Non mostrare form/lista finché il listener iniziale non ha caricato */}
+                                {!isLoadingPlayers && !errorLoadingPlayers && (
+                                  <>
+                                      <PlayerForm onSave={handleSavePlayer} editingPlayer={editingPlayer} onCancelEdit={handleCancelEdit}/>
+                                      <PlayerList players={players} onEdit={handleEditPlayer} onDelete={handleDeletePlayer}/>
+                                  </>
+                                )}
                             </section>
 
                             <hr className="section-divider" />
 
-                            <section id="imposta-partita">
-                                <MatchSetup matchType={matchType} onMatchTypeChange={handleMatchTypeChange} onOpenSelection={handleOpenSelectionModal} availablePlayerCount={players.length}/>
-                            </section>
+                             {/* Non mostrare setup partita finché il listener iniziale non ha caricato */}
+                            {!isLoadingPlayers && !errorLoadingPlayers && (
+                              <>
+                                <section id="imposta-partita">
+                                    <MatchSetup matchType={matchType} onMatchTypeChange={handleMatchTypeChange} onOpenSelection={handleOpenSelectionModal} availablePlayerCount={players.length}/>
+                                </section>
 
-                            {isModalOpen && ( <PlayerSelectionModal players={players} selectedPlayerIds={selectedPlayerIds} requiredCount={getRequiredPlayers(matchType)} onToggleSelect={handleTogglePlayerSelection} onConfirm={handleConfirmSelection} onClose={handleCloseSelectionModal} /> )}
+                                {isModalOpen && ( <PlayerSelectionModal players={players} selectedPlayerIds={selectedPlayerIds} requiredCount={getRequiredPlayers(matchType)} onToggleSelect={handleTogglePlayerSelection} onConfirm={handleConfirmSelection} onClose={handleCloseSelectionModal} /> )}
 
-                            <hr className="section-divider" />
+                                <hr className="section-divider" />
 
-                            <section id="crea-squadre">
-                                <TeamDisplay players={players} selectedPlayerIds={selectedPlayerIds} teams={teams} matchType={matchType} onUpdateTeams={handleUpdateTeams} onClearSelection={handleClearSelectionAndTeams} balanceByRoleEnabled={balanceByRoleEnabled} onToggleBalanceByRole={handleToggleBalanceByRole} onGenerateTeams={handleGenerateBalancedTeams} />
-                            </section>
+                                <section id="crea-squadre">
+                                    <TeamDisplay players={players} selectedPlayerIds={selectedPlayerIds} teams={teams} matchType={matchType} onUpdateTeams={handleUpdateTeams} onClearSelection={handleClearSelectionAndTeams} balanceByRoleEnabled={balanceByRoleEnabled} onToggleBalanceByRole={handleToggleBalanceByRole} onGenerateTeams={handleGenerateBalancedTeams} />
+                                </section>
+                              </>
+                            )}
                         </>
                     )}
                 </div>
@@ -441,7 +742,7 @@
         } // --- Fine App ---
 
 
-        // === Monta l'App React nel DOM con Error Boundary ===
+        // === Monta l'App React nel DOM con Error Boundary (Invariato) ===
         const rootElement = document.getElementById('root');
         if (rootElement) {
             try {
