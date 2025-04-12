@@ -3,165 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calcetto Team Manager</title>
+    <title>Calcetto Team Manager V6.1 - Corretto</title>
 
-    <!-- 1. Carica React e ReactDOM dal CDN -->
+    <!-- React, ReactDOM, Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-
-    <!-- 2. Carica Babel Standalone per compilare JSX nel browser -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 3. CSS Incorporato -->
+    <!-- CSS Incorporato -->
     <style>
-        /* === Stili Generali (da App.css) === */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            margin: 0;
-            background-color: #f4f7f6;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 15px;
-            background-color: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
-
-        h1, h2, h3 {
-             color: #333;
-        }
-        h1 {
-            text-align: center;
-            color: #fff;
-            background-color: #28a745; /* Verde calcetto */
-            padding: 15px;
-            margin: -15px -15px 20px -15px; /* Estende al bordo del container */
-            border-radius: 8px 8px 0 0;
-        }
-         h2 {
-            border-bottom: 2px solid #eee;
-            padding-bottom: 8px;
-            margin-top: 30px;
-            margin-bottom: 20px;
-         }
-         h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-         }
-
-
-        /* Separatore */
-        .section-divider {
-            border: none;
-            height: 1px;
-            background-color: #e0e0e0;
-            margin: 40px 0;
-        }
-
-        /* Stili comuni per bottoni */
-        button {
-            padding: 10px 18px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            margin: 5px;
-            background-color: #007bff;
-            color: white;
-        }
-        button:hover {
-            opacity: 0.9;
-        }
-         button:active {
-             transform: scale(0.98);
-         }
-
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
+        /* === Stili Generali === */
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.6; }
+        .container { max-width: 900px; margin: 20px auto; padding: 15px; background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
+        h1, h2, h3 { color: #333; }
+        h1 { text-align: center; color: #fff; background-color: #28a745; padding: 15px; margin: -15px -15px 20px -15px; border-radius: 8px 8px 0 0; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; margin-bottom: 20px; }
+        h3 { margin-top: 0; margin-bottom: 15px; }
+        .section-divider { border: none; height: 1px; background-color: #e0e0e0; margin: 40px 0; }
+        button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s ease, transform 0.1s ease; margin: 5px; background-color: #007bff; color: white; }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; opacity: 0.7; }
         .btn-create { background-color: #007bff; }
         .btn-save { background-color: #28a745; }
         .btn-cancel, .btn-delete, .btn-clear-selection { background-color: #dc3545; }
         .btn-edit { background-color: #ffc107; color: #333; }
         .btn-select-players, .btn-generate, .btn-confirm { background-color: #17a2b8; }
+        .btn-swap { background-color: #fd7e14; }
+        .btn-generate-img { background-color: #6f42c1; }
+        .btn-save-file { background-color: #5a6268; }
+        .btn-load-file { background-color: #5a6268; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #495057; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1em; margin-bottom: 10px; box-sizing: border-box; }
+        input[type="file"] { padding: 5px; }
+        .checkbox-group { display: flex; align-items: center; margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
+        .checkbox-group input[type="checkbox"] { width: auto; margin-right: 10px; transform: scale(1.3); cursor: pointer; }
+        .checkbox-group label { margin-bottom: 0; font-weight: normal; cursor: pointer; }
+        .photo-preview { max-width: 80px; max-height: 80px; margin-top: 5px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
+        .player-photo-thumbnail { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid #eee; vertical-align: middle; background-color: #eee;}
 
-        /* Stili per form, input, select */
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #495057;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select {
-            width: 100%; /* Usa 100% per adattarsi */
-            padding: 10px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 1em;
-            margin-bottom: 10px;
-            box-sizing: border-box; /* Include padding nel width */
-        }
-
-        /* === Stili PlayerForm (da PlayerForm.css) === */
+        /* PlayerForm */
         .player-form-container { margin-bottom: 20px; }
-        .player-form {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-            margin-top: 15px;
-        }
+        .player-form { background-color: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-top: 15px; }
         .form-group { margin-bottom: 15px; }
-        .form-group span { margin-left: 10px; font-weight: bold; }
-        .form-actions {
-            margin-top: 20px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
+        .form-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-toggle-form { display: block; width: auto; margin: 0 auto 15px auto;}
 
-        /* === Stili PlayerList/PlayerItem (da PlayerList.css / PlayerItem.css) === */
+        /* PlayerList/PlayerItem */
         .player-list-container { margin-top: 20px; }
         .player-list { list-style: none; padding: 0; margin: 0; }
-        .player-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap; /* Per responsive */
-            padding: 12px 15px;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            background-color: #fff;
-        }
-        .player-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .player-item { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 10px 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 10px; background-color: #fff; }
+        .player-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-grow: 1; }
+        .player-details { display: flex; flex-direction: column; }
         .player-name { font-weight: bold; font-size: 1.1em; }
-        .player-role { font-style: italic; color: #555; }
-        .player-avg-score { font-size: 0.9em; background-color: #e9ecef; padding: 3px 8px; border-radius: 10px; color: #495057; }
-        .player-actions { display: flex; gap: 8px; margin-top: 5px; /* Spazio su mobile */}
+        .player-meta { font-size: 0.9em; color: #555; }
+        .player-role { font-style: italic; }
+        .player-avg-score { background-color: #e9ecef; padding: 2px 6px; border-radius: 10px; color: #495057; margin-left: 5px; }
+        .player-actions { display: flex; gap: 8px; margin-top: 5px; }
         .player-actions button { padding: 6px 12px; font-size: 0.9em; }
 
-        /* === Stili MatchSetup (da MatchSetup.css) === */
+        /* File IO Section */
+        .file-io-section { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .file-io-section p { margin: 0; font-size: 0.9em; color: #6c757d; }
+
+        /* MatchSetup */
         .match-setup-container { padding: 15px; background-color: #eef; border-radius: 8px; }
         .match-type-selector { margin-bottom: 15px; }
         .match-type-selector label { margin-right: 10px; font-weight: bold; }
         .match-type-selector select { padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1em; display: inline-block; width: auto; }
         .match-setup-container p { font-weight: bold; margin-bottom: 15px; }
 
-        /* === Stili PlayerSelectionModal (da PlayerSelectionModal.css) === */
+        /* PlayerSelectionModal */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
         .modal-content { background-color: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .modal-content h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
@@ -170,149 +82,124 @@
         .modal-player-item:last-child { border-bottom: none; }
         .modal-player-item:hover { background-color: #f8f9fa; }
         .modal-player-item.selected { background-color: #d4edda; font-weight: bold; }
+        .modal-player-item.disabled { cursor: not-allowed; opacity: 0.6;}
         .modal-player-item label { display: flex; align-items: center; width: 100%; cursor: pointer; }
         .modal-player-item input[type="checkbox"] { margin-right: 12px; transform: scale(1.3); cursor: pointer; }
+        .modal-player-item.disabled label, .modal-player-item.disabled input { cursor: not-allowed; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
 
-        /* === Stili TeamDisplay (da TeamDisplay.css) === */
+        /* TeamDisplay */
         .team-display-container { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 8px; }
-        .unpredictability-slider { margin: 15px 0; background-color: #e9ecef; padding: 10px; border-radius: 5px; }
+        .balancing-options { margin-bottom: 15px; }
+        .unpredictability-slider { margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; }
         .unpredictability-slider label { display: block; margin-bottom: 8px; font-weight: bold; }
         .unpredictability-slider input[type="range"] { width: 100%; cursor: pointer; }
         .team-display-container button { margin-right: 10px; margin-bottom: 15px; }
         .teams-output { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
         .teams-output h3 { text-align: center; margin-bottom: 15px; }
         .team-columns { display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap; }
-        .team-column { flex: 1; min-width: 220px; background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 15px; }
+        .team-column { flex: 1; min-width: 250px; background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 15px; }
         .team-column h4 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
-        .team-column:first-child h4 { color: #007bff; } /* Blu Team A */
-        .team-column:last-child h4 { color: #dc3545; } /* Rosso Team B */
+        .team-column h4 small { font-weight: normal; font-size: 0.85em; color: #555;}
+        .team-column:first-child h4 { color: #007bff; }
+        .team-column:last-child h4 { color: #dc3545; }
         .team-column ul { list-style: none; padding: 0; margin: 0; }
-        .team-column li { padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 0.95em;}
+        .team-column li { padding: 10px 5px; border-bottom: 1px dashed #eee; font-size: 0.95em; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: background-color 0.2s; }
         .team-column li:last-child { border-bottom: none; }
+        .team-column li.selected-for-swap { background-color: #fff3cd; outline: 2px solid #fd7e14; font-weight: bold; }
+        .team-player-info { flex-grow: 1; cursor: pointer; }
+        .team-player-name { font-weight: bold; }
+        .team-player-original-role { font-size: 0.8em; color: #777; display: block; }
+        .team-player-role-selector select { padding: 4px 6px; font-size: 0.9em; width: auto; border-radius: 4px; margin-left: 5px; border: 1px solid #ccc; }
+        .swap-controls { margin-top: 15px; text-align: center; }
 
-        /* Responsive Adjustments */
-         @media (max-width: 600px) {
-            .container {
-                margin: 10px;
-                padding: 10px;
-            }
-            h1 {
-                font-size: 1.6em;
-                padding: 12px;
-                margin: -10px -10px 15px -10px;
-            }
-             button {
-                 padding: 8px 14px;
-                 font-size: 0.95em;
-             }
-            input[type="text"], input[type="number"], select {
-                 padding: 8px;
-            }
-             .player-item {
-                 flex-direction: column;
-                 align-items: flex-start;
-             }
-             .player-actions {
-                 width: 100%;
-                 justify-content: flex-end; /* Pulsanti a dx anche su mobile */
-                 margin-top: 8px;
-             }
-            .team-columns {
-                flex-direction: column;
-            }
-            .modal-content {
-                 padding: 15px;
-            }
+        /* Immagine Generata */
+        .generated-image-container { margin-top: 25px; padding-top: 20px; border-top: 1px solid #ccc; text-align: center; }
+        .generated-image-container canvas { display: none; }
+        .generated-image-container img { max-width: 100%; height: auto; border: 1px solid #ddd; margin-top: 10px; background-color: #f9f9f9; }
+        .generated-image-container a { display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 0.9em; }
+        .generated-image-container a:hover { background-color: #218838; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container { margin: 10px; padding: 10px; }
+            h1 { font-size: 1.6em; padding: 12px; margin: -10px -10px 15px -10px; }
+            button { padding: 8px 14px; font-size: 0.95em; }
+            input[type="text"], input[type="number"], select { padding: 8px; }
+            .player-item { flex-direction: column; align-items: flex-start; gap: 5px; }
+            .player-info { gap: 5px;}
+            .player-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
+            .file-io-section { flex-direction: column; align-items: stretch; text-align: center;}
+            .file-io-section p { margin-bottom: 10px; }
+            .team-columns { flex-direction: column; }
+            .modal-content { padding: 15px; }
+            .balancing-options { display: flex; flex-direction: column; }
+            .checkbox-group { font-size: 0.9em; }
+            .team-column li { font-size: 0.9em; flex-wrap: wrap;}
+            .team-player-role-selector select { width: 100%; margin-left: 0; margin-top: 5px; }
         }
-
     </style>
 </head>
 <body>
-
-    <!-- 4. Elemento Root dove React monterà l'app -->
+    <!-- 4. Elemento Root -->
     <div id="root"></div>
 
-    <!-- 5. Codice React (JSX) - Verrà compilato da Babel -->
+    <!-- 5. Codice React (JSX) -->
     <script type="text/babel">
 
-        // === Hook e Funzioni Utili ===
-        const { useState, useEffect, useCallback } = React;
+        // === Hook e Costanti ===
+        const { useState, useEffect, useCallback, useRef } = React;
+        const ALL_ROLES = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
 
-        // Hook per localStorage (semplificato)
+        // === Hook localStorage (Un-minified) ===
         function useLocalStorage(key, initialValue) {
             const [storedValue, setStoredValue] = useState(() => {
                 try {
                     const item = window.localStorage.getItem(key);
+                    // Parse stored json or if none return initialValue
                     return item ? JSON.parse(item) : initialValue;
                 } catch (error) {
-                    console.error("Error reading localStorage key “" + key + "”:", error);
+                    // If error also return initialValue
+                    console.error("Error reading localStorage key “"+key+"”:", error);
                     return initialValue;
                 }
             });
 
-            const setValue = (value) => {
+            // Return a wrapped version of useState's setter function that ...
+            // ... persists the new value to localStorage.
+            const setValue = useCallback((value) => {
                 try {
-                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    // Allow value to be a function so we have same API as useState
+                    const valueToStore =
+                        value instanceof Function ? value(storedValue) : value;
+                    // Save state
                     setStoredValue(valueToStore);
+                    // Save to local storage
                     window.localStorage.setItem(key, JSON.stringify(valueToStore));
                 } catch (error) {
-                    console.error("Error setting localStorage key “" + key + "”:", error);
+                    // A more advanced implementation would handle the error case
+                    console.error("Error setting localStorage key “"+key+"”:", error);
                 }
-            };
+            }, [key, storedValue]); // Include storedValue in dependency array if value is a function
 
             return [storedValue, setValue];
         }
 
-         // Funzioni di bilanciamento e utilità (da utils/teamBalancer.js)
+
+        // === Funzioni Utili (Un-minified) ===
         const calculatePlayerScore = (player) => {
             if (!player) return 0;
             return (
-                (player.abilitaDifensiva || 0) +
-                (player.abilitaOffensiva || 0) +
-                (player.velocita || 0) +
-                (player.scatto || 0) +
-                (player.pressing || 0) +
-                (player.determinazione || 0) +
-                (player.robustezza || 0) +
-                ((player.peso || 0) / 10) +
-                ((player.altezza || 0) / 20)
+                (player.abilitaDifensiva || 0) * 1.0 +
+                (player.abilitaOffensiva || 0) * 1.0 +
+                (player.velocita || 0) * 0.8 +
+                (player.scatto || 0) * 0.8 +
+                (player.pressing || 0) * 0.7 +
+                (player.determinazione || 0) * 1.0 +
+                (player.robustezza || 0) * 0.7 +
+                ((player.peso || 75) / 20) +
+                ((player.altezza || 175) / 40)
             );
-        };
-
-        const balanceTeams = (players, unpredictability) => {
-            if (!players || players.length % 2 !== 0) {
-                console.error("Numero di giocatori non valido per il bilanciamento.");
-                return { teamA: [], teamB: [] };
-            }
-
-            const playersWithScores = players.map(player => {
-                const baseScore = calculatePlayerScore(player);
-                const randomFactor = (Math.random() - 0.5) * 2 * unpredictability * 0.5;
-                return { ...player, score: baseScore + randomFactor };
-            });
-
-            const sortedPlayers = playersWithScores.sort((a, b) => b.score - a.score);
-
-            const teamA = [];
-            const teamB = [];
-            let scoreA = 0;
-            let scoreB = 0;
-
-            sortedPlayers.forEach(player => {
-                if (scoreA <= scoreB) {
-                    teamA.push(player);
-                    scoreA += player.score;
-                } else {
-                    teamB.push(player);
-                    scoreB += player.score;
-                }
-            });
-
-            const finalTeamA = teamA.map(({ score, ...player }) => player);
-            const finalTeamB = teamB.map(({ score, ...player }) => player);
-
-            return { teamA: finalTeamA, teamB: finalTeamB };
         };
 
         const getRequiredPlayers = (matchType) => {
@@ -325,30 +212,295 @@
             }
         };
 
-         const calculateTeamScore = (team) => {
+        const calculateTeamFinalScore = (team) => {
             return team.reduce((sum, player) => sum + calculatePlayerScore(player), 0);
-         };
+        };
+
+        const roleOrder = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
+
+        const getAvgScore = (player) => {
+            if (!player) return '0.0';
+            const scoreSum = (
+                (player.abilitaDifensiva || 0) +
+                (player.abilitaOffensiva || 0) +
+                (player.velocita || 0) +
+                (player.scatto || 0) +
+                (player.pressing || 0) +
+                (player.determinazione || 0) +
+                (player.robustezza || 0)
+            );
+            return (scoreSum / 7).toFixed(1);
+        };
+
+
+        // === Funzione Bilanciamento Squadre (Un-minified) ===
+        const balanceTeams = (players, unpredictability, balanceByRole) => {
+            if (!players || players.length === 0 || players.length % 2 !== 0) {
+                console.error("Invalid player count for balancing:", players?.length);
+                return { teamA: [], teamB: [] };
+            }
+
+            const playersWithScores = players.map(player => {
+                const baseScore = calculatePlayerScore(player);
+                // Apply unpredictability proportionally? Or fixed? Let's keep proportional for now.
+                const randomFactor = (Math.random() - 0.5) * 2 * unpredictability * (baseScore * 0.05);
+                return {
+                    ...player,
+                    tempScore: baseScore + randomFactor,
+                    baseScore: baseScore,
+                    // Initialize currentRole to preferred role when balancing
+                    currentRole: player.ruolo
+                };
+            });
+
+            const sortedPlayers = playersWithScores.sort((a, b) => b.tempScore - a.tempScore);
+
+            const teamA = [];
+            const teamB = [];
+            let scoreA = 0;
+            let scoreB = 0;
+            const rolesCountA = {};
+            const rolesCountB = {};
+            const rolesInGame = [...new Set(players.map(p => p.ruolo))];
+            rolesInGame.forEach(role => {
+                rolesCountA[role] = 0;
+                rolesCountB[role] = 0;
+            });
+
+            sortedPlayers.forEach(player => {
+                let assignToA = false;
+
+                if (balanceByRole) {
+                    const role = player.ruolo; // Use preferred role for initial balancing logic
+                    const countA = rolesCountA[role] || 0;
+                    const countB = rolesCountB[role] || 0;
+
+                    if (countA < countB) {
+                        assignToA = true;
+                    } else if (countB < countA) {
+                        assignToA = false;
+                    } else {
+                        // If roles counts are equal, assign to the lower score team (greedy)
+                        assignToA = scoreA <= scoreB;
+                    }
+                } else {
+                    // Standard balancing: assign to lower score team
+                    assignToA = scoreA <= scoreB;
+                }
+
+                if (assignToA) {
+                    teamA.push(player);
+                    scoreA += player.tempScore;
+                    if (balanceByRole) rolesCountA[player.ruolo]++;
+                } else {
+                    teamB.push(player);
+                    scoreB += player.tempScore;
+                    if (balanceByRole) rolesCountB[player.ruolo]++;
+                }
+            });
+
+            // Remove temporary scores before returning
+            const finalTeamA = teamA.map(({ tempScore, baseScore, ...player }) => player);
+            const finalTeamB = teamB.map(({ tempScore, baseScore, ...player }) => player);
+
+            return { teamA: finalTeamA, teamB: finalTeamB };
+        };
+
+
+        // === Funzione Disegno Campo (Un-minified) ===
+        function drawFormation(canvas, teamA, teamB, matchType) {
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error("Failed to get 2D context");
+                return;
+            }
+            const W = canvas.width = 700;
+            const H = canvas.height = 450;
+            const playerRadius = 15;
+            const fieldColor = '#28a745';
+            const lineColor = '#FFFFFF';
+            const teamAColor = '#007bff';
+            const teamBColor = '#dc3545';
+            const playerNameColor = '#000000';
+            const defaultTextColor = '#FFFFFF';
+
+            // Simple image cache (consider more robust loading for production)
+            const imageCache = {};
+            const loadImage = (url) => {
+                if (!url) return null; // Handle null/undefined URLs
+                if (imageCache[url]) return imageCache[url];
+                const img = new Image();
+                img.src = url;
+                imageCache[url] = img;
+                img.onload = () => {
+                    // Request redraw when image loads (might cause flicker, needs better handling)
+                    // A better approach involves Promises and waiting for all images
+                    // console.log("Image loaded:", url.substring(0, 30));
+                    // For simplicity, we don't force redraw here, relying on initial render
+                };
+                img.onerror = () => {
+                    console.warn("Failed to load image:", url.substring(0, 30));
+                    imageCache[url] = null; // Mark as failed
+                };
+                return img;
+            };
+
+            // Clear and draw base field
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = fieldColor;
+            ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(5, 5, W - 10, H - 10); // Field outline
+            ctx.beginPath(); // Center line
+            ctx.moveTo(W / 2, 5);
+            ctx.lineTo(W / 2, H - 5);
+            ctx.stroke();
+            ctx.beginPath(); // Center circle
+            ctx.arc(W / 2, H / 2, 60, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.fillStyle = lineColor; // Center spot
+            ctx.beginPath();
+            ctx.arc(W / 2, H / 2, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            // Penalty areas (simplified)
+            ctx.strokeRect(5, H * 0.2, W * 0.2, H * 0.6);
+            ctx.strokeRect(W - 5 - W * 0.2, H * 0.2, W * 0.2, H * 0.6);
+
+            // --- Positioning Logic (Simplified) ---
+            const getPositions = (team, isTeamA) => {
+                const positions = {}; // { playerId: { x, y } }
+                const sideXBase = isTeamA ? W * 0.25 : W * 0.75;
+                // Define rough X offsets based on role from the center line half
+                const roleOffsets = {
+                    Portiere: -W * 0.18,
+                    Difensore: -W * 0.1,
+                    Centrocampista: 0,
+                    Attaccante: W * 0.1
+                };
+
+                ALL_ROLES.forEach(role => {
+                    // Get players currently assigned to this role IN THIS TEAM
+                    const playersInRole = team.filter(p => p.currentRole === role);
+                    if (playersInRole.length === 0) return;
+
+                    const baseX = sideXBase + (roleOffsets[role] || 0);
+                    const availableHeight = H * 0.8; // Use 80% of height
+                    const startY = H * 0.1;
+                    // Distribute players vertically in their zone
+                    const yStep = playersInRole.length > 1 ? availableHeight / (playersInRole.length -1) : availableHeight / 2;
+
+                    playersInRole.forEach((player, index) => {
+                        let yPos = startY + (playersInRole.length === 1 ? availableHeight / 2 : index * yStep);
+                        // Add small random variations to avoid perfect overlap
+                        yPos += (Math.random() - 0.5) * 10;
+                        let xPos = baseX + (Math.random() - 0.5) * 20;
+
+                        // Clamp positions to be within the field boundaries
+                        positions[player.id] = {
+                            x: Math.max(playerRadius + 5, Math.min(W - playerRadius - 5, xPos)),
+                            y: Math.max(playerRadius + 5, Math.min(H - playerRadius - 5, yPos))
+                        };
+                    });
+                });
+                return positions;
+            };
+
+            const positionsA = getPositions(teamA, true);
+            const positionsB = getPositions(teamB, false);
+
+            // --- Draw Player Function ---
+            const drawPlayer = (player, pos, teamColor) => {
+                if (!pos) {
+                    // console.warn("No position for player:", player.nome);
+                    return; // Skip if no position calculated
+                }
+                const { x, y } = pos;
+                ctx.save(); // Save context state
+
+                // Draw circle background/fallback
+                ctx.beginPath();
+                ctx.arc(x, y, playerRadius, 0, 2 * Math.PI);
+                ctx.fillStyle = teamColor;
+                ctx.fill();
+
+                // Try to draw photo if available and loaded
+                if (player.photoUrl) {
+                    const img = loadImage(player.photoUrl);
+                    // Check if image is loaded and valid before drawing
+                    if (img && img.complete && img.naturalHeight !== 0) {
+                        ctx.clip(); // Use the circle path as a clipping mask
+
+                        // Calculate aspect ratio and drawing dimensions to cover the circle
+                        const aspectRatio = img.naturalWidth / img.naturalHeight;
+                        let drawWidth, drawHeight, offsetX, offsetY;
+                        if (img.naturalWidth > img.naturalHeight) { // Landscape or square
+                            drawHeight = playerRadius * 2;
+                            drawWidth = drawHeight * aspectRatio;
+                            offsetX = x - drawWidth / 2;
+                            offsetY = y - playerRadius;
+                        } else { // Portrait
+                            drawWidth = playerRadius * 2;
+                            drawHeight = drawWidth / aspectRatio;
+                            offsetX = x - playerRadius;
+                            offsetY = y - drawHeight / 2;
+                        }
+                        try {
+                            ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+                        } catch (e) {
+                             console.warn("Error drawing image for", player.nome, e);
+                             // Fallback drawing if image fails (already filled background)
+                        }
+                    }
+                     // If image not loaded yet, it might appear later if onload triggers redraw
+                }
+
+                ctx.restore(); // Restore context (remove clipping mask)
+
+                // Draw circle border (over the image/fill)
+                ctx.beginPath();
+                ctx.arc(x, y, playerRadius, 0, 2 * Math.PI);
+                ctx.strokeStyle = '#333'; // Dark border
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Draw player name below
+                ctx.fillStyle = playerNameColor;
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                // Limit name length if needed
+                const displayName = player.nome.split(' ')[0]; // Use first name
+                ctx.fillText(displayName, x, y + playerRadius + 12);
+
+                ctx.restore(); // Restore context state if needed elsewhere (good practice)
+            };
+
+            // Draw all players
+            teamA.forEach(p => drawPlayer(p, positionsA[p.id], teamAColor));
+            teamB.forEach(p => drawPlayer(p, positionsB[p.id], teamBColor));
+        }
 
 
         // === Componenti React ===
 
-        // --- PlayerForm ---
+        // --- PlayerForm (Un-minified) ---
         function PlayerForm({ onSave, editingPlayer, onCancelEdit }) {
-            const initialFormData = {
-                nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5,
-                velocita: 5, scatto: 5, pressing: 5, determinazione: 5,
-                peso: 75, altezza: 175, robustezza: 5,
-            };
+            const initialFormData = { nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5, velocita: 5, scatto: 5, pressing: 5, determinazione: 5, peso: 75, altezza: 175, robustezza: 5, photoUrl: null };
             const [formData, setFormData] = useState(initialFormData);
-            const [isVisible, setIsVisible] = useState(false); // Stato locale per visibilità
+            const [isVisible, setIsVisible] = useState(false);
+            const [photoPreview, setPhotoPreview] = useState(null);
 
             useEffect(() => {
                 if (editingPlayer) {
-                    setFormData({ ...editingPlayer });
-                    setIsVisible(true); // Mostra form in modifica
+                    // Make sure all keys exist in editingPlayer before setting
+                    const dataToEdit = {...initialFormData, ...editingPlayer};
+                    setFormData(dataToEdit);
+                    setPhotoPreview(dataToEdit.photoUrl || null);
+                    setIsVisible(true);
                 } else {
-                    // Non resettare qui se non stiamo editando,
-                    // il reset avviene al submit o all'annulla
+                     // Reset form fully if not editing
+                     setFormData(initialFormData);
+                     setPhotoPreview(null);
                 }
             }, [editingPlayer]);
 
@@ -360,86 +512,116 @@
                 }));
             };
 
+            const handlePhotoChange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                        alert("Immagine troppo grande! Max 2MB.");
+                        e.target.value = null; // Reset file input
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setFormData(prev => ({ ...prev, photoUrl: reader.result }));
+                        setPhotoPreview(reader.result);
+                    };
+                    reader.onerror = (error) => {
+                        console.error("File reading error:", error);
+                        alert("Errore nel caricamento dell'immagine.");
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
             const handleSubmit = (e) => {
                 e.preventDefault();
                 if (!formData.nome.trim()) {
                     alert("Il nome è obbligatorio!");
                     return;
                 }
-                onSave(formData); // Passa formData all'handler del genitore
-                setFormData(initialFormData); // Resetta form
-                setIsVisible(false); // Nascondi dopo salvataggio
-                 if(editingPlayer) onCancelEdit(); // Assicura che la modalità edit sia cancellata
+                onSave(formData);
+                handleCancel(); // Use cancel to ensure full reset
             };
 
             const handleCancel = () => {
-                 setFormData(initialFormData);
-                 setIsVisible(false);
-                 onCancelEdit(); // Notifica al genitore di annullare l'edit
-            }
+                setFormData(initialFormData);
+                setPhotoPreview(null);
+                setIsVisible(false);
+                onCancelEdit();
+            };
 
             const toggleVisibility = () => {
-                 // Se stiamo editando, il toggle non fa nulla (si chiude con Salva/Annulla)
-                 if (!editingPlayer) {
-                     setIsVisible(!isVisible);
-                     if(isVisible) { // Se lo stiamo nascondendo
-                         setFormData(initialFormData); // Resetta
-                     }
-                 } else if (!isVisible) {
-                     // Caso strano: in modifica ma nascosto -> mostra
-                     setIsVisible(true);
-                 }
-            }
+                if (!editingPlayer) {
+                    setIsVisible(!isVisible);
+                    // If hiding, reset form via cancel
+                    if (isVisible) {
+                        handleCancel();
+                    }
+                } else if (!isVisible) {
+                    // Should not happen if useEffect works, but safety measure
+                    setIsVisible(true);
+                }
+            };
 
             return (
                 <div className="player-form-container">
-                     {!isVisible && (
-                         <button onClick={toggleVisibility} className="btn-toggle-form btn-create">
-                             + Crea Nuovo Giocatore
-                         </button>
-                      )}
-
+                    {!isVisible && (
+                        <button onClick={toggleVisibility} className="btn-toggle-form btn-create">
+                            + Crea Nuovo Giocatore
+                        </button>
+                    )}
                     {isVisible && (
                         <form onSubmit={handleSubmit} className="player-form">
                             <h3>{editingPlayer ? 'Modifica Giocatore' : 'Nuovo Giocatore'}</h3>
+
                             {/* Nome */}
                             <div className="form-group">
                                 <label htmlFor="nome">Nome:</label>
                                 <input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required />
                             </div>
-                            {/* Ruolo */}
+
+                            {/* Ruolo Preferito */}
                             <div className="form-group">
-                                <label htmlFor="ruolo">Ruolo:</label>
+                                <label htmlFor="ruolo">Ruolo Preferito:</label>
                                 <select id="ruolo" name="ruolo" value={formData.ruolo} onChange={handleChange}>
-                                    <option value="Portiere">Portiere</option>
-                                    <option value="Difensore">Difensore</option>
-                                    <option value="Centrocampista">Centrocampista</option>
-                                    <option value="Attaccante">Attaccante</option>
+                                    {ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                                 </select>
                             </div>
-                             {/* Abilità Numeriche */}
-                             {[
-                                { name: 'abilitaDifensiva', label: 'Difesa' }, { name: 'abilitaOffensiva', label: 'Attacco' },
-                                { name: 'velocita', label: 'Velocità' }, { name: 'scatto', label: 'Scatto' },
-                                { name: 'pressing', label: 'Pressing' }, { name: 'determinazione', label: 'Determ.' },
+
+                            {/* Abilità Numeriche */}
+                            {[
+                                { name: 'abilitaDifensiva', label: 'Difesa' },
+                                { name: 'abilitaOffensiva', label: 'Attacco' },
+                                { name: 'velocita', label: 'Velocità' },
+                                { name: 'scatto', label: 'Scatto' },
+                                { name: 'pressing', label: 'Pressing' },
+                                { name: 'determinazione', label: 'Determ.' },
                                 { name: 'robustezza', label: 'Robustezza' }
                             ].map(({ name, label }) => (
                                 <div className="form-group" key={name}>
                                     <label htmlFor={name}>{label} (1-10):</label>
-                                    <input type="number" id={name} name={name} min="1" max="10" step="1" value={formData[name]} onChange={handleChange} required />
-                                    {/*<span>{formData[name]}</span>*/}
+                                    <input type="number" id={name} name={name} min="1" max="10" step="1" value={formData[name] || ''} onChange={handleChange} required />
                                 </div>
-                             ))}
-                             {/* Peso e Altezza */}
+                            ))}
+
+                            {/* Peso e Altezza */}
                             <div className="form-group">
                                 <label htmlFor="peso">Peso (kg):</label>
-                                <input type="number" id="peso" name="peso" min="30" max="150" step="0.1" value={formData.peso} onChange={handleChange} required />
+                                <input type="number" id="peso" name="peso" min="30" max="150" step="0.1" value={formData.peso || ''} onChange={handleChange} required />
                             </div>
-                             <div className="form-group">
+                            <div className="form-group">
                                 <label htmlFor="altezza">Altezza (cm):</label>
-                                <input type="number" id="altezza" name="altezza" min="100" max="230" step="1" value={formData.altezza} onChange={handleChange} required />
+                                <input type="number" id="altezza" name="altezza" min="100" max="230" step="1" value={formData.altezza || ''} onChange={handleChange} required />
                             </div>
 
+                            {/* Input Foto */}
+                            <div className="form-group">
+                                <label htmlFor="photo">Foto (Max 2MB):</label>
+                                <input type="file" id="photo" name="photo" accept="image/png, image/jpeg, image/webp" onChange={handlePhotoChange} />
+                                {photoPreview && <img src={photoPreview} alt="Anteprima" className="photo-preview" />}
+                            </div>
+
+                            {/* Azioni Form */}
                             <div className="form-actions">
                                 <button type="submit" className="btn-save">
                                     {editingPlayer ? 'Salva Modifiche' : 'Aggiungi Giocatore'}
@@ -454,19 +636,24 @@
             );
         }
 
-         // --- PlayerItem ---
+        // --- PlayerItem (Un-minified) ---
         function PlayerItem({ player, onEdit, onDelete }) {
-             const avgScore = (
-                ((player.abilitaDifensiva || 0) + (player.abilitaOffensiva || 0) + (player.velocita || 0) +
-                 (player.scatto || 0) + (player.pressing || 0) + (player.determinazione || 0) + (player.robustezza || 0)) / 7
-             ).toFixed(1);
-
+            const avgScore = getAvgScore(player);
             return (
                 <li className="player-item">
                     <div className="player-info">
-                        <span className="player-name">{player.nome}</span>
-                        <span className="player-role">{player.ruolo}</span>
-                        <span className="player-avg-score">Avg: {avgScore}</span>
+                        {player.photoUrl ? (
+                            <img src={player.photoUrl} alt={player.nome} className="player-photo-thumbnail" />
+                        ) : (
+                            <span className="player-photo-thumbnail"></span> // Placeholder span
+                        )}
+                        <div className="player-details">
+                            <span className="player-name">{player.nome}</span>
+                            <span className="player-meta">
+                                <span className="player-role">{player.ruolo}</span>
+                                <span className="player-avg-score">Avg: {avgScore}</span>
+                            </span>
+                        </div>
                     </div>
                     <div className="player-actions">
                         <button onClick={() => onEdit(player.id)} className="btn-edit">Modifica</button>
@@ -476,17 +663,17 @@
             );
         }
 
-         // --- PlayerList ---
+        // --- PlayerList (Un-minified) ---
         function PlayerList({ players, onEdit, onDelete }) {
             return (
                 <div className="player-list-container">
                     <h2>Giocatori Disponibili ({players.length})</h2>
                     {players.length === 0 ? (
-                        <p>Nessun giocatore creato. Aggiungine uno usando il form sopra!</p>
+                        <p>Nessun giocatore creato. Aggiungine uno usando il form o carica da file.</p>
                     ) : (
                         <ul className="player-list">
-                            {players.map(player => (
-                                <PlayerItem key={player.id} player={player} onEdit={onEdit} onDelete={onDelete} />
+                            {players.map(p => (
+                                <PlayerItem key={p.id} player={p} onEdit={onEdit} onDelete={onDelete} />
                             ))}
                         </ul>
                     )}
@@ -494,40 +681,41 @@
             );
         }
 
-        // --- PlayerSelectionModal ---
+        // --- PlayerSelectionModal (Un-minified) ---
         function PlayerSelectionModal({ players, selectedPlayerIds, requiredCount, onToggleSelect, onConfirm, onClose }) {
             const selectedCount = selectedPlayerIds.length;
             const canConfirm = selectedCount === requiredCount;
 
             return (
-                <div className="modal-overlay" onClick={onClose}> {/* Chiudi cliccando fuori */}
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}> {/* Evita che il click nel modal chiuda */}
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <h3>Seleziona Giocatori ({selectedCount} / {requiredCount})</h3>
                         <p>Seleziona esattamente {requiredCount} giocatori per la partita.</p>
                         <ul className="modal-player-list">
                             {players.map(player => {
                                 const isSelected = selectedPlayerIds.includes(player.id);
+                                // Disable checkbox if max selected and this one is not selected
                                 const isDisabled = !isSelected && selectedCount >= requiredCount;
                                 return (
                                     <li key={player.id}
                                         className={`modal-player-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
-                                        onClick={() => !isDisabled && onToggleSelect(player.id)} // Permetti click su li
+                                        onClick={() => !isDisabled && onToggleSelect(player.id)} // Allow click on li too
                                     >
-                                        <label>
+                                        <label className={isDisabled ? 'disabled' : ''}>
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
-                                                onChange={() => onToggleSelect(player.id)}
+                                                onChange={() => onToggleSelect(player.id)} // Let li click handle state change is fine too
                                                 disabled={isDisabled}
                                             />
                                             {player.nome} ({player.ruolo})
                                         </label>
                                     </li>
                                 );
-                             })}
+                            })}
                         </ul>
                         <div className="modal-actions">
-                             <button onClick={onConfirm} disabled={!canConfirm} className="btn-confirm">
+                            <button onClick={onConfirm} disabled={!canConfirm} className="btn-confirm">
                                 Conferma Selezione ({selectedCount}/{requiredCount})
                             </button>
                             <button onClick={onClose} className="btn-cancel">
@@ -539,13 +727,12 @@
             );
         }
 
-
-        // --- MatchSetup ---
+        // --- MatchSetup (Un-minified) ---
         function MatchSetup({ matchType, onMatchTypeChange, onOpenSelection, availablePlayerCount }) {
-             const requiredPlayers = getRequiredPlayers(matchType);
-             const canOpenSelector = matchType && availablePlayerCount >= requiredPlayers;
+            const requiredPlayers = getRequiredPlayers(matchType);
+            const canOpenSelector = matchType && availablePlayerCount >= requiredPlayers;
 
-             const getMatchTypeLabel = (type) => {
+            const getMatchTypeLabel = (type) => {
                 switch (type) {
                     case '5': return "Calcio a 5 (10 giocatori)";
                     case '6': return "Calcio a 6 (12 giocatori)";
@@ -553,7 +740,7 @@
                     case '11': return "Calcio a 11 (22 giocatori)";
                     default: return "Seleziona tipo...";
                 }
-             };
+            };
 
             return (
                 <div className="match-setup-container">
@@ -570,12 +757,12 @@
                     </div>
 
                     {matchType && (
-                         <p>
-                             {availablePlayerCount < requiredPlayers
-                                ? `Servono ${requiredPlayers} giocatori, ma ne hai solo ${availablePlayerCount}. Aggiungine altri.`
+                        <p>
+                            {availablePlayerCount < requiredPlayers
+                                ? `Servono ${requiredPlayers} giocatori, ma ne hai solo ${availablePlayerCount}. Aggiungine altri o carica da file.`
                                 : `Servono ${requiredPlayers} giocatori.`
-                             }
-                          </p>
+                            }
+                        </p>
                     )}
 
                     <button
@@ -590,214 +777,391 @@
             );
         }
 
-        // --- TeamDisplay ---
-        function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onGenerateTeams, onClearSelection }) {
+        // --- TeamDisplay (Un-minified) ---
+        function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onUpdateTeams, onClearSelection, balanceByRoleEnabled, onToggleBalanceByRole, onGenerateTeams }) {
             const [unpredictability, setUnpredictability] = useState(1);
-            const selectedPlayersCount = selectedPlayerIds.length;
+            const [playersToSwap, setPlayersToSwap] = useState({ teamA: null, teamB: null });
+            const [imageDataUrl, setImageDataUrl] = useState(null);
+            const canvasRef = useRef(null);
+
             const requiredPlayers = getRequiredPlayers(matchType);
-            const canGenerate = selectedPlayersCount === requiredPlayers && requiredPlayers > 0;
+            const teamsExist = teams.teamA.length > 0 || teams.teamB.length > 0;
+            const correctPlayersSelectedForCreation = selectedPlayerIds.length === requiredPlayers && requiredPlayers > 0;
+            const generationPossible = teamsExist || correctPlayersSelectedForCreation;
+            const buttonDisabled = !generationPossible;
+            const swapButtonEnabled = playersToSwap.teamA !== null && playersToSwap.teamB !== null;
 
-            const selectedPlayers = players.filter(p => selectedPlayerIds.includes(p.id));
+            const handleGenerateOrRegenerate = () => {
+                const playersForGeneration = teamsExist
+                    ? [...teams.teamA, ...teams.teamB]
+                    : players.filter(p => selectedPlayerIds.includes(p.id));
+                if (playersForGeneration.length !== requiredPlayers) {
+                    alert(`Errore: Numero giocatori (${playersForGeneration.length}) non corrisponde ai richiesti (${requiredPlayers}).`);
+                    return;
+                }
+                setImageDataUrl(null);
+                setPlayersToSwap({ teamA: null, teamB: null });
+                onGenerateTeams(playersForGeneration, unpredictability, balanceByRoleEnabled);
+            };
 
-             const handleGenerate = () => {
-                 onGenerateTeams(selectedPlayers, unpredictability);
-             };
+            const handleSelectPlayerForSwap = (playerId, teamKey) => {
+                setPlayersToSwap(prev => (prev[teamKey] === playerId ? { ...prev, [teamKey]: null } : { ...prev, [teamKey]: playerId }));
+            };
 
-             const scoreA = teams.teamA.length > 0 ? calculateTeamScore(teams.teamA).toFixed(1) : 0;
-             const scoreB = teams.teamB.length > 0 ? calculateTeamScore(teams.teamB).toFixed(1) : 0;
+            const handleExecuteSwap = () => {
+                if (!swapButtonEnabled) return;
+                const playerA_ID = playersToSwap.teamA;
+                const playerB_ID = playersToSwap.teamB;
+                const playerA = teams.teamA.find(p => p.id === playerA_ID);
+                const playerB = teams.teamB.find(p => p.id === playerB_ID);
+                if (!playerA || !playerB) return;
+                const newTeamA = teams.teamA.filter(p => p.id !== playerA_ID).concat(playerB);
+                const newTeamB = teams.teamB.filter(p => p.id !== playerB_ID).concat(playerA);
+                onUpdateTeams({ teamA: newTeamA, teamB: newTeamB });
+                setPlayersToSwap({ teamA: null, teamB: null });
+                setImageDataUrl(null);
+            };
 
-             return (
+            const handleRoleChange = (playerId, newRole, teamKey) => {
+                const currentTeams = { teamA: [...teams.teamA], teamB: [...teams.teamB] };
+                const team = currentTeams[teamKey];
+                const playerIndex = team.findIndex(p => p.id === playerId);
+                if (playerIndex === -1) return;
+                const updatedPlayer = { ...team[playerIndex], currentRole: newRole };
+                const updatedTeam = [...team.slice(0, playerIndex), updatedPlayer, ...team.slice(playerIndex + 1)];
+                onUpdateTeams({ ...currentTeams, [teamKey]: updatedTeam });
+                setImageDataUrl(null);
+            };
+
+            const handleGenerateImage = () => {
+                if (!canvasRef.current || !teamsExist) return;
+                drawFormation(canvasRef.current, teams.teamA, teams.teamB, matchType);
+                setImageDataUrl(canvasRef.current.toDataURL('image/png'));
+            };
+
+            const scoreA = teams.teamA.length > 0 ? calculateTeamFinalScore(teams.teamA).toFixed(1) : 0;
+            const scoreB = teams.teamB.length > 0 ? calculateTeamFinalScore(teams.teamB).toFixed(1) : 0;
+            const sortTeamForDisplay = (team) => [...team].sort((a, b) => (roleOrder.indexOf(a.currentRole ?? a.ruolo) === -1 ? 99 : roleOrder.indexOf(a.currentRole ?? a.ruolo)) - (roleOrder.indexOf(b.currentRole ?? b.ruolo) === -1 ? 99 : roleOrder.indexOf(b.currentRole ?? b.ruolo)));
+            const sortedTeamA = sortTeamForDisplay(teams.teamA);
+            const sortedTeamB = sortTeamForDisplay(teams.teamB);
+
+            return (
                 <div className="team-display-container">
-                    <h2>Crea Squadre</h2>
-
-                    {requiredPlayers > 0 && selectedPlayersCount > 0 && (
-                         <p>Giocatori selezionati: {selectedPlayersCount} / {requiredPlayers}</p>
-                    )}
-                    {requiredPlayers > 0 && selectedPlayersCount !== requiredPlayers && selectedPlayersCount > 0 &&(
-                         <p style={{ color: 'orange', fontWeight:'bold' }}>Devi selezionare esattamente {requiredPlayers} giocatori.</p>
-                    )}
-
-                    {canGenerate && (
-                         <>
+                    <h2>{teamsExist ? 'Modifica Squadre' : 'Crea Squadre'}</h2>
+                    {!teamsExist && !correctPlayersSelectedForCreation && requiredPlayers > 0 && (<p>Seleziona {requiredPlayers} giocatori.</p>)}
+                    {!teamsExist && correctPlayersSelectedForCreation && (<p>Hai selezionato {selectedPlayerIds.length} giocatori. Clicca 'Crea Squadre'.</p>)}
+                    {teamsExist && (<p>Squadre pronte. Clicca sul nome per scambiare, cambia ruolo, o rigenera.</p>)}
+                    {requiredPlayers > 0 && (
+                        <div className="balancing-options">
                             <div className="unpredictability-slider">
                                 <label htmlFor="unpredictability">Imprevedibilità (0-5): {unpredictability}</label>
-                                <input
-                                    type="range" id="unpredictability" min="0" max="5" step="0.5"
-                                    value={unpredictability} onChange={(e) => setUnpredictability(parseFloat(e.target.value))}
-                                />
+                                <input type="range" id="unpredictability" min="0" max="5" step="0.5" value={unpredictability} onChange={(e) => setUnpredictability(parseFloat(e.target.value))} />
                             </div>
-                            <button onClick={handleGenerate} className="btn-generate">
-                                Crea Squadre Equilibrate
+                            <div className="checkbox-group">
+                                <input type="checkbox" id="balanceByRole" checked={balanceByRoleEnabled} onChange={onToggleBalanceByRole} />
+                                <label htmlFor="balanceByRole">Tenta di bilanciare i ruoli</label>
+                            </div>
+                            <button onClick={handleGenerateOrRegenerate} className="btn-generate" disabled={buttonDisabled} title={buttonDisabled ? "Seleziona giocatori" : (teamsExist ? "Rigenera" : "Crea squadre")}>
+                                {teamsExist ? 'Rigenera Squadre' : 'Crea Squadre'}
                             </button>
-                         </>
-                     )}
-
-                     {selectedPlayersCount > 0 && (
-                         <button onClick={onClearSelection} className="btn-clear-selection">
-                             Azzera Selezione
-                         </button>
-                     )}
-
-
-                    {(teams.teamA.length > 0 || teams.teamB.length > 0) && (
-                        <div className="teams-output">
-                            <h3>Squadre Generate</h3>
-                            <div className="team-columns">
-                                <div className="team-column">
-                                    <h4>Squadra A <small>(Punteggio: {scoreA})</small></h4>
-                                    <ul>
-                                        {teams.teamA.map(p => <li key={p.id}>{p.nome} ({p.ruolo})</li>)}
-                                    </ul>
-                                </div>
-                                <div className="team-column">
-                                    <h4>Squadra B <small>(Punteggio: {scoreB})</small></h4>
-                                    <ul>
-                                        {teams.teamB.map(p => <li key={p.id}>{p.nome} ({p.ruolo})</li>)}
-                                    </ul>
-                                </div>
-                            </div>
                         </div>
                     )}
+                    {teamsExist && (
+                        <React.Fragment>
+                            <div className="teams-output">
+                                <h3>Squadre Attuali</h3>
+                                <div className="team-columns">
+                                    {/* Team A */}
+                                    <div className="team-column">
+                                        <h4>Squadra A <small>(Punteggio: {scoreA})</small></h4>
+                                        <ul>
+                                            {sortedTeamA.map(p => (
+                                                <li key={p.id} className={playersToSwap.teamA === p.id ? 'selected-for-swap' : ''}>
+                                                    <div className="team-player-info" onClick={() => handleSelectPlayerForSwap(p.id, 'teamA')} title={`Seleziona ${p.nome} per scambio`}>
+                                                        <span className="team-player-name">{p.nome}</span>
+                                                        <span className="team-player-original-role">(Pref: {p.ruolo} - Avg: {getAvgScore(p)})</span>
+                                                    </div>
+                                                    <div className="team-player-role-selector">
+                                                        <select value={p.currentRole ?? p.ruolo} onChange={(e) => handleRoleChange(p.id, e.target.value, 'teamA')} title={`Cambia ruolo ${p.nome}`}>
+                                                            {ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    {/* Team B */}
+                                    <div className="team-column">
+                                        <h4>Squadra B <small>(Punteggio: {scoreB})</small></h4>
+                                        <ul>
+                                            {sortedTeamB.map(p => (
+                                                <li key={p.id} className={playersToSwap.teamB === p.id ? 'selected-for-swap' : ''}>
+                                                    <div className="team-player-info" onClick={() => handleSelectPlayerForSwap(p.id, 'teamB')} title={`Seleziona ${p.nome} per scambio`}>
+                                                        <span className="team-player-name">{p.nome}</span>
+                                                        <span className="team-player-original-role">(Pref: {p.ruolo} - Avg: {getAvgScore(p)})</span>
+                                                    </div>
+                                                    <div className="team-player-role-selector">
+                                                         <select value={p.currentRole ?? p.ruolo} onChange={(e) => handleRoleChange(p.id, e.target.value, 'teamB')} title={`Cambia ruolo ${p.nome}`}>
+                                                            {ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div className="swap-controls">
+                                    <button onClick={handleExecuteSwap} className="btn-swap" disabled={!swapButtonEnabled} title={!swapButtonEnabled ? "Seleziona un giocatore da A e uno da B" : "Scambia selezionati"}>Scambia Selezionati {playersToSwap.teamA ? '✅' : '⬜'}-{playersToSwap.teamB ? '✅' : '⬜'}</button>
+                                </div>
+                            </div>
+                            <div className="generated-image-container">
+                                <button onClick={handleGenerateImage} className="btn-generate-img" disabled={!teamsExist}>Genera Immagine Campo</button>
+                                <canvas ref={canvasRef}></canvas>
+                                {imageDataUrl && (<div><img src={imageDataUrl} alt="Formazione"/><br/><a href={imageDataUrl} download={`formazione_${matchType}.png`}>Scarica Immagine</a></div>)}
+                            </div>
+                        </React.Fragment>
+                    )}
+                    {(selectedPlayerIds.length > 0 || teamsExist) && (<button onClick={onClearSelection} className="btn-clear-selection" style={{ marginTop: '20px' }}>Azzera Selezione/Squadre</button>)}
                 </div>
             );
-        }
+        } // --- Fine TeamDisplay ---
 
 
-        // --- Componente Principale App ---
+        // === Componente Principale App (Un-minified) ===
         function App() {
-            const [players, setPlayers] = useLocalStorage('calcettoPlayers', []);
-            const [editingPlayer, setEditingPlayer] = useState(null); // ID del giocatore in modifica
-            const [matchType, setMatchType] = useLocalStorage('calcettoMatchType', null); // '5', '6', '8', '11'
+            const [players, setPlayers] = useLocalStorage('calcettoPlayersV6_1', []); // Nuova chiave per sicurezza
+            const [editingPlayer, setEditingPlayer] = useState(null);
+            const [matchType, setMatchType] = useLocalStorage('calcettoMatchType_1', null);
             const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
-            const [teams, setTeams] = useState({ teamA: [], teamB: [] });
+            const [teams, setTeams] = useLocalStorage('calcettoTeamsV6_1', { teamA: [], teamB: [] }); // Nuova chiave
             const [isModalOpen, setIsModalOpen] = useState(false);
+            const [balanceByRoleEnabled, setBalanceByRoleEnabled] = useLocalStorage('calcettoBalanceByRole_1', true);
+            const fileInputRef = useRef(null);
 
-            // Funzioni Gestione Giocatori
+            // --- Handlers Gestione Giocatori ---
             const handleSavePlayer = (playerData) => {
-                if (playerData.id) { // Modifica
-                    setPlayers(prevPlayers => prevPlayers.map(p => p.id === playerData.id ? { ...playerData } : p));
-                    setEditingPlayer(null); // Esci dalla modalità modifica
-                } else { // Creazione
-                    setPlayers(prevPlayers => [...prevPlayers, { ...playerData, id: crypto.randomUUID() }]);
+                if (playerData.id) {
+                    // Update player in the main list
+                    setPlayers(prev => prev.map(p => p.id === playerData.id ? { ...playerData } : p));
+                    // Also update the player if they are currently in a team, preserving their currentRole
+                    setTeams(prevTeams => ({
+                        teamA: prevTeams.teamA.map(p => p.id === playerData.id ? { ...p, ...playerData, currentRole: p.currentRole ?? playerData.ruolo } : p),
+                        teamB: prevTeams.teamB.map(p => p.id === playerData.id ? { ...p, ...playerData, currentRole: p.currentRole ?? playerData.ruolo } : p)
+                    }));
+                    setEditingPlayer(null);
+                } else {
+                    // Add new player to the main list
+                    setPlayers(prev => [...prev, { ...playerData, id: crypto.randomUUID() }]);
                 }
             };
 
-             const handleEditPlayer = (playerId) => {
-                 const playerToEdit = players.find(p => p.id === playerId);
-                 if (playerToEdit) {
+            const handleEditPlayer = (playerId) => {
+                const playerToEdit = players.find(p => p.id === playerId);
+                if (playerToEdit) {
                     setEditingPlayer(playerToEdit);
-                    // Scrolla al form (opzionale, potrebbe non funzionare perfettamente)
                     window.scrollTo({ top: 0, behavior: 'smooth' });
-                 }
-             };
+                }
+            };
 
-             const handleDeletePlayer = (playerId) => {
-                  const playerToDelete = players.find(p => p.id === playerId);
-                  if (playerToDelete && window.confirm(`Sei sicuro di voler eliminare ${playerToDelete.nome}?`)) {
-                     setPlayers(prevPlayers => prevPlayers.filter(p => p.id !== playerId));
-                     // Rimuovi anche dai selezionati se presente
-                     setSelectedPlayerIds(prevSelected => prevSelected.filter(id => id !== playerId));
-                     // Se stavi modificando il giocatore eliminato, annulla la modifica
-                     if (editingPlayer && editingPlayer.id === playerId) {
-                         setEditingPlayer(null);
-                     }
-                 }
-             };
+            const handleDeletePlayer = (playerId) => {
+                const playerToDelete = players.find(p => p.id === playerId);
+                if (playerToDelete && window.confirm(`Sei sicuro di voler eliminare ${playerToDelete.nome}?`)) {
+                    // Remove from main list
+                    setPlayers(prev => prev.filter(p => p.id !== playerId));
+                    // Remove from selection
+                    setSelectedPlayerIds(prev => prev.filter(id => id !== playerId));
+                    // Remove from teams
+                    setTeams(prevTeams => ({
+                        teamA: prevTeams.teamA.filter(p => p.id !== playerId),
+                        teamB: prevTeams.teamB.filter(p => p.id !== playerId)
+                    }));
+                    // Cancel editing if this player was being edited
+                    if (editingPlayer?.id === playerId) {
+                        setEditingPlayer(null);
+                    }
+                }
+            };
 
-             const handleCancelEdit = () => {
-                 setEditingPlayer(null);
-             };
+            const handleCancelEdit = () => {
+                setEditingPlayer(null);
+            };
 
-             // Funzioni Gestione Partita e Squadre
-             const handleMatchTypeChange = (type) => {
-                 setMatchType(type);
-                 setSelectedPlayerIds([]); // Resetta selezione
-                 setTeams({ teamA: [], teamB: [] }); // Resetta squadre
-             };
+            // --- Handlers Gestione Partita/Selezione ---
+            const handleMatchTypeChange = (type) => {
+                setMatchType(type);
+                setSelectedPlayerIds([]);
+                setTeams({ teamA: [], teamB: [] });
+            };
+            const handleOpenSelectionModal = () => setIsModalOpen(true);
+            const handleCloseSelectionModal = () => setIsModalOpen(false);
+            const handleTogglePlayerSelection = (playerId) => {
+                setSelectedPlayerIds(prevSelected => {
+                    const isSelected = prevSelected.includes(playerId);
+                    const required = getRequiredPlayers(matchType);
+                    if (isSelected) {
+                        return prevSelected.filter(id => id !== playerId);
+                    } else {
+                        if (prevSelected.length < required) {
+                            return [...prevSelected, playerId];
+                        } else {
+                            return prevSelected; // Max reached
+                        }
+                    }
+                });
+            };
+            const handleConfirmSelection = () => {
+                handleCloseSelectionModal();
+                // Reset teams to force user to click "Create Teams"
+                setTeams({ teamA: [], teamB: [] });
+            };
 
-             const handleOpenSelectionModal = () => {
-                 // La logica di controllo (abbastanza giocatori) è nel component MatchSetup
-                 setIsModalOpen(true);
-             };
+            // --- Handlers Gestione Squadre ---
+            const handleClearSelectionAndTeams = () => {
+                setSelectedPlayerIds([]);
+                setTeams({ teamA: [], teamB: [] });
+            };
+            const handleToggleBalanceByRole = () => {
+                setBalanceByRoleEnabled(prev => !prev);
+            };
+            // Called by TeamDisplay after swap or role change
+            const handleUpdateTeams = useCallback((newTeams) => {
+                setTeams(newTeams);
+            }, [setTeams]);
+            // Called by TeamDisplay to generate/regenerate
+            const handleGenerateBalancedTeams = useCallback((playersToBalance, unpredictability, balanceByRole) => {
+                const balanced = balanceTeams(playersToBalance, unpredictability, balanceByRole);
+                setTeams(balanced);
+            }, [setTeams]);
 
-             const handleCloseSelectionModal = () => {
-                 setIsModalOpen(false);
-             };
+            // --- Handlers File IO ---
+            const handleSaveToFile = () => {
+                if (players.length === 0) {
+                    alert("Nessun giocatore da salvare.");
+                    return;
+                }
+                try {
+                    // Only save the essential player data, not team-specific stuff like currentRole
+                    const playersToSave = players.map(({ id, nome, ruolo, abilitaDifensiva, abilitaOffensiva, velocita, scatto, pressing, determinazione, peso, altezza, robustezza, photoUrl }) => ({ id, nome, ruolo, abilitaDifensiva, abilitaOffensiva, velocita, scatto, pressing, determinazione, peso, altezza, robustezza, photoUrl }));
+                    const dataStr = JSON.stringify(playersToSave, null, 2); // Pretty print
+                    const blob = new Blob([dataStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = "calcetto_players.json";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    alert("File pronto per il download!");
+                } catch (error) {
+                    console.error("Errore durante il salvataggio:", error);
+                    alert("Errore durante la preparazione del file.");
+                }
+            };
 
-             const handleTogglePlayerSelection = (playerId) => {
-                  setSelectedPlayerIds(prevSelected => {
-                      const isSelected = prevSelected.includes(playerId);
-                      const required = getRequiredPlayers(matchType);
-                      if (isSelected) {
-                          return prevSelected.filter(id => id !== playerId);
-                      } else {
-                          // Aggiungi solo se non abbiamo raggiunto il limite
-                          if (prevSelected.length < required) {
-                              return [...prevSelected, playerId];
-                          } else {
-                               // alert(`Puoi selezionare al massimo ${required} giocatori.`); // Opzionale: avviso
-                               return prevSelected; // Non fare nulla se siamo al limite
-                          }
-                      }
-                  });
-             };
+            const handleLoadTrigger = () => {
+                fileInputRef.current?.click(); // Use optional chaining
+            };
 
-             const handleConfirmSelection = () => {
-                  // La validazione (numero giusto) è nel modal
-                  handleCloseSelectionModal();
-                  // Le squadre verranno generate successivamente
-             };
+            const handleFileSelected = (event) => {
+                const file = event.target.files?.[0]; // Optional chaining
+                if (!file) return;
 
-             const handleGenerateTeams = (selectedPlayersForBalancing, unpredictability) => {
-                 const balanced = balanceTeams(selectedPlayersForBalancing, unpredictability);
-                 setTeams(balanced);
-             };
+                if (!file.name.endsWith('.json')) {
+                    alert("Seleziona un file .json valido.");
+                    event.target.value = null;
+                    return;
+                }
 
-             const handleClearSelection = () => {
-                  setSelectedPlayerIds([]);
-                  setTeams({ teamA: [], teamB: [] });
-             };
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                         if (!e.target?.result) throw new Error("File vuoto o illeggibile.");
+                        const loadedData = JSON.parse(e.target.result);
+
+                        // Basic validation: is it an array? Does it have expected keys?
+                        if (!Array.isArray(loadedData)) {
+                             throw new Error("Il file non contiene un elenco (array) di giocatori.");
+                        }
+                         if (loadedData.length > 0 && (!loadedData[0].id || !loadedData[0].nome)) {
+                             console.warn("Il file caricato sembra non avere il formato atteso.");
+                             // Potresti aggiungere controlli più specifici qui
+                         }
+
+                        if (window.confirm(`Caricare ${loadedData.length} giocatori dal file?\nATTENZIONE: Questo sostituirà TUTTI i giocatori e le squadre attuali.`)) {
+                            // Ensure loaded players have necessary fields (even if null/default)
+                            const sanitizedPlayers = loadedData.map(p => ({
+                                id: p.id || crypto.randomUUID(), // Generate ID if missing
+                                nome: p.nome || "Sconosciuto",
+                                ruolo: ALL_ROLES.includes(p.ruolo) ? p.ruolo : 'Centrocampista',
+                                abilitaDifensiva: p.abilitaDifensiva || 5,
+                                abilitaOffensiva: p.abilitaOffensiva || 5,
+                                velocita: p.velocita || 5,
+                                scatto: p.scatto || 5,
+                                pressing: p.pressing || 5,
+                                determinazione: p.determinazione || 5,
+                                peso: p.peso || 75,
+                                altezza: p.altezza || 175,
+                                robustezza: p.robustezza || 5,
+                                photoUrl: p.photoUrl || null // Keep photo if present
+                             }));
+
+                            setPlayers(sanitizedPlayers);
+                            // Reset everything else
+                            setSelectedPlayerIds([]);
+                            setTeams({ teamA: [], teamB: [] });
+                            setEditingPlayer(null);
+                            setMatchType(null); // Also reset match type? Maybe desirable.
+                            alert("Giocatori caricati con successo!");
+                        }
+                    } catch (error) {
+                        console.error("Errore parsing file JSON:", error);
+                        alert(`Errore nel caricamento del file:\n${error.message}\n\nAssicurati che sia un file JSON valido con l'elenco dei giocatori.`);
+                    } finally {
+                        // Reset input value so the same file can be loaded again if needed
+                        if(event.target) event.target.value = null;
+                    }
+                };
+                reader.onerror = () => {
+                    alert("Errore nella lettura del file.");
+                     if(event.target) event.target.value = null;
+                };
+                reader.readAsText(file);
+            };
 
 
-            // Render dell'App
+            // --- Render App ---
             return (
                 <div className="container">
-                    <h1>Calcetto Team Manager</h1>
-
+                    <h1>Calcetto Team Manager V6.1</h1>
                     <section id="gestione-giocatori">
-                       <PlayerForm
-                            onSave={handleSavePlayer}
-                            editingPlayer={editingPlayer}
-                            onCancelEdit={handleCancelEdit}
-                        />
-                       <PlayerList
-                            players={players}
-                            onEdit={handleEditPlayer}
-                            onDelete={handleDeletePlayer}
-                        />
+                       <h2>Gestione Giocatori</h2>
+                       <div className="file-io-section">
+                           <button onClick={handleSaveToFile} className="btn-save-file" disabled={players.length === 0}>Salva Giocatori</button>
+                           <button onClick={handleLoadTrigger} className="btn-load-file">Carica Giocatori</button>
+                           <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} />
+                           <p>(Salva/Carica l'elenco giocatori in un file .json)</p>
+                       </div>
+                       <PlayerForm onSave={handleSavePlayer} editingPlayer={editingPlayer} onCancelEdit={handleCancelEdit}/>
+                       <PlayerList players={players} onEdit={handleEditPlayer} onDelete={handleDeletePlayer}/>
                     </section>
 
                     <hr className="section-divider" />
 
                     <section id="imposta-partita">
-                        <MatchSetup
-                            matchType={matchType}
-                            onMatchTypeChange={handleMatchTypeChange}
-                            onOpenSelection={handleOpenSelectionModal}
-                            availablePlayerCount={players.length}
-                        />
+                        <MatchSetup matchType={matchType} onMatchTypeChange={handleMatchTypeChange} onOpenSelection={handleOpenSelectionModal} availablePlayerCount={players.length}/>
                     </section>
 
-                     {isModalOpen && (
-                          <PlayerSelectionModal
-                             players={players}
-                             selectedPlayerIds={selectedPlayerIds}
-                             requiredCount={getRequiredPlayers(matchType)}
-                             onToggleSelect={handleTogglePlayerSelection}
-                             onConfirm={handleConfirmSelection}
-                             onClose={handleCloseSelectionModal}
-                          />
-                     )}
+                    {isModalOpen && (
+                        <PlayerSelectionModal
+                            players={players}
+                            selectedPlayerIds={selectedPlayerIds}
+                            requiredCount={getRequiredPlayers(matchType)}
+                            onToggleSelect={handleTogglePlayerSelection}
+                            onConfirm={handleConfirmSelection}
+                            onClose={handleCloseSelectionModal}
+                        />
+                    )}
 
                     <hr className="section-divider" />
 
@@ -807,19 +1171,33 @@
                             selectedPlayerIds={selectedPlayerIds}
                             teams={teams}
                             matchType={matchType}
-                            onGenerateTeams={handleGenerateTeams}
-                            onClearSelection={handleClearSelection}
+                            onUpdateTeams={handleUpdateTeams}
+                            onClearSelection={handleClearSelectionAndTeams}
+                            balanceByRoleEnabled={balanceByRoleEnabled}
+                            onToggleBalanceByRole={handleToggleBalanceByRole}
+                            onGenerateTeams={handleGenerateBalancedTeams}
                         />
                     </section>
-
                 </div>
             );
-        }
+        } // --- Fine App ---
+
 
         // === Monta l'App React nel DOM ===
         const rootElement = document.getElementById('root');
-        const root = ReactDOM.createRoot(rootElement);
-        root.render(<App />);
+        if (rootElement) {
+            try {
+                 const root = ReactDOM.createRoot(rootElement);
+                 root.render(<App />);
+            } catch (error) {
+                 console.error("Errore durante il rendering iniziale di React:", error);
+                 // Mostra un messaggio di errore all'utente se il rendering fallisce
+                 rootElement.innerHTML = '<div style="color: red; padding: 20px; border: 1px solid red;">Errore critico durante l\'avvio dell\'applicazione. Controlla la console per i dettagli.</div>';
+            }
+        } else {
+            console.error("Elemento root '#root' non trovato nel DOM!");
+            alert("Errore: Impossibile avviare l'applicazione (elemento #root mancante).")
+        }
 
     </script>
 
