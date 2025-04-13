@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Clasico Team Manager (Master DB)</title>
+
+    <!-- React, ReactDOM, Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Firebase SDKs (via CDN - Compat version v9.22.1 o successiva) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script> -->
+
+    <!-- CSS Incorporato (Identico a prima) -->
+    <style>
+        /* === Stili Generali === */
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.6; }
+        .container { max-width: 900px; margin: 20px auto; padding: 15px; background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
+        h1, h2, h3 { color: #333; }
+        h1 { text-align: center; color: #fff; background-color: #28a745; padding: 15px; margin: -15px -15px 20px -15px; border-radius: 8px 8px 0 0; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; margin-bottom: 20px; }
+        h3 { margin-top: 0; margin-bottom: 15px; }
+        .section-divider { border: none; height: 1px; background-color: #e0e0e0; margin: 40px 0; }
+        button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s ease, transform 0.1s ease; margin: 5px; background-color: #007bff; color: white; }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; opacity: 0.7; }
+        .btn-create { background-color: #007bff; }
+        .btn-save { background-color: #28a745; }
+        .btn-cancel, .btn-delete, .btn-clear-selection { background-color: #dc3545; }
+        .btn-edit { background-color: #ffc107; color: #333; }
+        .btn-select-players, .btn-generate, .btn-confirm { background-color: #17a2b8; }
+        .btn-swap { background-color: #fd7e14; }
+        .btn-generate-img { background-color: #6f42c1; }
+        .btn-save-file { background-color: #5a6268; }
+        .btn-load-file { background-color: #5a6268; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #495057; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1em; margin-bottom: 10px; box-sizing: border-box; }
+        input[type="file"] { padding: 5px; }
+        .checkbox-group { display: flex; align-items: center; margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
+        .checkbox-group input[type="checkbox"] { width: auto; margin-right: 10px; transform: scale(1.3); cursor: pointer; }
+        .checkbox-group label { margin-bottom: 0; font-weight: normal; cursor: pointer; }
+        .photo-preview { max-width: 80px; max-height: 80px; margin-top: 5px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
+        .player-photo-thumbnail { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid #eee; vertical-align: middle; background-color: #eee;}
+
+        /* PlayerForm */
+        .player-form-container { margin-bottom: 20px; }
+        .player-form { background-color: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-top: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-toggle-form { display: block; width: auto; margin: 0 auto 15px auto;}
+
+        /* PlayerList/PlayerItem */
+        .player-list-container { margin-top: 20px; }
+        .player-list { list-style: none; padding: 0; margin: 0; }
+        .player-item { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 10px 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 10px; background-color: #fff; }
+        .player-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-grow: 1; }
+        .player-details { display: flex; flex-direction: column; }
+        .player-name { font-weight: bold; font-size: 1.1em; }
+        .player-meta { font-size: 0.9em; color: #555; }
+        .player-role { font-style: italic; }
+        .player-avg-score { background-color: #e9ecef; padding: 2px 6px; border-radius: 10px; color: #495057; margin-left: 5px; }
+        .player-actions { display: flex; gap: 8px; margin-top: 5px; }
+        .player-actions button { padding: 6px 12px; font-size: 0.9em; }
+
+        /* File IO Section */
+        .file-io-section { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .file-io-section p { margin: 0; font-size: 0.9em; color: #6c757d; }
+
+        /* MatchSetup */
+        .match-setup-container { padding: 15px; background-color: #eef; border-radius: 8px; }
+        .match-type-selector { margin-bottom: 15px; }
+        .match-type-selector label { margin-right: 10px; font-weight: bold; }
+        .match-type-selector select { padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1em; display: inline-block; width: auto; }
+        .match-setup-container p { font-weight: bold; margin-bottom: 15px; }
+
+        /* PlayerSelectionModal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+        .modal-content { background-color: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-content h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-player-list { list-style: none; padding: 0; margin: 0 0 20px 0; max-height: 50vh; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; }
+        .modal-player-item { padding: 10px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background-color 0.2s; }
+        .modal-player-item:last-child { border-bottom: none; }
+        .modal-player-item:hover { background-color: #f8f9fa; }
+        .modal-player-item.selected { background-color: #d4edda; font-weight: bold; }
+        .modal-player-item.disabled { cursor: not-allowed; opacity: 0.6;}
+        .modal-player-item label { display: flex; align-items: center; width: 100%; cursor: pointer; }
+        .modal-player-item input[type="checkbox"] { margin-right: 12px; transform: scale(1.3); cursor: pointer; }
+        .modal-player-item.disabled label, .modal-player-item.disabled input { cursor: not-allowed; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+        /* TeamDisplay */
+        .team-display-container { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 8px; }
+        .balancing-options { margin-bottom: 15px; }
+        .unpredictability-slider { margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; }
+        .unpredictability-slider label { display: block; margin-bottom: 8px; font-weight: bold; }
+        .unpredictability-slider input[type="range"] { width: 100%; cursor: pointer; }
+        .team-display-container button { margin-right: 10px; margin-bottom: 15px; }
+        .teams-output { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
+        .teams-output h3 { text-align: center; margin-bottom: 15px; }
+        .team-columns { display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap; }
+        .team-column { flex: 1; min-width: 250px; background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 15px; }
+        .team-column h4 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
+        .team-column h4 small { font-weight: normal; font-size: 0.85em; color: #555;}
+        .team-column:first-child h4 { color: #007bff; }
+        .team-column:last-child h4 { color: #dc3545; }
+        .team-column ul { list-style: none; padding: 0; margin: 0; }
+        .team-column li { padding: 10px 5px; border-bottom: 1px dashed #eee; font-size: 0.95em; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: background-color 0.2s; }
+        .team-column li:last-child { border-bottom: none; }
+        .team-column li.selected-for-swap { background-color: #fff3cd; outline: 2px solid #fd7e14; font-weight: bold; }
+        .team-player-info { flex-grow: 1; cursor: pointer; }
+        .team-player-name { font-weight: bold; }
+        .team-player-original-role { font-size: 0.8em; color: #777; display: block; }
+        .team-player-role-selector select { padding: 4px 6px; font-size: 0.9em; width: auto; border-radius: 4px; margin-left: 5px; border: 1px solid #ccc; }
+        .swap-controls { margin-top: 15px; text-align: center; }
+
+        /* Immagine Generata */
+        .generated-image-container { margin-top: 25px; padding-top: 20px; border-top: 1px solid #ccc; text-align: center; }
+        .generated-image-container canvas { display: none; /* Mostra solo l'img */ }
+        .generated-image-container img { max-width: 100%; height: auto; border: 1px solid #ddd; margin-top: 10px; background-color: #f9f9f9; }
+        .generated-image-container a { display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 0.9em; }
+        .generated-image-container a:hover { background-color: #218838; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container { margin: 10px; padding: 10px; }
+            h1 { font-size: 1.6em; padding: 12px; margin: -10px -10px 15px -10px; }
+            button { padding: 8px 14px; font-size: 0.95em; }
+            input[type="text"], input[type="number"], select { padding: 8px; }
+            .player-item { flex-direction: column; align-items: flex-start; gap: 5px; }
+            .player-info { gap: 5px;}
+            .player-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
+            .file-io-section { flex-direction: column; align-items: stretch; text-align: center;}
+            .file-io-section p { margin-bottom: 10px; }
+            .team-columns { flex-direction: column; }
+            .modal-content { padding: 15px; }
+            .balancing-options { display: flex; flex-direction: column; }
+            .checkbox-group { font-size: 0.9em; }
+            .team-column li { font-size: 0.9em; flex-wrap: wrap;}
+            .team-player-role-selector select { width: 100%; margin-left: 0; margin-top: 5px; }
+        }
+
+        /* Stili per messaggio di caricamento/errore */
+        .loading-message { text-align: center; padding: 40px; font-size: 1.2em; color: #555; font-weight: bold;}
+        .error-message { text-align: center; padding: 20px; color: red; border: 1px solid red; background-color: #fdd; border-radius: 5px; margin: 10px; }
+        .warning-message { text-align: center; padding: 15px; color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 5px; margin: 10px; }
+
+    </style>
+</head>
+<body>
+    <!-- Elemento Root -->
+    <div id="root"></div>
+
+    <!-- Codice React (JSX) -->
+    <script type="text/babel">
+
+        // === Hook e Costanti ===
+        const { useState, useEffect, useCallback, useRef } = React;
+        const ALL_ROLES = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
+
+        // --- Hook useLocalStorage ---
+        function useLocalStorage(key, initialValue) {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    console.error("Error reading localStorage key “"+key+"”:", error);
+                    return initialValue;
+                }
+            });
+            const setValue = useCallback((value) => {
+                try {
+                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    setStoredValue(valueToStore);
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                } catch (error) {
+                    console.error("Error setting localStorage key “"+key+"”:", error);
+                }
+            }, [key, storedValue]);
+            return [storedValue, setValue];
+        }
+        // --- Fine useLocalStorage ---
+
+
+        // --- Inizializzazione Firebase ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCl-0Ini6m3MKRN-qTfGp1kcXtW0z6qGEE", // Chiave API corretta
+          authDomain: "el-clasico-app.firebaseapp.com",
+          projectId: "el-clasico-app",
+          storageBucket: "el-clasico-app.appspot.com", // Usa il bucket corretto se necessario per le foto
+          messagingSenderId: "816654567071",
+          appId: "1:816654567071:web:318425d18e9b224c4b04aa",
+          measurementId: "G-JVLZFP9PCR"
+        };
+
+        // Variabili globali per Firebase
+        let db;
+        let playersCollectionRef; // Verrà impostato dopo l'inizializzazione
+        let firebaseInitializationError = null;
+        const TARGET_COLLECTION = 'giocatori_master'; // <<<--- CAMBIATO QUI!
+
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                console.log("Firebase inizializzato.");
+            } else {
+                firebase.app();
+                console.log("Firebase già inizializzato.");
+            }
+            db = firebase.firestore();
+            // Imposta il riferimento alla collezione CORRETTA
+            playersCollectionRef = db.collection(TARGET_COLLECTION);
+            console.log(`Riferimento alla collezione '${TARGET_COLLECTION}' ottenuto.`);
+        } catch (error) {
+             console.error("!!! ERRORE CRITICO NELL'INIZIALIZZAZIONE DI FIREBASE !!!", error);
+             firebaseInitializationError = `Errore grave: Impossibile inizializzare il database (${error.message}). Controlla le credenziali Firebase e la connessione internet.`;
+        }
+        // --- Fine Inizializzazione Firebase ---
+
+
+        // === Funzioni Utili (Invariate) ===
+        const calculatePlayerScore = (player) => {
+            if (!player) return 0;
+            return (
+                (player.abilitaDifensiva || 0) * 1.0 +
+                (player.abilitaOffensiva || 0) * 1.0 +
+                (player.velocita || 0) * 0.8 +
+                (player.scatto || 0) * 0.8 +
+                (player.pressing || 0) * 0.7 +
+                (player.determinazione || 0) * 1.0 +
+                (player.robustezza || 0) * 0.7 +
+                ((player.peso || 75) / 20) +
+                ((player.altezza || 175) / 40)
+            );
+        };
+        const getRequiredPlayers = (matchType) => {
+            switch (matchType) {
+                case '5': return 10; case '6': return 12;
+                case '8': return 16; case '11': return 22;
+                default: return 0;
+            }
+        };
+        const calculateTeamFinalScore = (team) => {
+            return team.reduce((sum, player) => sum + calculatePlayerScore(player), 0);
+        };
+        const roleOrder = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
+        const getAvgScore = (player) => {
+            if (!player) return '0.0';
+            const scoreSum = ((player.abilitaDifensiva || 0) + (player.abilitaOffensiva || 0) + (player.velocita || 0) + (player.scatto || 0) + (player.pressing || 0) + (player.determinazione || 0) + (player.robustezza || 0));
+            return (scoreSum / 7).toFixed(1);
+        };
+        const balanceTeams = (players, unpredictability, balanceByRole) => {
+             if (!players || players.length === 0 || players.length % 2 !== 0) { console.error("Invalid player count for balancing:", players?.length); return { teamA: [], teamB: [] }; }
+             const playersWithScores = players.map(player => {
+                 const baseScore = calculatePlayerScore(player);
+                 const randomFactor = (Math.random() - 0.5) * 2 * unpredictability * (baseScore * 0.05); // Adjust randomness factor if needed
+                 return { ...player, tempScore: baseScore + randomFactor, baseScore: baseScore, currentRole: player.ruolo };
+             });
+             const sortedPlayers = playersWithScores.sort((a, b) => b.tempScore - a.tempScore);
+             const teamA = []; const teamB = []; let scoreA = 0; let scoreB = 0;
+             const rolesCountA = {}; const rolesCountB = {};
+             const rolesInGame = [...new Set(players.map(p => p.ruolo))];
+             rolesInGame.forEach(role => { rolesCountA[role] = 0; rolesCountB[role] = 0; });
+
+             sortedPlayers.forEach(player => {
+                 let assignToA = false;
+                 if (balanceByRole) {
+                     const role = player.ruolo; const countA = rolesCountA[role] || 0; const countB = rolesCountB[role] || 0;
+                     if (countA < countB) assignToA = true;
+                     else if (countB < countA) assignToA = false;
+                     else assignToA = scoreA <= scoreB; // Fallback to greedy if roles are equal
+                 } else { assignToA = scoreA <= scoreB; }
+
+                 if (assignToA) {
+                     teamA.push(player); scoreA += player.tempScore;
+                     if (balanceByRole) rolesCountA[player.ruolo]++;
+                 } else {
+                     teamB.push(player); scoreB += player.tempScore;
+                     if (balanceByRole) rolesCountB[player.ruolo]++;
+                 }
+             });
+             const finalTeamA = teamA.map(({ tempScore, baseScore, ...player }) => player);
+             const finalTeamB = teamB.map(({ tempScore, baseScore, ...player }) => player);
+             return { teamA: finalTeamA, teamB: finalTeamB };
+        };
+        function drawFormation(canvas, teamA, teamB, matchType) {
+             const ctx = canvas.getContext('2d'); if (!ctx) return;
+             const W = canvas.width = 700; const H = canvas.height = 450; const playerRadius = 15; const fieldColor = '#28a745'; const lineColor = '#FFFFFF'; const teamAColor = '#007bff'; const teamBColor = '#dc3545'; const playerNameColor = '#000000'; const defaultTextColor = '#FFFFFF';
+             const imageCache = {};
+             const loadImage = (url) => { if (!url) return Promise.resolve(null); if (imageCache[url]) return imageCache[url]; const img = new Image(); img.crossOrigin = "anonymous"; // Tenta di gestire CORS se le immagini sono su storage diverso
+                return new Promise((resolve) => {
+                    img.onload = () => { imageCache[url] = img; resolve(img); };
+                    img.onerror = () => { console.warn(`Failed to load image: ${url}`); imageCache[url] = null; resolve(null); }; // Gestisci errore caricamento
+                    img.src = url;
+                });
+             };
+             ctx.clearRect(0, 0, W, H); ctx.fillStyle = fieldColor; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = lineColor; ctx.lineWidth = 2; ctx.strokeRect(5, 5, W - 10, H - 10); ctx.beginPath(); ctx.moveTo(W / 2, 5); ctx.lineTo(W / 2, H - 5); ctx.stroke(); ctx.beginPath(); ctx.arc(W / 2, H / 2, 60, 0, 2 * Math.PI); ctx.stroke(); ctx.fillStyle = lineColor; ctx.beginPath(); ctx.arc(W / 2, H / 2, 4, 0, 2 * Math.PI); ctx.fill(); ctx.strokeRect(5, H * 0.2, W * 0.2, H * 0.6); ctx.strokeRect(W - 5 - W * 0.2, H * 0.2, W * 0.2, H * 0.6);
+
+             const getPositions = (team, isTeamA) => {
+                 const positions = {}; const sideXBase = isTeamA ? W * 0.25 : W * 0.75;
+                 const roleOffsets = { Portiere: -W * 0.18, Difensore: -W * 0.1, Centrocampista: 0, Attaccante: W * 0.1 };
+                 ALL_ROLES.forEach(role => {
+                     const playersInRole = team.filter(p => p.currentRole === role); if (playersInRole.length === 0) return;
+                     const baseX = sideXBase + (roleOffsets[role] || 0); const availableHeight = H * 0.8; const startY = H * 0.1;
+                     const yStep = playersInRole.length > 1 ? availableHeight / (playersInRole.length -1) : availableHeight / 2;
+                     playersInRole.forEach((player, index) => {
+                         let yPos = startY + (playersInRole.length === 1 ? availableHeight / 2 : index * yStep) + (Math.random() - 0.5) * 10;
+                         let xPos = baseX + (Math.random() - 0.5) * 20;
+                         positions[player.id] = { x: Math.max(playerRadius + 5, Math.min(W - playerRadius - 5, xPos)), y: Math.max(playerRadius + 5, Math.min(H - playerRadius - 5, yPos)) };
+                     });
+                 }); return positions;
+             };
+
+             const drawPlayer = async (player, pos, teamColor) => {
+                 if (!pos) return; const { x, y } = pos;
+                 let img = null;
+                 if (player.photoUrl) { img = await loadImage(player.photoUrl); }
+
+                 ctx.save();
+                 // Disegna cerchio base
+                 ctx.beginPath(); ctx.arc(x, y, playerRadius, 0, 2 * Math.PI); ctx.fillStyle = teamColor; ctx.fill();
+                 // Disegna immagine se caricata correttamente
+                 if (img) {
+                     ctx.beginPath(); ctx.arc(x, y, playerRadius, 0, 2 * Math.PI); ctx.clip();
+                     const aspectRatio = img.naturalWidth / img.naturalHeight; let drawWidth, drawHeight, offsetX, offsetY;
+                     if (img.naturalWidth >= img.naturalHeight) { drawHeight = playerRadius * 2; drawWidth = drawHeight * aspectRatio; offsetX = x - drawWidth / 2; offsetY = y - playerRadius; }
+                     else { drawWidth = playerRadius * 2; drawHeight = drawWidth / aspectRatio; offsetX = x - playerRadius; offsetY = y - drawHeight / 2; }
+                     try { ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight); } catch (e) { console.warn("Error drawing image for", player.nome, e); /* Non interrompere se un'immagine fallisce */ }
+                 }
+                 ctx.restore(); // Ripristina contesto dopo clip
+
+                 // Disegna bordo SOPRA immagine/colore
+                 ctx.beginPath(); ctx.arc(x, y, playerRadius, 0, 2 * Math.PI); ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.stroke();
+
+                 // Disegna nome sotto
+                 ctx.fillStyle = playerNameColor; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
+                 const displayName = player.nome.length > 12 ? player.nome.split(' ')[0] : player.nome;
+                 ctx.fillText(displayName, x, y + playerRadius + 12);
+                 // Non c'è bisogno di ctx.restore() qui
+             };
+
+             // Poiché drawPlayer è async ora, dobbiamo aspettare che tutte le promesse si risolvano
+             const drawAllPlayers = async () => {
+                const positionsA = getPositions(teamA, true);
+                const positionsB = getPositions(teamB, false);
+                const drawPromises = [];
+                teamA.forEach(p => drawPromises.push(drawPlayer(p, positionsA[p.id], teamAColor)));
+                teamB.forEach(p => drawPromises.push(drawPlayer(p, positionsB[p.id], teamBColor)));
+                await Promise.all(drawPromises);
+                console.log("Formation drawing complete.");
+             };
+
+             return drawAllPlayers(); // Ritorna la promessa per la gestione esterna
+        };
+        // === Fine Funzioni Utili ===
+
+
+        // === Componenti React (Largamente Invariati nella struttura, solo props aggiornate) ===
+        function PlayerForm({ onSave, editingPlayer, onCancelEdit }) {
+             const initialFormData = { nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5, velocita: 5, scatto: 5, pressing: 5, determinazione: 5, peso: 75, altezza: 175, robustezza: 5, photoUrl: null };
+             const [formData, setFormData] = useState(initialFormData);
+             const [isVisible, setIsVisible] = useState(false);
+             const [photoPreview, setPhotoPreview] = useState(null);
+             // Track upload status/error maybe? For now, keep simple.
+
+             useEffect(() => {
+                 if (editingPlayer) {
+                     const dataToEdit = {...initialFormData, ...editingPlayer};
+                     setFormData(dataToEdit);
+                     setPhotoPreview(dataToEdit.photoUrl || null); // Mostra foto esistente
+                     setIsVisible(true);
+                 } else {
+                     setFormData(initialFormData);
+                     setPhotoPreview(null);
+                     // Potresti decidere se nascondere o meno il form qui
+                 }
+             }, [editingPlayer]);
+
+             const handleChange = (e) => { const { name, value, type } = e.target; setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value })); };
+
+             // Gestione Foto: Ora salva solo il Data URL temporaneamente. L'upload vero avverrà in handleSavePlayer
+             const handlePhotoChange = (e) => {
+                 const file = e.target.files[0];
+                 if (file) {
+                     if (file.size > 2 * 1024 * 1024) { alert("Immagine troppo grande! Max 2MB."); e.target.value = null; return; }
+                     const reader = new FileReader();
+                     reader.onloadend = () => {
+                         // Salva il Data URL per l'anteprima e per passarlo a onSave
+                         setFormData(prev => ({ ...prev, photoUrl: reader.result, photoFile: file })); // Aggiungi file originale se serve upload diretto
+                         setPhotoPreview(reader.result);
+                     };
+                     reader.onerror = (error) => { console.error("File reading error:", error); alert("Errore nel caricamento dell'immagine."); };
+                     reader.readAsDataURL(file);
+                 } else {
+                     // Se l'utente annulla la selezione file, resetta?
+                     setFormData(prev => ({ ...prev, photoUrl: editingPlayer?.photoUrl || null, photoFile: null })); // Ripristina vecchia foto o null
+                     setPhotoPreview(editingPlayer?.photoUrl || null);
+                 }
+                 // Resetta il valore dell'input file per permettere di selezionare lo stesso file di nuovo
+                 e.target.value = null;
+             };
+
+             const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!formData.nome.trim()) { alert("Il nome è obbligatorio!"); return; }
+                // Passa formData a onSave. Sarà onSave a gestire l'eventuale upload.
+                onSave(formData);
+                handleCancel(); // Chiudi e resetta form dopo il tentativo di salvataggio
+            };
+
+             const handleCancel = () => {
+                 setFormData(initialFormData);
+                 setPhotoPreview(null);
+                 setIsVisible(false);
+                 onCancelEdit(); // Notifica al parent che l'edit è stato cancellato
+             };
+
+             const toggleVisibility = () => {
+                 if (!editingPlayer) { // Se NON stai modificando
+                     setIsVisible(!isVisible);
+                     if (isVisible) { // Se stavi chiudendo il form (senza essere in edit)
+                         handleCancel(); // Resetta tutto
+                     }
+                 } else if (!isVisible) { // Se stai modificando ma il form era nascosto (improbabile con useEffect)
+                     setIsVisible(true); // Mostralo
+                 }
+                 // Se stai modificando e clicchi "Nuovo Giocatore", dovrebbe prima annullare l'edit?
+                 // Per ora, il bottone "Nuovo" è nascosto durante l'edit.
+             };
+
+             return (
+                 <div className="player-form-container">
+                     {!isVisible && !editingPlayer && ( /* Mostra solo se non visibile E non in modifica */
+                        <button onClick={toggleVisibility} className="btn-toggle-form btn-create">+ Crea Nuovo Giocatore</button>
+                     )}
+                     {isVisible && (
+                         <form onSubmit={handleSubmit} className="player-form">
+                             <h3>{editingPlayer ? `Modifica Giocatore: ${editingPlayer.nome}` : 'Nuovo Giocatore'}</h3>
+                             {/* Campi form identici a prima */}
+                             <div className="form-group"><label htmlFor="nome">Nome:</label><input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required /></div>
+                             <div className="form-group"><label htmlFor="ruolo">Ruolo Preferito:</label><select id="ruolo" name="ruolo" value={formData.ruolo} onChange={handleChange}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+                             {[ { name: 'abilitaDifensiva', label: 'Difesa' }, { name: 'abilitaOffensiva', label: 'Attacco' }, { name: 'velocita', label: 'Velocità' }, { name: 'scatto', label: 'Scatto' }, { name: 'pressing', label: 'Pressing' }, { name: 'determinazione', label: 'Determ.' }, { name: 'robustezza', label: 'Robustezza' } ].map(({ name, label }) => ( <div className="form-group" key={name}><label htmlFor={name}>{label} (1-10):</label><input type="number" id={name} name={name} min="1" max="10" step="1" value={formData[name] ?? ''} onChange={handleChange} required /></div> ))}
+                             <div className="form-group"><label htmlFor="peso">Peso (kg):</label><input type="number" id="peso" name="peso" min="30" max="150" step="0.1" value={formData.peso ?? ''} onChange={handleChange} required /></div>
+                             <div className="form-group"><label htmlFor="altezza">Altezza (cm):</label><input type="number" id="altezza" name="altezza" min="100" max="230" step="1" value={formData.altezza ?? ''} onChange={handleChange} required /></div>
+                             <div className="form-group">
+                                <label htmlFor="photo">Foto (Max 2MB):</label>
+                                <input type="file" id="photo" name="photo" accept="image/png, image/jpeg, image/webp" onChange={handlePhotoChange} />
+                                <br/>
+                                {photoPreview && <img src={photoPreview} alt="Anteprima" className="photo-preview" />}
+                                {!photoPreview && editingPlayer?.photoUrl && <span> (Foto attuale presente)</span>}
+                             </div>
+                             <div className="form-actions">
+                                 <button type="submit" className="btn-save">{editingPlayer ? 'Salva Modifiche' : 'Aggiungi Giocatore'}</button>
+                                 <button type="button" onClick={handleCancel} className="btn-cancel">Annulla</button>
+                             </div>
+                         </form>
+                     )}
+                 </div>
+             );
+        }
+        function PlayerItem({ player, onEdit, onDelete }) {
+             const avgScore = getAvgScore(player);
+             return (
+                 <li className="player-item">
+                     <div className="player-info">
+                         {/* Mostra thumbnail, gestendo caso null/undefined */}
+                         {player.photoUrl ? (<img src={player.photoUrl} alt={player.nome} className="player-photo-thumbnail" onError={(e) => e.target.style.display='none'} />) : (<span className="player-photo-thumbnail"></span>)}
+                         <div className="player-details">
+                             <span className="player-name">{player.nome}</span>
+                             <span className="player-meta">
+                                 <span className="player-role">{player.ruolo}</span>
+                                 <span className="player-avg-score">Avg: {avgScore}</span>
+                             </span>
+                         </div>
+                     </div>
+                     <div className="player-actions">
+                         <button onClick={() => onEdit(player.id)} className="btn-edit">Modifica</button>
+                         <button onClick={() => onDelete(player.id)} className="btn-delete">Elimina</button>
+                     </div>
+                 </li>
+             );
+        }
+        function PlayerList({ players, onEdit, onDelete }) {
+             // Ordina i giocatori alfabeticamente per nome
+             const sortedPlayers = [...players].sort((a, b) => a.nome.localeCompare(b.nome));
+
+             return (
+                 <div className="player-list-container">
+                     <h2>Giocatori nel DB Master ({players.length})</h2>
+                     {players.length === 0 ? (
+                        <p>Nessun giocatore nel database. Aggiungine uno usando il form sopra o carica un file JSON locale.</p>
+                     ) : (
+                        <ul className="player-list">
+                            {sortedPlayers.map(p => (
+                                <PlayerItem key={p.id} player={p} onEdit={onEdit} onDelete={onDelete} />
+                            ))}
+                        </ul>
+                     )}
+                 </div>
+             );
+        }
+        function PlayerSelectionModal({ players, selectedPlayerIds, requiredCount, onToggleSelect, onConfirm, onClose }) {
+             const selectedCount = selectedPlayerIds.length;
+             const canConfirm = selectedCount === requiredCount;
+             // Ordina i giocatori alfabeticamente anche nel modal
+             const sortedPlayers = [...players].sort((a, b) => a.nome.localeCompare(b.nome));
+
+             return (
+                 <div className="modal-overlay" onClick={onClose}>
+                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                         <h3>Seleziona Giocatori ({selectedCount} / {requiredCount})</h3>
+                         <p>Seleziona esattamente {requiredCount} giocatori dalla lista per la partita.</p>
+                         <ul className="modal-player-list">
+                             {sortedPlayers.map(player => {
+                                 const isSelected = selectedPlayerIds.includes(player.id);
+                                 // Disabilita se non è selezionato e abbiamo già raggiunto il numero richiesto
+                                 const isDisabled = !isSelected && selectedCount >= requiredCount;
+                                 return (
+                                     <li
+                                        key={player.id}
+                                        className={`modal-player-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                                        onClick={() => !isDisabled && onToggleSelect(player.id)}
+                                     >
+                                        <label className={isDisabled ? 'disabled' : ''}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => {}} // L'onChange è gestito dal click sul LI
+                                                disabled={isDisabled}
+                                            />
+                                            {player.photoUrl ? <img src={player.photoUrl} alt="" className="player-photo-thumbnail" style={{width: '25px', height: '25px'}} onError={(e) => e.target.style.display='none'}/> : <span className="player-photo-thumbnail" style={{width: '25px', height: '25px', display: 'inline-block'}}></span>}
+                                            {player.nome} ({player.ruolo} - Avg: {getAvgScore(player)})
+                                        </label>
+                                     </li>
+                                 );
+                             })}
+                         </ul>
+                         <div className="modal-actions">
+                            <button onClick={onConfirm} disabled={!canConfirm} className="btn-confirm">
+                                Conferma Selezione ({selectedCount}/{requiredCount})
+                            </button>
+                            <button onClick={onClose} className="btn-cancel">Annulla</button>
+                         </div>
+                     </div>
+                 </div>
+             );
+        }
+        function MatchSetup({ matchType, onMatchTypeChange, onOpenSelection, availablePlayerCount }) {
+             const requiredPlayers = getRequiredPlayers(matchType);
+             const canOpenSelector = matchType && availablePlayerCount >= requiredPlayers;
+             let infoText = '';
+             if (matchType) {
+                 if (availablePlayerCount < requiredPlayers) {
+                     infoText = `Servono ${requiredPlayers} giocatori per questa modalità, ma ne hai solo ${availablePlayerCount} nel DB.`;
+                 } else {
+                     infoText = `Modalità selezionata: Calcio a ${matchType}. Servono ${requiredPlayers} giocatori.`;
+                 }
+             }
+
+             return (
+                 <div className="match-setup-container">
+                     <h2>Imposta Partita</h2>
+                     <div className="match-type-selector">
+                        <label htmlFor="matchType">Tipo Partita:</label>
+                        <select id="matchType" value={matchType || ''} onChange={(e) => onMatchTypeChange(e.target.value)}>
+                            <option value="" disabled>Seleziona tipo...</option>
+                            <option value="5">Calcio a 5 (10 giocatori)</option>
+                            <option value="6">Calcio a 6 (12 giocatori)</option>
+                            <option value="8">Calciotto (16 giocatori)</option>
+                            <option value="11">Calcio a 11 (22 giocatori)</option>
+                        </select>
+                     </div>
+                     {infoText && (<p>{infoText}</p>)}
+                     <button
+                        onClick={onOpenSelection}
+                        disabled={!canOpenSelector}
+                        className="btn-select-players"
+                        title={!matchType ? "Seleziona prima il tipo di partita" : (availablePlayerCount < requiredPlayers ? "Giocatori insufficienti nel DB" : "Seleziona i giocatori per la partita")}
+                     >
+                         Seleziona Giocatori Convocati
+                     </button>
+                 </div>
+             );
+        }
+        function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onUpdateTeams, onClearSelection, balanceByRoleEnabled, onToggleBalanceByRole, onGenerateTeams }) {
+             const [unpredictability, setUnpredictability] = useState(1);
+             const [playersToSwap, setPlayersToSwap] = useState({ teamA: null, teamB: null });
+             const [imageDataUrl, setImageDataUrl] = useState(null);
+             const [isGeneratingImage, setIsGeneratingImage] = useState(false); // Stato per feedback generazione immagine
+             const canvasRef = useRef(null);
+
+             const requiredPlayers = getRequiredPlayers(matchType);
+             const teamsExist = teams.teamA.length > 0 || teams.teamB.length > 0;
+             const correctPlayersSelectedForCreation = selectedPlayerIds.length === requiredPlayers && requiredPlayers > 0;
+
+             // La generazione è possibile se le squadre esistono GIÀ o se sono stati selezionati il numero CORRETTO di giocatori
+             const generationPossible = teamsExist || correctPlayersSelectedForCreation;
+             const buttonGenerateText = teamsExist ? 'Rigenera Squadre' : 'Crea Squadre';
+             const buttonGenerateTitle = teamsExist ? 'Rigenera le squadre con le impostazioni attuali' : (correctPlayersSelectedForCreation ? 'Crea le squadre con i giocatori selezionati' : 'Seleziona il numero corretto di giocatori');
+
+             const swapButtonEnabled = playersToSwap.teamA !== null && playersToSwap.teamB !== null;
+
+             const handleGenerateOrRegenerate = () => {
+                 // Se le squadre esistono già, usa i giocatori in quelle squadre
+                 // Altrimenti, usa i giocatori selezionati
+                 const playersForGeneration = teamsExist
+                    ? [...teams.teamA, ...teams.teamB]
+                    : players.filter(p => selectedPlayerIds.includes(p.id));
+
+                 // Doppio controllo sulla numerosità
+                 if (playersForGeneration.length !== requiredPlayers) {
+                     alert(`Errore: Per la modalità Calcio a ${matchType} servono ${requiredPlayers} giocatori, ma ne sono stati forniti ${playersForGeneration.length}.`);
+                     return;
+                 }
+
+                 setImageDataUrl(null); // Azzera immagine precedente
+                 setPlayersToSwap({ teamA: null, teamB: null }); // Azzera selezione swap
+                 onGenerateTeams(playersForGeneration, unpredictability, balanceByRoleEnabled);
+             };
+
+             const handleSelectPlayerForSwap = (playerId, teamKey) => {
+                 setPlayersToSwap(prev => {
+                     // Se clicco sullo stesso giocatore, lo deseleziono
+                     if (prev[teamKey] === playerId) {
+                         return { ...prev, [teamKey]: null };
+                     }
+                     // Altrimenti, seleziono il nuovo giocatore per quel team
+                     return { ...prev, [teamKey]: playerId };
+                 });
+             };
+
+             const handleExecuteSwap = () => {
+                 if (!swapButtonEnabled) return;
+                 const playerA_ID = playersToSwap.teamA;
+                 const playerB_ID = playersToSwap.teamB;
+
+                 const playerA = teams.teamA.find(p => p.id === playerA_ID);
+                 const playerB = teams.teamB.find(p => p.id === playerB_ID);
+
+                 if (!playerA || !playerB) {
+                     console.error("Swap error: Player not found", playerA_ID, playerB_ID);
+                     return;
+                 }
+
+                 // Crea le nuove squadre scambiando i giocatori
+                 const newTeamA = teams.teamA.filter(p => p.id !== playerA_ID).concat(playerB);
+                 const newTeamB = teams.teamB.filter(p => p.id !== playerB_ID).concat(playerA);
+
+                 onUpdateTeams({ teamA: newTeamA, teamB: newTeamB });
+                 setPlayersToSwap({ teamA: null, teamB: null }); // Resetta selezione swap
+                 setImageDataUrl(null); // Azzera immagine generata dopo lo swap
+             };
+
+             const handleRoleChange = (playerId, newRole, teamKey) => {
+                 const currentTeams = { teamA: [...teams.teamA], teamB: [...teams.teamB] };
+                 const team = currentTeams[teamKey];
+                 const playerIndex = team.findIndex(p => p.id === playerId);
+                 if (playerIndex === -1) return;
+
+                 // Aggiorna solo il ruolo corrente (currentRole) del giocatore
+                 const updatedPlayer = { ...team[playerIndex], currentRole: newRole };
+                 const updatedTeam = [
+                     ...team.slice(0, playerIndex),
+                     updatedPlayer,
+                     ...team.slice(playerIndex + 1)
+                 ];
+
+                 onUpdateTeams({ ...currentTeams, [teamKey]: updatedTeam });
+                 setImageDataUrl(null); // Azzera immagine se cambio ruolo
+             };
+
+             const handleGenerateImage = async () => {
+                 if (!canvasRef.current || !teamsExist || isGeneratingImage) return;
+                 setIsGeneratingImage(true); // Blocca click multipli
+                 setImageDataUrl(null); // Pulisci vecchia immagine
+
+                 try {
+                     // Assicurati che i ruoli 'currentRole' siano impostati per tutti
+                     const teamA_withRoles = teams.teamA.map(p => ({ ...p, currentRole: p.currentRole ?? p.ruolo }));
+                     const teamB_withRoles = teams.teamB.map(p => ({ ...p, currentRole: p.currentRole ?? p.ruolo }));
+
+                     console.log("Generating image for teams:", teamA_withRoles, teamB_withRoles);
+                     await drawFormation(canvasRef.current, teamA_withRoles, teamB_withRoles, matchType);
+                     // Aspetta un piccolo delay per assicurare il rendering completo del canvas
+                     await new Promise(resolve => setTimeout(resolve, 100));
+                     const dataUrl = canvasRef.current.toDataURL('image/png');
+                     setImageDataUrl(dataUrl);
+                 } catch (error) {
+                     console.error("Error generating formation image:", error);
+                     alert("Errore durante la generazione dell'immagine della formazione.");
+                     setImageDataUrl(null); // Assicura che non rimanga un'immagine parziale/errata
+                 } finally {
+                    setIsGeneratingImage(false); // Riabilita il pulsante
+                 }
+             };
+
+             const scoreA = teams.teamA.length > 0 ? calculateTeamFinalScore(teams.teamA).toFixed(1) : 0;
+             const scoreB = teams.teamB.length > 0 ? calculateTeamFinalScore(teams.teamB).toFixed(1) : 0;
+
+             const sortTeamForDisplay = (team) => {
+                return [...team].sort((a, b) => {
+                    const roleA = a.currentRole ?? a.ruolo;
+                    const roleB = b.currentRole ?? b.ruolo;
+                    const indexA = roleOrder.indexOf(roleA);
+                    const indexB = roleOrder.indexOf(roleB);
+                    // Gestisci ruoli non trovati mettendoli alla fine
+                    const effectiveIndexA = indexA === -1 ? 99 : indexA;
+                    const effectiveIndexB = indexB === -1 ? 99 : indexB;
+                    if (effectiveIndexA !== effectiveIndexB) {
+                        return effectiveIndexA - effectiveIndexB;
+                    }
+                    // Se il ruolo è lo stesso, ordina per nome
+                    return a.nome.localeCompare(b.nome);
+                });
+             };
+
+             const sortedTeamA = sortTeamForDisplay(teams.teamA);
+             const sortedTeamB = sortTeamForDisplay(teams.teamB);
+
+             return (
+                 <div className="team-display-container">
+                     <h2>{teamsExist ? 'Gestisci Squadre' : 'Crea Squadre'}</h2>
+
+                     {/* Messaggi informativi */}
+                     {!teamsExist && !correctPlayersSelectedForCreation && requiredPlayers > 0 && (
+                         <p>Seleziona {requiredPlayers} giocatori per creare le squadre.</p>
+                     )}
+                     {!teamsExist && correctPlayersSelectedForCreation && (
+                         <p>Hai selezionato {selectedPlayerIds.length} giocatori ({requiredPlayers} richiesti). Clicca su '{buttonGenerateText}' per generare le squadre.</p>
+                     )}
+                     {teamsExist && (
+                         <p>Squadre generate. Puoi rigenerarle, scambiare giocatori (cliccando sul nome), cambiare il ruolo in campo o generare l'immagine.</p>
+                     )}
+
+                     {/* Controlli di generazione/bilanciamento (mostra solo se un tipo partita è scelto) */}
+                     {requiredPlayers > 0 && (
+                         <div className="balancing-options">
+                             <div className="unpredictability-slider">
+                                <label htmlFor="unpredictability">Imprevedibilità bilanciamento (0=max equilibrio, 5=più casuale): {unpredictability}</label>
+                                <input type="range" id="unpredictability" min="0" max="5" step="0.5" value={unpredictability} onChange={(e) => setUnpredictability(parseFloat(e.target.value))} />
+                             </div>
+                             <div className="checkbox-group">
+                                <input type="checkbox" id="balanceByRole" checked={balanceByRoleEnabled} onChange={onToggleBalanceByRole} />
+                                <label htmlFor="balanceByRole">Tenta bilanciamento per ruolo (oltre al punteggio)</label>
+                             </div>
+                             <button onClick={handleGenerateOrRegenerate} className="btn-generate" disabled={!generationPossible} title={buttonGenerateTitle}>
+                                {buttonGenerateText}
+                             </button>
+                         </div>
+                     )}
+
+                     {/* Visualizzazione Squadre (solo se esistono) */}
+                     {teamsExist && (
+                         <React.Fragment>
+                             <div className="teams-output">
+                                 <h3>Squadre Generate</h3>
+                                 <div className="team-columns">
+                                     {/* Squadra A */}
+                                     <div className="team-column">
+                                         <h4>Squadra A <small>(Punteggio Tot: {scoreA})</small></h4>
+                                         <ul>
+                                            {sortedTeamA.map(p => (
+                                                <li key={p.id} className={playersToSwap.teamA === p.id ? 'selected-for-swap' : ''}>
+                                                    <div className="team-player-info" onClick={() => handleSelectPlayerForSwap(p.id, 'teamA')} title={`Clicca per selezionare ${p.nome} per lo scambio`}>
+                                                        <span className="team-player-name">
+                                                            {p.photoUrl && <img src={p.photoUrl} alt="" className="player-photo-thumbnail" style={{width: '20px', height: '20px', marginRight:'5px'}} onError={(e) => e.target.style.display='none'}/>}
+                                                            {p.nome}
+                                                        </span>
+                                                        <span className="team-player-original-role">(Pref: {p.ruolo} - Avg: {getAvgScore(p)})</span>
+                                                    </div>
+                                                    <div className="team-player-role-selector">
+                                                        <label htmlFor={`role-a-${p.id}`} style={{display:'none'}}>Ruolo A</label> {/* Label per accessibilità */}
+                                                        <select
+                                                            id={`role-a-${p.id}`}
+                                                            value={p.currentRole ?? p.ruolo} // Usa currentRole se esiste, altrimenti ruolo base
+                                                            onChange={(e) => handleRoleChange(p.id, e.target.value, 'teamA')}
+                                                            title={`Cambia ruolo in campo per ${p.nome}`}
+                                                        >
+                                                            {ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                     </div>
+                                     {/* Squadra B */}
+                                     <div className="team-column">
+                                        <h4>Squadra B <small>(Punteggio Tot: {scoreB})</small></h4>
+                                         <ul>
+                                            {sortedTeamB.map(p => (
+                                                <li key={p.id} className={playersToSwap.teamB === p.id ? 'selected-for-swap' : ''}>
+                                                    <div className="team-player-info" onClick={() => handleSelectPlayerForSwap(p.id, 'teamB')} title={`Clicca per selezionare ${p.nome} per lo scambio`}>
+                                                        <span className="team-player-name">
+                                                            {p.photoUrl && <img src={p.photoUrl} alt="" className="player-photo-thumbnail" style={{width: '20px', height: '20px', marginRight:'5px'}} onError={(e) => e.target.style.display='none'}/>}
+                                                            {p.nome}
+                                                        </span>
+                                                        <span className="team-player-original-role">(Pref: {p.ruolo} - Avg: {getAvgScore(p)})</span>
+                                                    </div>
+                                                    <div className="team-player-role-selector">
+                                                        <label htmlFor={`role-b-${p.id}`} style={{display:'none'}}>Ruolo B</label> {/* Label per accessibilità */}
+                                                        <select
+                                                            id={`role-b-${p.id}`}
+                                                            value={p.currentRole ?? p.ruolo} // Usa currentRole se esiste, altrimenti ruolo base
+                                                            onChange={(e) => handleRoleChange(p.id, e.target.value, 'teamB')}
+                                                            title={`Cambia ruolo in campo per ${p.nome}`}
+                                                        >
+                                                            {ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                     </div>
+                                 </div>
+                                 {/* Controlli Scambio */}
+                                 <div className="swap-controls">
+                                     <button onClick={handleExecuteSwap} className="btn-swap" disabled={!swapButtonEnabled} title={!swapButtonEnabled ? "Seleziona un giocatore da Squadra A e uno da Squadra B" : "Esegui lo scambio tra i giocatori selezionati"}>
+                                        Scambia Giocatori ({playersToSwap.teamA ? 'A✓' : 'A?'} {'↔'} {playersToSwap.teamB ? 'B✓' : 'B?'})
+                                     </button>
+                                 </div>
+                             </div>
+
+                             {/* Generazione Immagine */}
+                             <div className="generated-image-container">
+                                 <button onClick={handleGenerateImage} className="btn-generate-img" disabled={!teamsExist || isGeneratingImage}>
+                                     {isGeneratingImage ? 'Generando Immagine...' : 'Genera Immagine Formazione'}
+                                 </button>
+                                 {/* Canvas nascosto usato per generare l'immagine */}
+                                 <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+                                 {/* Mostra l'immagine generata e il link per scaricarla */}
+                                 {imageDataUrl && (
+                                     <div>
+                                         <img src={imageDataUrl} alt={`Formazione Calcio a ${matchType}`}/>
+                                         <br/>
+                                         <a href={imageDataUrl} download={`formazione_elclasico_${matchType}v${matchType}.png`}>
+                                             Scarica Immagine Formazione
+                                         </a>
+                                     </div>
+                                 )}
+                             </div>
+                         </React.Fragment>
+                     )}
+
+                     {/* Pulsante per azzerare tutto */}
+                     {(selectedPlayerIds.length > 0 || teamsExist) && (
+                        <button onClick={onClearSelection} className="btn-clear-selection" style={{ marginTop: '20px' }}>
+                           Azzera Selezione Giocatori e Squadre
+                        </button>
+                     )}
+                 </div>
+             );
+        }
+        // === Fine Componenti React ===
+
+
+        // === Componente Principale App (Connesso a Firestore) ===
+        function App() {
+            // STATO GIOCATORI: Gestito da Firestore via useState
+            const [players, setPlayers] = useState([]);
+            const [isLoadingPlayers, setIsLoadingPlayers] = useState(true);
+            const [errorLoadingPlayers, setErrorLoadingPlayers] = useState(firebaseInitializationError); // Usa errore da inizializzazione
+
+            // STATI GESTITI CON LOCALSTORAGE (Partita, Squadre locali, Impostazioni)
+            const [matchType, setMatchType] = useLocalStorage('elClasico_matchType_v2', null);
+            const [teams, setTeams] = useLocalStorage('elClasico_teams_v7', { teamA: [], teamB: [] }); // Incremented version key
+            const [balanceByRoleEnabled, setBalanceByRoleEnabled] = useLocalStorage('elClasico_balanceByRole_v2', true);
+
+            // STATI LOCALI STANDARD
+            const [editingPlayer, setEditingPlayer] = useState(null); // Oggetto giocatore con ID Firestore
+            const [selectedPlayerIds, setSelectedPlayerIds] = useState([]); // ID dei giocatori selezionati per la partita
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const fileInputRef = useRef(null);
+
+            // --- EFFETTO CARICAMENTO GIOCATORI DA FIRESTORE (`giocatori_master`) ---
+            useEffect(() => {
+                if (firebaseInitializationError) { setIsLoadingPlayers(false); return; }
+                if (!playersCollectionRef) { setErrorLoadingPlayers("Errore: Riferimento alla collezione Firestore non valido."); setIsLoadingPlayers(false); return; }
+
+                setIsLoadingPlayers(true);
+                setErrorLoadingPlayers(null);
+
+                console.log(`Attivazione listener sulla collezione: ${TARGET_COLLECTION}`);
+                const unsubscribe = playersCollectionRef.onSnapshot(snapshot => {
+                    console.log(`Dati ricevuti da ${TARGET_COLLECTION}:`, snapshot.size);
+                    const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setPlayers(playersData);
+                    setIsLoadingPlayers(false);
+                }, error => {
+                    console.error(`Errore listener Firestore su ${TARGET_COLLECTION}:`, error);
+                    setErrorLoadingPlayers(`Errore connessione DB (${TARGET_COLLECTION}): ${error.message}. Controlla le regole di sicurezza e la connessione.`);
+                    setIsLoadingPlayers(false);
+                });
+
+                // Cleanup listener on component unmount
+                return () => {
+                    console.log(`Disattivazione listener su ${TARGET_COLLECTION}.`);
+                    unsubscribe();
+                };
+            }, []); // Esegui solo al mount
+
+            // --- Handlers Gestione Giocatori (Firestore - `giocatori_master`) ---
+            const handleSavePlayer = async (playerData) => {
+                if (!db || !playersCollectionRef) { alert("Errore: Database non connesso."); return; }
+
+                // Separa ID, file foto (se presente) e dati da salvare
+                const { id, photoFile, ...dataToSave } = playerData;
+
+                // Gestione photoUrl: Inizialmente è il dataURL dall'input o l'URL esistente.
+                // Se c'è un photoFile, l'URL verrà sovrascritto dall'URL di storage DOPO l'upload.
+                // Se non c'è photoFile e photoUrl è null/undefined (es. rimosso foto), assicurati che sia null.
+                if (!photoFile && !dataToSave.photoUrl) {
+                    dataToSave.photoUrl = null; // Assicura che sia null se non c'è file e non c'è URL
+                }
+
+                 // !!! IMPORTANTE: L'UPLOAD SU FIREBASE STORAGE NON È IMPLEMENTATO QUI !!!
+                 // Per ora, salviamo solo il dataURL (che può essere molto lungo e inefficiente)
+                 // o l'URL esistente se non è stato cambiato.
+                 // Per fare l'upload:
+                 // 1. Aggiungere l'SDK di Firebase Storage.
+                 // 2. Creare un riferimento allo storage (`firebase.storage().ref(...)`).
+                 // 3. Usare `ref.put(photoFile)` per caricare.
+                 // 4. Ottenere l'URL di download (`ref.getDownloadURL()`).
+                 // 5. Salvare QUESTO URL in `dataToSave.photoUrl`.
+                 // Questo è omesso per semplicità ora.
+                 if (photoFile) {
+                     console.warn("Upload foto non implementato. Salvo il Data URL nel campo photoUrl (inefficiente).");
+                     // dataToSave.photoUrl è già il Data URL dal form
+                 }
+
+
+                // Rimuovi photoFile dai dati da salvare in Firestore
+                delete dataToSave.photoFile;
+
+                console.log("Tentativo di salvataggio su Firestore:", id ? `Modifica ID ${id}` : "Nuovo Giocatore", dataToSave);
+
+                try {
+                    if (id) { // Modifica Giocatore Esistente
+                        await playersCollectionRef.doc(id).update(dataToSave);
+                        console.log("Giocatore aggiornato:", id);
+                        setEditingPlayer(null); // Esci dalla modalità modifica
+                    } else { // Creazione Nuovo Giocatore
+                        const docRef = await playersCollectionRef.add(dataToSave);
+                        console.log("Giocatore aggiunto con ID:", docRef.id);
+                    }
+                } catch (error) {
+                    console.error("Errore salvataggio giocatore su Firestore:", error);
+                    alert(`Errore durante il salvataggio del giocatore: ${error.message}\nControlla le regole di sicurezza di Firestore.`);
+                }
+                 // Il listener onSnapshot aggiornerà automaticamente lo stato `players`.
+            };
+
+            const handleEditPlayer = (playerId) => {
+                const playerToEdit = players.find(p => p.id === playerId);
+                if (playerToEdit) {
+                    setEditingPlayer(playerToEdit); // Imposta giocatore in modifica (passa oggetto completo)
+                    window.scrollTo({ top: 0, behavior: 'smooth' }); // Scrolla in cima per vedere il form
+                } else {
+                    console.warn("Edit: Player non trovato con ID", playerId);
+                }
+            };
+
+            const handleDeletePlayer = async (playerId) => {
+                if (!db || !playersCollectionRef) { alert("Errore: Database non connesso."); return; }
+
+                const playerToDelete = players.find(p => p.id === playerId);
+                if (playerToDelete && window.confirm(`Sei sicuro di voler eliminare ${playerToDelete.nome} dal database master? L'azione è irreversibile.`)) {
+                    console.log("Tentativo di eliminazione giocatore:", playerId);
+                    try {
+                        await playersCollectionRef.doc(playerId).delete();
+                        console.log("Giocatore eliminato:", playerId);
+                        // Pulisci stato locale correlato (se necessario, anche se il listener dovrebbe bastare)
+                        setSelectedPlayerIds(prev => prev.filter(id => id !== playerId));
+                        setTeams(prevTeams => ({
+                            teamA: prevTeams.teamA.filter(p => p.id !== playerId),
+                            teamB: prevTeams.teamB.filter(p => p.id !== playerId)
+                        }));
+                        if (editingPlayer?.id === playerId) {
+                            setEditingPlayer(null); // Esci da modifica se stavamo modificando questo
+                        }
+                        // L'eliminazione da Storage della foto non è implementata qui.
+                    } catch (error) {
+                        console.error("Errore eliminazione giocatore:", error);
+                        alert(`Errore durante l'eliminazione: ${error.message}\nControlla le regole di sicurezza.`);
+                    }
+                     // Il listener onSnapshot aggiornerà lo stato `players`.
+                }
+            };
+
+            const handleCancelEdit = () => {
+                setEditingPlayer(null); // Annulla la modalità modifica
+            };
+            // --- Fine Handlers Giocatori ---
+
+
+            // --- Handlers Partita/Selezione (Operano su stato locale/localStorage) ---
+            const handleMatchTypeChange = (type) => {
+                setMatchType(type);
+                // Quando cambio modalità, resetto selezione e squadre
+                setSelectedPlayerIds([]);
+                setTeams({ teamA: [], teamB: [] });
+            };
+
+            const handleOpenSelectionModal = () => setIsModalOpen(true);
+            const handleCloseSelectionModal = () => setIsModalOpen(false);
+
+            const handleTogglePlayerSelection = (playerId) => {
+                setSelectedPlayerIds(prevSelected => {
+                    const isSelected = prevSelected.includes(playerId);
+                    const required = getRequiredPlayers(matchType);
+
+                    if (isSelected) {
+                        // Se è selezionato, lo rimuovo
+                        return prevSelected.filter(id => id !== playerId);
+                    } else {
+                        // Se non è selezionato, lo aggiungo SOLO se non abbiamo raggiunto il limite
+                        return prevSelected.length < required ? [...prevSelected, playerId] : prevSelected;
+                    }
+                });
+            };
+
+            const handleConfirmSelection = () => {
+                handleCloseSelectionModal();
+                // Dopo la conferma, le squadre precedenti non sono più valide
+                setTeams({ teamA: [], teamB: [] });
+                console.log("Giocatori selezionati per la partita:", selectedPlayerIds);
+            };
+            // --- Fine Handlers Partita/Selezione ---
+
+
+            // --- Handlers Squadre (Operano su stato locale/localStorage) ---
+            const handleClearSelectionAndTeams = () => {
+                setSelectedPlayerIds([]);
+                setTeams({ teamA: [], teamB: [] });
+                // Non resetta il matchType
+            };
+
+            const handleToggleBalanceByRole = () => {
+                setBalanceByRoleEnabled(prev => !prev);
+            };
+
+            // Callback per aggiornare le squadre (passato a TeamDisplay)
+            const handleUpdateTeams = useCallback((newTeams) => {
+                setTeams(newTeams); // Salva in localStorage e stato locale
+            }, [setTeams]);
+
+            // Callback per generare le squadre (passato a TeamDisplay)
+            const handleGenerateBalancedTeams = useCallback((playersToBalance, unpredictability, balanceByRole) => {
+                console.log("Generazione squadre con:", { count: playersToBalance.length, unpredictability, balanceByRole });
+                const balanced = balanceTeams(playersToBalance, unpredictability, balanceByRole);
+                setTeams(balanced); // Salva in localStorage e stato locale
+            }, [setTeams]);
+            // --- Fine Handlers Squadre ---
+
+
+            // --- Handlers File IO (Operano su stato locale 'players', NON su Firestore direttamente) ---
+            const handleSaveToFile = () => {
+                if (players.length === 0) { alert("Nessun giocatore presente nello stato attuale da salvare."); return; }
+                try {
+                    // Salva lo stato CORRENTE dei giocatori (quello ricevuto da Firestore o caricato localmente)
+                    const playersToSave = players.map(({ ...player }) => player); // Clona per sicurezza
+                    const dataStr = JSON.stringify(playersToSave, null, 2);
+                    const blob = new Blob([dataStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `elclasico_players_${TARGET_COLLECTION}_snapshot_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    // Non serve alert, il download parte
+                } catch (error) {
+                    console.error("Errore salvataggio snapshot locale:", error);
+                    alert("Errore durante la preparazione del file di snapshot.");
+                }
+            };
+
+            const handleLoadTrigger = () => {
+                fileInputRef.current?.click();
+            };
+
+            const handleFileSelected = (event) => {
+                 const file = event.target.files?.[0];
+                 if (!file) return;
+                 if (!file.name.endsWith('.json')) { alert("Formato file non valido. Seleziona un file .json."); event.target.value = null; return; }
+
+                 const reader = new FileReader();
+                 reader.onload = (e) => {
+                     try {
+                         if (!e.target?.result) throw new Error("File vuoto o illeggibile.");
+                         const loadedData = JSON.parse(e.target.result);
+                         if (!Array.isArray(loadedData)) throw new Error("Il contenuto del file JSON non è un array di giocatori.");
+
+                         // Chiedi conferma prima di sovrascrivere lo stato locale
+                         if (window.confirm(`Stai per caricare ${loadedData.length} giocatori da un file locale.\nQUESTO SOVRASCRIVERÀ LA LISTA ATTUALMENTE VISUALIZZATA.\nNon verranno fatte modifiche al database Firestore.\n\nProcedere?`)) {
+                             // Sanitizza i dati caricati per assicurare campi base
+                             const sanitizedPlayers = loadedData.map(p => ({
+                                 id: p.id || crypto.randomUUID(), // Genera ID se manca (ma non sarà quello di Firestore)
+                                 nome: p.nome || "Sconosciuto",
+                                 ruolo: ALL_ROLES.includes(p.ruolo) ? p.ruolo : 'Centrocampista',
+                                 abilitaDifensiva: p.abilitaDifensiva ?? 5,
+                                 abilitaOffensiva: p.abilitaOffensiva ?? 5,
+                                 velocita: p.velocita ?? 5,
+                                 scatto: p.scatto ?? 5,
+                                 pressing: p.pressing ?? 5,
+                                 determinazione: p.determinazione ?? 5,
+                                 peso: p.peso ?? 75,
+                                 altezza: p.altezza ?? 175,
+                                 robustezza: p.robustezza ?? 5,
+                                 photoUrl: p.photoUrl || null // Mantieni photoUrl se presente
+                             }));
+
+                             // *** IMPORTANTE: SOSTITUISCI LO STATO LOCALE 'players' ***
+                             // Questo disconnette temporaneamente la vista dal listener di Firestore
+                             // finché non ci sarà un refresh della pagina o un'azione che
+                             // ripristini i dati da Firestore (non implementato qui un pulsante "Ricarica da DB").
+                             setPlayers(sanitizedPlayers);
+
+                             // Resetta stati dipendenti dai giocatori
+                             setSelectedPlayerIds([]);
+                             setTeams({ teamA: [], teamB: [] });
+                             setEditingPlayer(null);
+                             setMatchType(null); // Resetta anche tipo partita? Forse no. Lo lascio.
+
+                             alert(`Caricati ${sanitizedPlayers.length} giocatori localmente dal file. La vista NON è più sincronizzata in tempo reale con il DB ${TARGET_COLLECTION}.`);
+                         }
+                     } catch (error) {
+                         console.error("Errore caricamento file JSON:", error);
+                         alert(`Errore durante il caricamento o la lettura del file: ${error.message}`);
+                     } finally {
+                         // Resetta l'input file per permettere di ricaricare lo stesso file
+                         if(event.target) event.target.value = null;
+                     }
+                 };
+                 reader.onerror = () => {
+                     alert("Errore imprevisto durante la lettura del file.");
+                     if(event.target) event.target.value = null;
+                 };
+                 reader.readAsText(file);
+            };
+            // --- Fine Handlers File IO ---
+
+
+            // --- Render App ---
+            return (
+                <div className="container">
+                    <h1>El Clasico Team Manager <small>({TARGET_COLLECTION} DB)</small></h1>
+
+                    {/* Messaggio di Avviso Sicurezza */}
+                    <div className="warning-message">
+                        <strong>Attenzione:</strong> Le regole attuali di Firestore permettono a CHIUNQUE di leggere e scrivere sulla collezione <code>{TARGET_COLLECTION}</code>. Questo è insicuro per un'applicazione pubblica. Considera l'implementazione di Firebase Authentication per proteggere i dati.
+                    </div>
+
+
+                    {/* Gestione Caricamento ed Errori Iniziali */}
+                    {errorLoadingPlayers && <div className="error-message">{errorLoadingPlayers}</div>}
+                    {isLoadingPlayers && !errorLoadingPlayers && <div className="loading-message">Caricamento giocatori da Firestore ({TARGET_COLLECTION})...</div>}
+
+                    {/* Contenuto Principale (mostrato solo se non in caricamento e senza errori gravi) */}
+                    {!isLoadingPlayers && !errorLoadingPlayers && (
+                        <>
+                            <section id="gestione-giocatori">
+                               <h2>Gestione Giocatori ({TARGET_COLLECTION})</h2>
+                               {/* Sezione File IO Locale */}
+                               <div className="file-io-section">
+                                   <button onClick={handleSaveToFile} className="btn-save-file" disabled={players.length === 0} title="Salva uno snapshot JSON dei giocatori attualmente visualizzati">Salva Snapshot Locale</button>
+                                   <button onClick={handleLoadTrigger} className="btn-load-file" title="Carica giocatori da un file JSON locale (sovrascrive la vista attuale, non il DB)">Carica da File Locale</button>
+                                   <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} />
+                                   <p>(Salva/Carica la lista giocatori in formato JSON sul tuo computer)</p>
+                               </div>
+
+                               {/* Form Aggiunta/Modifica Giocatore */}
+                               <PlayerForm
+                                  onSave={handleSavePlayer}
+                                  editingPlayer={editingPlayer}
+                                  onCancelEdit={handleCancelEdit}
+                               />
+
+                               {/* Lista Giocatori */}
+                               <PlayerList players={players} onEdit={handleEditPlayer} onDelete={handleDeletePlayer}/>
+                            </section>
+
+                            <hr className="section-divider" />
+
+                            <section id="imposta-partita">
+                                {/* Selezione Tipo Partita */}
+                                <MatchSetup
+                                    matchType={matchType}
+                                    onMatchTypeChange={handleMatchTypeChange}
+                                    onOpenSelection={handleOpenSelectionModal}
+                                    availablePlayerCount={players.length}
+                                />
+                            </section>
+
+                            {/* Modale Selezione Giocatori */}
+                            {isModalOpen && (
+                                <PlayerSelectionModal
+                                    players={players}
+                                    selectedPlayerIds={selectedPlayerIds}
+                                    requiredCount={getRequiredPlayers(matchType)}
+                                    onToggleSelect={handleTogglePlayerSelection}
+                                    onConfirm={handleConfirmSelection}
+                                    onClose={handleCloseSelectionModal}
+                                />
+                            )}
+
+                            {/* Mostra sezione squadre solo se è stato selezionato un tipo di partita */}
+                            {matchType && (
+                                <>
+                                    <hr className="section-divider" />
+                                    <section id="crea-squadre">
+                                        {/* Creazione/Gestione Squadre */}
+                                        <TeamDisplay
+                                            players={players} // Passa tutti i giocatori disponibili
+                                            selectedPlayerIds={selectedPlayerIds} // Passa gli ID selezionati
+                                            teams={teams} // Passa le squadre attuali (da localStorage)
+                                            matchType={matchType}
+                                            onUpdateTeams={handleUpdateTeams} // Callback per aggiornare le squadre (es. swap)
+                                            onClearSelection={handleClearSelectionAndTeams} // Callback per azzerare
+                                            balanceByRoleEnabled={balanceByRoleEnabled}
+                                            onToggleBalanceByRole={handleToggleBalanceByRole}
+                                            onGenerateTeams={handleGenerateBalancedTeams} // Callback per (ri)generare
+                                        />
+                                    </section>
+                                </>
+                            )}
+                        </>
+                    )}
+                </div>
+            );
+        } // --- Fine App ---
+
+
+        // === Monta l'App React nel DOM con Error Boundary ===
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+            try {
+                 const root = ReactDOM.createRoot(rootElement);
+                 // Componente Error Boundary semplice
+                 class ErrorBoundary extends React.Component {
+                     constructor(props) { super(props); this.state = { hasError: false, error: null, errorInfo: null }; }
+                     static getDerivedStateFromError(error) { return { hasError: true, error }; }
+                     componentDidCatch(error, errorInfo) {
+                        console.error("React Error Boundary catturato:", error, errorInfo);
+                        this.setState({errorInfo: errorInfo});
+                     }
+                     render() {
+                         if (this.state.hasError) {
+                             return (
+                                <div className="container">
+                                    <div className="error-message" style={{textAlign: 'left'}}>
+                                        <h2>Oops! Qualcosa è andato storto nell'applicazione.</h2>
+                                        <p>Si è verificato un errore che impedisce il corretto funzionamento.</p>
+                                        <details style={{ whiteSpace: 'pre-wrap', marginTop: '15px' }}>
+                                            <summary>Dettagli Tecnici (per debug)</summary>
+                                            {this.state.error && this.state.error.toString()}
+                                            <br />
+                                            {this.state.errorInfo && this.state.errorInfo.componentStack}
+                                        </details>
+                                        <p style={{marginTop: '15px'}}>Prova a ricaricare la pagina (F5). Se il problema persiste, controlla la console sviluppatori (F12) per ulteriori dettagli.</p>
+                                    </div>
+                                 </div>
+                             );
+                         }
+                         return this.props.children;
+                     }
+                 }
+                 root.render(<ErrorBoundary><App /></ErrorBoundary>);
+            } catch (error) {
+                 console.error("Errore critico durante il rendering iniziale React:", error);
+                 rootElement.innerHTML = '<div class="container"><div class="error-message">Errore critico durante l\'avvio dell\'applicazione. Impossibile montare React. Controlla la console per errori di script o configurazione.</div></div>';
+            }
+        } else {
+            console.error("Errore fatale: Elemento #root non trovato nel DOM!");
+            document.body.innerHTML = '<div style="padding:20px; color:red; font-weight:bold;">Errore: L\'elemento con ID "root" non è stato trovato. L\'applicazione non può partire.</div>';
+        }
+
+    </script>
+
+</body>
+</html>
