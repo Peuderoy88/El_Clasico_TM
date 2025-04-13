@@ -3,37 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>El Clasico Team Manager</title>
+    <title>El Clasico Team Manager - Debug Finale</title>
 
     <!-- React, ReactDOM, Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Firebase SDKs (via CDN - Compat version) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
-    <!-- CSS Incorporato (con aggiunta per toggle live) -->
+    <!-- CSS (Invariato) -->
     <style>
-        /* ... (stili precedenti invariati) ... */
-
-        /* File IO Section & Live Sync Toggle */
-        .file-io-section { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; }
-        .db-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; margin-bottom: 15px;}
-        .live-sync-toggle { display: flex; align-items: center; gap: 8px; padding: 10px; background-color: #e9ecef; border-radius: 5px; margin-bottom: 15px; justify-content: center; }
-        .live-sync-toggle input[type="checkbox"] { transform: scale(1.4); cursor: pointer; }
-        .live-sync-toggle label { margin: 0; font-weight: bold; cursor: pointer; }
-        .status-indicator { font-size: 0.9em; color: #6c757d; flex-basis: 100%; text-align: center; margin-top: 5px;}
-        .status-indicator .mode-local { color: #5a6268; font-weight: bold; }
-        .status-indicator .mode-live { color: #dc3545; font-weight: bold; }
-        .db-status-message { font-size: 0.9em; font-style: italic; color: #17a2b8; margin-left: 10px; display: block; text-align: center; margin-top:5px; }
-
-         /* Responsive per controlli DB */
-         @media (max-width: 768px) {
-            .db-controls { flex-direction: column; align-items: stretch; }
-            .db-controls button { width: 100%; margin-bottom: 5px; }
-         }
+        /* CSS Identico */
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;margin:0;background-color:#f4f7f6;color:#333;line-height:1.6}.container{max-width:900px;margin:20px auto;padding:15px;background-color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}h1,h2,h3{color:#333}h1{text-align:center;color:#fff;background-color:#28a745;padding:15px;margin:-15px -15px 20px;border-radius:8px 8px 0 0}h1 small{font-size:.6em;display:block;margin-top:5px;font-weight:400}h2{border-bottom:2px solid #eee;padding-bottom:8px;margin-top:30px;margin-bottom:20px}h3{margin-top:0;margin-bottom:15px}.section-divider{border:none;height:1px;background-color:#e0e0e0;margin:40px 0}button{padding:10px 18px;border:none;border-radius:5px;cursor:pointer;font-size:1em;transition:background-color .2s ease,transform .1s ease;margin:5px;background-color:#007bff;color:#fff}button:hover{opacity:.9}button:active{transform:scale(.98)}button:disabled{background-color:#ccc;cursor:not-allowed;opacity:.7}.btn-create{background-color:#007bff}.btn-save,.btn-save-master-confirm,.btn-merge-action{background-color:#28a745}.btn-cancel,.btn-delete,.btn-clear-selection,.btn-merge-cancel{background-color:#dc3545}.btn-edit{background-color:#ffc107;color:#333}.btn-select-players,.btn-generate,.btn-confirm{background-color:#17a2b8}.btn-swap{background-color:#fd7e14}.btn-generate-img{background-color:#6f42c1}.btn-save-file,.btn-load-file,.btn-db-action{background-color:#5a6268}.btn-db-action.active{background-color:#17a2b8;font-weight:700}.btn-save-master{background-color:#ffc107;color:#333}label{display:block;margin-bottom:5px;font-weight:700;color:#495057}input[type=text],input[type=number],input[type=password],select{width:100%;padding:10px;border:1px solid #ced4da;border-radius:4px;font-size:1em;margin-bottom:10px;box-sizing:border-box}input[type=file]{padding:5px}.checkbox-group{display:flex;align-items:center;margin-bottom:15px;background-color:#e9ecef;padding:10px;border-radius:5px;flex-wrap:wrap}.checkbox-group input[type=checkbox]{width:auto;margin-right:10px;transform:scale(1.3);cursor:pointer}.checkbox-group label{margin-bottom:0;font-weight:400;cursor:pointer}.photo-preview{max-width:80px;max-height:80px;margin-top:5px;border-radius:50%;object-fit:cover;border:1px solid #ddd}.player-photo-thumbnail{width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;border:1px solid #eee;vertical-align:middle;background-color:#eee}.player-form-container{margin-bottom:20px}.player-form{background-color:#f8f9fa;padding:20px;border-radius:8px;border:1px solid #dee2e6;margin-top:15px}.form-group{margin-bottom:15px}.form-actions{margin-top:20px;display:flex;justify-content:flex-end;gap:10px}.btn-toggle-form{display:block;width:auto;margin:0 auto 15px}.form-group-photo label{display:flex;align-items:center;justify-content:space-between}.form-group-photo small{font-weight:400;color:#6c757d}.player-list-container{margin-top:20px}.player-list{list-style:none;padding:0;margin:0}.player-item{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:10px 15px;border:1px solid #eee;border-radius:5px;margin-bottom:10px;background-color:#fff}.player-info{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-grow:1}.player-details{display:flex;flex-direction:column}.player-name{font-weight:700;font-size:1.1em}.player-meta{font-size:.9em;color:#555}.player-role{font-style:italic}.player-avg-score{background-color:#e9ecef;padding:2px 6px;border-radius:10px;color:#495057;margin-left:5px}.player-actions{display:flex;gap:8px;margin-top:5px}.player-actions button{padding:6px 12px;font-size:.9em}.file-io-section,.db-controls-section{margin-top:20px;padding:15px;background-color:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.file-io-section p,.db-controls-section p{margin:0 10px 0 0;font-size:.9em;color:#6c757d}.password-prompt{margin-left:15px;display:flex;align-items:center;gap:8px}.password-prompt input[type=password]{width:150px;margin-bottom:0}.match-setup-container{padding:15px;background-color:#eef;border-radius:8px}.match-type-selector{margin-bottom:15px}.match-type-selector label{margin-right:10px;font-weight:700}.match-type-selector select{padding:8px 12px;border-radius:4px;border:1px solid #ccc;font-size:1em;display:inline-block;width:auto}.match-setup-container p{font-weight:700;margin-bottom:15px}.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background-color:rgba(0,0,0,.6);display:flex;justify-content:center;align-items:center;z-index:1000;padding:15px}.modal-content{background-color:#fff;padding:25px;border-radius:8px;width:100%;max-width:650px;max-height:90vh;overflow-y:auto;box-shadow:0 5px 15px rgba(0,0,0,.3)}.modal-content h3{margin-top:0;color:#333;border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:15px}.modal-player-list{list-style:none;padding:0;margin:0 0 20px;max-height:50vh;overflow-y:auto;border:1px solid #eee;border-radius:4px}.modal-player-item{padding:10px 15px;border-bottom:1px solid #eee;cursor:pointer;transition:background-color .2s}.modal-player-item:last-child{border-bottom:none}.modal-player-item:hover{background-color:#f8f9fa}.modal-player-item.selected{background-color:#d4edda;font-weight:700}.modal-player-item.disabled{cursor:not-allowed;opacity:.6}.modal-player-item label{display:flex;align-items:center;width:100%;cursor:pointer}.modal-player-item input[type=checkbox]{margin-right:12px;transform:scale(1.3);cursor:pointer}.modal-player-item.disabled label,.modal-player-item.disabled input{cursor:not-allowed}.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;flex-wrap:wrap}.merge-conflict-area{margin-bottom:20px}.merge-conflict-header{font-weight:700;margin-bottom:15px;background-color:#fff3cd;padding:8px;border-radius:4px;border:1px solid #ffeeba}.merge-player-columns{display:flex;gap:20px;justify-content:space-between;flex-wrap:wrap}.merge-player-column{border:1px solid #ddd;border-radius:5px;padding:15px;flex:1;min-width:250px}.merge-player-column h4{margin-top:0;border-bottom:1px solid #eee;padding-bottom:5px;margin-bottom:10px;font-size:1.1em}.merge-player-column ul{list-style:none;padding:0;margin:0;font-size:.9em}.merge-player-column li{margin-bottom:5px}.merge-player-column li strong{margin-right:5px}.merge-player-photo{max-width:60px;max-height:60px;border-radius:50%;display:block;margin:5px 0;border:1px solid #eee}.merge-modal-actions{display:flex;justify-content:space-around;margin-top:20px;padding-top:15px;border-top:1px solid #eee}.merge-modal-actions button{flex-grow:1;margin:0 10px}.team-display-container{margin-top:20px;padding:15px;background-color:#f0f0f0;border-radius:8px}.balancing-options{margin-bottom:15px}.unpredictability-slider{margin-bottom:15px;background-color:#e9ecef;padding:10px;border-radius:5px}.unpredictability-slider label{display:block;margin-bottom:8px;font-weight:700}.unpredictability-slider input[type=range]{width:100%;cursor:pointer}.team-display-container button{margin-right:10px;margin-bottom:15px}.teams-output{margin-top:20px;border-top:1px solid #ccc;padding-top:15px}.teams-output h3{text-align:center;margin-bottom:15px}.team-columns{display:flex;justify-content:space-around;gap:20px;flex-wrap:wrap}.team-column{flex:1;min-width:250px;background-color:#fff;padding:15px;border-radius:5px;border:1px solid #ddd;margin-bottom:15px}.team-column h4{margin-top:0;border-bottom:1px solid #eee;padding-bottom:8px;margin-bottom:10px}.team-column h4 small{font-weight:400;font-size:.85em;color:#555}.team-column:first-child h4{color:#007bff}.team-column:last-child h4{color:#dc3545}.team-column ul{list-style:none;padding:0;margin:0}.team-column li{padding:10px 5px;border-bottom:1px dashed #eee;font-size:.95em;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:background-color .2s}.team-column li:last-child{border-bottom:none}.team-column li.selected-for-swap{background-color:#fff3cd;outline:2px solid #fd7e14;font-weight:700}.team-player-info{flex-grow:1;cursor:pointer}.team-player-name{font-weight:700}.team-player-original-role{font-size:.8em;color:#777;display:block}.team-player-role-selector select{padding:4px 6px;font-size:.9em;width:auto;border-radius:4px;margin-left:5px;border:1px solid #ccc}.swap-controls{margin-top:15px;text-align:center}.generated-image-container{margin-top:25px;padding-top:20px;border-top:1px solid #ccc;text-align:center}.generated-image-container canvas{display:none}.generated-image-container img{max-width:100%;height:auto;border:1px solid #ddd;margin-top:10px;background-color:#f9f9f9}.generated-image-container a{display:inline-block;margin-top:10px;padding:8px 15px;background-color:#28a745;color:#fff;text-decoration:none;border-radius:5px;font-size:.9em}.generated-image-container a:hover{background-color:#218838}@media (max-width:600px){.container{margin:10px;padding:10px}h1{font-size:1.6em;padding:12px;margin:-10px -10px 15px}button{padding:8px 14px;font-size:.95em}input[type=text],input[type=number],input[type=password],select{padding:8px}.player-item{flex-direction:column;align-items:flex-start;gap:5px}.player-info{gap:5px}.player-actions{width:100%;justify-content:flex-end;margin-top:8px}.file-io-section,.db-controls-section{flex-direction:column;align-items:stretch;text-align:center}.file-io-section p,.db-controls-section p{margin-bottom:10px}.password-prompt{margin-left:0;margin-top:10px;flex-direction:column;align-items:stretch}.password-prompt input[type=password]{width:100%}.merge-player-columns{flex-direction:column}.team-columns{flex-direction:column}.modal-content{padding:15px}.balancing-options{display:flex;flex-direction:column}.checkbox-group{font-size:.9em}.team-column li{font-size:.9em;flex-wrap:wrap}.team-player-role-selector select{width:100%;margin-left:0;margin-top:5px}}.loading-message{text-align:center;padding:40px;font-size:1.2em;color:#555;font-weight:700}.error-message{text-align:center;padding:15px;color:#721c24;background-color:#f8d7da;border:1px solid #f5c6cb;border-radius:5px;margin:10px 0}.warning-message{text-align:center;padding:15px;color:#856404;background-color:#fff3cd;border:1px solid #ffeeba;border-radius:5px;margin:10px 0}.success-message{text-align:center;padding:15px;color:#155724;background-color:#d4edda;border:1px solid #c3e6cb;border-radius:5px;margin:10px 0}.info-message{text-align:center;padding:15px;color:#0c5460;background-color:#d1ecf1;border:1px solid #bee5eb;border-radius:5px;margin:10px 0}
     </style>
 </head>
 <body>
@@ -44,496 +28,189 @@
         // === Hook e Costanti ===
         const { useState, useEffect, useCallback, useRef } = React;
         const ALL_ROLES = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
-        const SAVE_PASSWORD = "RoyClasico";
-        const MASTER_COLLECTION_NAME = 'giocatori_master'; // Collezione storica/ufficiale
-        const LIVE_COLLECTION_NAME = 'giocatori_live';     // Collezione per sync real-time
+        const MASTER_DB_PASSWORD = "RoyClasico";
 
-        // --- Hook useLocalStorage (Invariato) ---
-        function useLocalStorage(key, initialValue) { /* ... codice invariato ... */ }
+        // --- Hook useLocalStorage ---
+        function useLocalStorage(key, initialValue) { const [storedValue, setStoredValue] = useState(() => { try { const item = window.localStorage.getItem(key); return item ? JSON.parse(item) : initialValue; } catch (error) { console.error("LS Read Err:", error); return initialValue; } }); const setValue = useCallback((value) => { try { const valueToStore = value instanceof Function ? value(storedValue) : value; setStoredValue(valueToStore); window.localStorage.setItem(key, JSON.stringify(valueToStore)); } catch (error) { console.error("LS Write Err:", error); } }, [key, storedValue]); return [storedValue, setValue]; }
 
         // --- Inizializzazione Firebase ---
-        const firebaseConfig = { /* ... tua config ... */ };
+        const firebaseConfig = { apiKey: "AIzaSyCl-0Ini6m3MKRN-qTfGp1kcXtW0z6qGEE", authDomain: "el-clasico-app.firebaseapp.com", projectId: "el-clasico-app", storageBucket: "el-clasico-app.appspot.com", messagingSenderId: "816654567071", appId: "1:816654567071:web:318425d18e9b224c4b04aa", measurementId: "G-JVLZFP9PCR" };
+        let db = null; let liveCollectionRef = null; let masterCollectionRef = null; let firebaseInitializationError = null;
+        const LIVE_COLLECTION = 'giocatori_live'; const MASTER_COLLECTION = 'giocatori_master';
+        try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } else { firebase.app(); } db = firebase.firestore(); liveCollectionRef = db.collection(LIVE_COLLECTION); masterCollectionRef = db.collection(MASTER_COLLECTION); console.log(`Firestore Refs OK: '${LIVE_COLLECTION}', '${MASTER_COLLECTION}'.`); } catch (error) { console.error("Firebase Init Error:", error); firebaseInitializationError = `Firebase Init Error: ${error.message}`; }
 
-        let db;
-        let masterPlayersCollectionRef;
-        let livePlayersCollectionRef; // NUOVO: Ref per collezione live
-        let firebaseInitializationError = null;
-
-        try {
-            if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-            else { firebase.app(); }
-            db = firebase.firestore();
-            masterPlayersCollectionRef = db.collection(MASTER_COLLECTION_NAME);
-            livePlayersCollectionRef = db.collection(LIVE_COLLECTION_NAME); // NUOVO
-            console.log(`Riferimenti Firestore: OK ('${MASTER_COLLECTION_NAME}', '${LIVE_COLLECTION_NAME}')`);
-        } catch (error) {
-             console.error("!!! ERRORE CRITICO FIREBASE !!!", error);
-             firebaseInitializationError = `Errore grave inizializzazione DB (${error.message}).`;
-        }
-        // --- Fine Inizializzazione Firebase ---
-
-        // === Funzioni Utili (Invariate) ===
-        const calculatePlayerScore = (player) => { /*...*/ };
-        const getRequiredPlayers = (matchType) => { /*...*/ };
-        const calculateTeamFinalScore = (team) => { /*...*/ };
+        // === Funzioni Utili ===
+        const calculatePlayerScore = (player) => { if (!player) return 0; return ( (player.abilitaDifensiva || 0) * 1.0 + (player.abilitaOffensiva || 0) * 1.0 + (player.velocita || 0) * 0.8 + (player.scatto || 0) * 0.8 + (player.pressing || 0) * 0.7 + (player.determinazione || 0) * 1.0 + (player.robustezza || 0) * 0.7 + ((player.peso || 75) / 20) + ((player.altezza || 175) / 40) ); };
+        const getRequiredPlayers = (matchType) => { switch (matchType) { case '5': return 10; case '6': return 12; case '8': return 16; case '11': return 22; default: return 0; } };
+        const calculateTeamFinalScore = (team) => team.reduce((sum, player) => sum + calculatePlayerScore(player), 0);
         const roleOrder = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
-        const getAvgScore = (player) => { /*...*/ };
-        const balanceTeams = (players, unpredictability, balanceByRole) => { /*...*/ };
-        function drawFormation(canvas, teamA, teamB, matchType) { /*...*/ };
+        const getAvgScore = (player) => { if (!player) return '0.0'; const scoreSum = ((player.abilitaDifensiva || 0) + (player.abilitaOffensiva || 0) + (player.velocita || 0) + (player.scatto || 0) + (player.pressing || 0) + (player.determinazione || 0) + (player.robustezza || 0)); return (scoreSum / 7).toFixed(1); };
+        const balanceTeams = (players, unpredictability, balanceByRole) => { /* ... */ };
+        async function drawFormation(canvas, teamA, teamB, matchType) { /* ... */ };
 
-        // === Componenti React (Struttura JSX invariata, ma logica interna cambia) ===
-        function PlayerForm({ onSave, editingPlayer, onCancelEdit, currentMode }) {
-            // ... (logica interna e stato del form invariati) ...
-            // Potremmo cambiare il testo del bottone "Salva" in base alla modalità, ma per ora lo lasciamo generico
-            const buttonText = editingPlayer ? 'Salva Modifiche' : 'Aggiungi Giocatore';
-             return (
-                 <div className="player-form-container">
-                    {/* ... (pulsante toggle e form JSX) ... */}
-                     {/* Nota: Il bottone submit chiama onSave, che ora ha logica condizionale */}
-                     <div className="form-actions">
-                         <button type="submit" className="btn-save">{buttonText} ({currentMode === 'live' ? 'Live' : 'Locale'})</button>
-                         <button type="button" onClick={handleCancel} className="btn-cancel">Annulla</button>
-                     </div>
-                 {/* ... (chiusura form) ... */}
-                 </div>
-             );
-        }
-        function PlayerItem({ player, onEdit, onDelete, currentMode }) {
-            const avgScore = getAvgScore(player);
-            // Aggiungiamo un piccolo indicatore se l'ID è locale
-            const isLocalOnly = player.id && player.id.startsWith('local_');
-             return (
-                 <li className="player-item">
-                     <div className="player-info">
-                         {player.photoUrl ? (<img src={player.photoUrl} alt={player.nome} className="player-photo-thumbnail" />) : (<span className="player-photo-thumbnail"></span>)}
-                         <div className="player-details">
-                             <span className="player-name">{player.nome} {isLocalOnly && <small>(Locale)</small>}</span>
-                             <span className="player-meta"><span className="player-role">{player.ruolo}</span><span className="player-avg-score">Avg: {avgScore}</span></span>
-                         </div>
-                     </div>
-                     {/* Le azioni ora chiamano handler che dipendono dalla modalità */}
-                     <div className="player-actions">
-                        <button onClick={() => onEdit(player.id)} className="btn-edit">Modifica</button>
-                        <button onClick={() => onDelete(player.id)} className="btn-delete">Elimina ({currentMode === 'live' ? 'Live!' : 'Loc.'})</button>
-                    </div>
-                 </li>
-             );
-        }
-        function PlayerList({ players, onEdit, onDelete, currentMode }) {
-             const listTitle = currentMode === 'live' ? `Giocatori Condivisi Live (${players.length})` : `Giocatori Locali (${players.length})`;
-             const emptyListMessage = currentMode === 'live'
-                ? "Nessun giocatore nella sessione live condivisa. Aggiungine uno per iniziare!"
-                : "Nessun giocatore nella lista locale. Carica da DB Master, attiva Sync Live o aggiungine di nuovi.";
-
-             return (
-                 <div className="player-list-container">
-                     <h2>{listTitle}</h2>
-                     {players.length === 0 ? (<p>{emptyListMessage}</p>) : (
-                        <ul className="player-list">
-                            {players.map(p => (<PlayerItem key={p.id} player={p} onEdit={onEdit} onDelete={onDelete} currentMode={currentMode}/>))}
-                        </ul>
-                     )}
-                 </div>
-             );
-        }
-        // PlayerSelectionModal, MatchSetup, TeamDisplay: JSX sostanzialmente invariato,
-        // ma operano sempre sui 'players' correnti passati come prop.
-
-        function PlayerSelectionModal({ players, selectedPlayerIds, requiredCount, onToggleSelect, onConfirm, onClose }) { /* ... codice JSX invariato ... */ }
-        function MatchSetup({ matchType, onMatchTypeChange, onOpenSelection, availablePlayerCount }) { /* ... codice JSX invariato ... */ }
-        function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onUpdateTeams, onClearSelection, balanceByRoleEnabled, onToggleBalanceByRole, onGenerateTeams }) { /* ... codice JSX invariato ... */ }
+        // === Componenti React ===
+        function PlayerForm({ onSave, editingPlayer, onCancelEdit, currentDbMode }) { /* ... Identico ... */ }
+        function PlayerItem({ player, onEdit, onDelete, currentDbMode }) { /* ... Identico, Delete sempre abilitato ... */ }
+        function PlayerList({ players, onEdit, onDelete, currentDbMode, isLoadingPlayers }) { /* ... Identico, usa isLoadingPlayers ... */ }
+        function PlayerSelectionModal({ players, selectedPlayerIds, requiredCount, onToggleSelect, onConfirm, onClose }) { /* ... Identico ... */ }
+        function MatchSetup({ matchType, onMatchTypeChange, onOpenSelection, availablePlayerCount }) { /* ... Identico ... */ }
+        function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onUpdateTeams, onClearSelection, balanceByRoleEnabled, onToggleBalanceByRole, onGenerateTeams }) { /* ... Identico ... */ }
+        function PlayerMergeModal({ conflicts, onResolve, onCancel, sourceLabel, targetLabel }) { /* ... Identico ... */ }
 
 
-        // === Componente Principale App ===
+        // === Componente App Principale ===
         function App() {
-            // STATO PRINCIPALE
-            const [players, setPlayers] = useState([]); // Lista giocatori attiva (locale o live)
-            const [operatingMode, setOperatingMode] = useState('local'); // 'local' o 'live'
-            const listenerUnsubscribeRef = useRef(null); // Per staccare il listener di Firestore
-
-            // Stati UI e Feedback
+            const [players, setPlayers] = useState([]);
+            const [isLoadingPlayers, setIsLoadingPlayers] = useState(true);
+            const [isLoadingAction, setIsLoadingAction] = useState(false);
+            const [errorState, setErrorState] = useState(firebaseInitializationError);
+            const [successMessage, setSuccessMessage] = useState(null);
+            const [infoMessage, setInfoMessage] = useState(null);
+            const [currentDbMode, setCurrentDbMode] = useState('live');
+            const [showMasterPasswordPrompt, setShowMasterPasswordPrompt] = useState(false);
+            const [masterPasswordInput, setMasterPasswordInput] = useState('');
+            const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+            const [conflictsToResolve, setConflictsToResolve] = useState([]);
+            const [mergeSourceLabel, setMergeSourceLabel] = useState('');
+            const [mergeTargetLabel, setMergeTargetLabel] = useState('');
+            const mergeResolutionCallback = useRef(null);
+            const [matchType, setMatchType] = useLocalStorage('elClasico_matchType_v_final', null);
+            const [teams, setTeams] = useLocalStorage('elClasico_teams_v_final', { teamA: [], teamB: [] });
+            const [balanceByRoleEnabled, setBalanceByRoleEnabled] = useLocalStorage('elClasico_balance_v_final', true);
             const [editingPlayer, setEditingPlayer] = useState(null);
             const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
-            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
             const fileInputRef = useRef(null);
-            const [isDbLoading, setIsLoadingDb] = useState(false); // Per operazioni DB (master load, live connect)
-            const [isDbSaving, setIsSavingDb] = useState(false);   // Per salvataggio DB Master
-            const [dbStatusMessage, setDbStatusMessage] = useState('');
-            const [dbError, setDbError] = useState(firebaseInitializationError);
+            const liveDataCache = useRef([]);
+            const listenerUnsubscribe = useRef(null);
 
-            // Stati salvati in localStorage (invariati)
-            const [matchType, setMatchType] = useLocalStorage('calcettoMatchType_1', null);
-            const [teams, setTeams] = useLocalStorage('calcettoTeamsV6_1', { teamA: [], teamB: [] });
-            const [balanceByRoleEnabled, setBalanceByRoleEnabled] = useLocalStorage('calcettoBalanceByRole_1', true);
+            const showSuccess = useCallback((msg, duration = 3000) => { setSuccessMessage(msg); setTimeout(() => setSuccessMessage(null), duration); }, []);
+            const showError = useCallback((msg, duration = 5000) => { setErrorState(msg); setTimeout(() => setErrorState(null), duration); }, []);
+            const showInfo = useCallback((msg, duration = 4000) => { setInfoMessage(msg); setTimeout(() => setInfoMessage(null), duration); }, []);
 
-            // --- Funzione Pulizia Stato Dipendente ---
-            const clearDependentState = () => {
-                setSelectedPlayerIds([]);
-                setTeams({ teamA: [], teamB: [] });
-                setEditingPlayer(null);
-                setMatchType(null); // Resettiamo anche il tipo partita
-                 // Non resettare balanceByRoleEnabled
-            };
+            // --- EFFETTO LISTENER FIRESTORE ---
+            useEffect(() => {
+                if (firebaseInitializationError) { setErrorState(firebaseInitializationError); setIsLoadingPlayers(false); return; }
+                if (!liveCollectionRef) { setErrorState("Errore: Riferimento Firestore Live non disponibile."); setIsLoadingPlayers(false); return; }
+                if (listenerUnsubscribe.current) { return; } // Evita doppioni
 
-            // --- Gestione Listener Live ---
-            const setupLiveListener = () => {
-                if (!livePlayersCollectionRef || listenerUnsubscribeRef.current) return; // Già attivo o errore
-                console.log("Attivazione listener su", LIVE_COLLECTION_NAME);
-                setIsLoadingDb(true); // Mostra caricamento durante la connessione iniziale
-                setDbStatusMessage("Connessione alla sessione Live...");
+                console.log("Attaching Firestore listener...");
+                let isFirstSnapshot = true;
+                setIsLoadingPlayers(true);
 
-                listenerUnsubscribeRef.current = livePlayersCollectionRef.onSnapshot(snapshot => {
-                    console.log("Dati ricevuti da Firestore (LIVE):", snapshot.size);
-                    const livePlayersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setPlayers(livePlayersData); // Aggiorna lo stato locale con i dati live
-                    setIsLoadingDb(false); // Caricamento completato (o aggiornamento ricevuto)
-                    setDbStatusMessage(""); // Pulisci messaggio connessione
-                    setDbError(null);
+                listenerUnsubscribe.current = liveCollectionRef.orderBy("nome").onSnapshot(snapshot => {
+                    console.log(`Snapshot received (${snapshot.docs.length} docs)`);
+                    const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    liveDataCache.current = playersData;
 
-                    // Se la lista live cambia, dobbiamo invalidare le selezioni/squadre locali
-                    // Potremmo cercare di preservarle se gli ID esistono ancora, ma è più semplice resettare
-                    clearDependentState();
+                    if (currentDbMode === 'live') { setPlayers(playersData); }
+
+                    if (isFirstSnapshot) { setIsLoadingPlayers(false); isFirstSnapshot = false; console.log("Initial load complete."); }
+                    if (errorState && !errorState.includes("Firebase Init Error")) { setErrorState(null); }
 
                 }, error => {
-                    console.error("Errore listener Firestore LIVE:", error);
-                    setDbError(`Errore connessione Live: ${error.message}. Disattivazione.`);
-                    setDbStatusMessage(`Errore Live: ${error.message}`);
-                    setIsLoadingDb(false);
-                    // Errore grave, disattiviamo la modalità live
-                    setOperatingMode('local');
-                    setPlayers([]); // Svuota la lista locale
-                    if (listenerUnsubscribeRef.current) {
-                        listenerUnsubscribeRef.current();
-                        listenerUnsubscribeRef.current = null;
-                    }
-                     clearDependentState();
+                    console.error("Firestore listener error:", error);
+                    if (!errorState || !errorState.includes("Firebase Init Error")) { setErrorState(`Errore DB Live: ${error.message}`); }
+                    setIsLoadingPlayers(false);
+                    if (listenerUnsubscribe.current) { listenerUnsubscribe.current(); listenerUnsubscribe.current = null; }
                 });
-            };
 
-            const detachLiveListener = () => {
-                if (listenerUnsubscribeRef.current) {
-                    console.log("Disattivazione listener Live.");
-                    listenerUnsubscribeRef.current();
-                    listenerUnsubscribeRef.current = null;
-                }
-                 // Reset stato quando si esce da Live
-                 setPlayers([]); // Lista vuota in modalità locale
-                 clearDependentState();
-                 setDbStatusMessage(""); // Pulisci eventuali messaggi
-            };
-
-            // Effetto per gestire il cleanup del listener quando il componente smonta
-            useEffect(() => {
-                return () => {
-                    detachLiveListener(); // Assicura che il listener sia staccato
-                };
-            }, []); // Esegui solo al mount/unmount
-
-            // --- Handler Toggle Sincronizzazione Live ---
-            const handleToggleLiveSync = (event) => {
-                const isEnabling = event.target.checked;
-
-                if (isEnabling) {
-                    if (window.confirm("Attivare la Sincronizzazione Live?\nLa lista locale attuale e le squadre verranno perse e vedrai la lista condivisa.")) {
-                        detachLiveListener(); // Assicura che non ci siano listener precedenti appesi
-                        setOperatingMode('live');
-                        // setupLiveListener() verrà chiamato dall'effetto sotto
-                    } else {
-                         event.target.checked = false; // Riporta la checkbox allo stato precedente
-                    }
-                } else {
-                     if (window.confirm("Disattivare la Sincronizzazione Live?\nVerrai disconnesso e tornerai a una lista locale vuota.")) {
-                        setOperatingMode('local');
-                        // detachLiveListener() verrà chiamato dall'effetto sotto
-                    } else {
-                         event.target.checked = true; // Riporta la checkbox allo stato precedente
-                    }
-                }
-            };
-
-             // Effetto per attaccare/staccare il listener quando operatingMode cambia
-             useEffect(() => {
-                if (operatingMode === 'live') {
-                    setupLiveListener();
-                } else {
-                    detachLiveListener();
-                }
-                 // Funzione di cleanup per questo effetto specifico
-                return () => {
-                    detachLiveListener();
-                };
-            }, [operatingMode]); // Riesegui quando operatingMode cambia
+                return () => { if (listenerUnsubscribe.current) { console.log("Detaching Firestore listener."); listenerUnsubscribe.current(); listenerUnsubscribe.current = null; } };
+            }, [firebaseInitializationError]);
 
 
-            // --- Handlers CRUD (Aggiungi/Modifica/Elimina Giocatore) ---
-            // Ora dipendono da operatingMode
-            const handleSavePlayer = async (playerData) => {
-                const { id, ...dataToSave } = playerData;
-                 if (!dataToSave.photoUrl) { delete dataToSave.photoUrl; } // Pulisci foto
-
-                if (operatingMode === 'live') {
-                    // --- SALVATAGGIO LIVE SU FIRESTORE ---
-                    if (!livePlayersCollectionRef) { alert("Errore: DB Live non connesso."); return; }
-                    setDbStatusMessage("Salvataggio Live in corso...");
+            // --- Handlers Gestione Giocatori ---
+            const handleSavePlayer = useCallback(async (playerData) => { /* ... Identico ... */ }, [currentDbMode, showSuccess, showError]);
+            const handleDeletePlayer = useCallback(async (playerId) => {
+                const targetCollectionRef = currentDbMode === 'live' ? liveCollectionRef : masterCollectionRef;
+                const dbNameToConfirm = currentDbMode === 'live' ? 'LIVE' : 'MASTER';
+                if (!db || !targetCollectionRef) { alert("Errore DB."); return; }
+                const playerToDelete = players.find(p => p.id === playerId);
+                const playerName = playerToDelete ? playerToDelete.nome : `ID ${playerId}`;
+                if (window.confirm(`Eliminare ${playerName} da ${dbNameToConfirm}?`)) {
+                    setIsLoadingAction(true); // Aggiunto loading action
+                    setErrorState(null);
+                    console.log(`Deleting from ${dbNameToConfirm}:`, playerId);
                     try {
-                        if (id && !id.startsWith('local_')) { // Modifica giocatore esistente nel DB Live
-                            await livePlayersCollectionRef.doc(id).update(dataToSave);
-                            setDbStatusMessage("Giocatore modificato (Live).");
-                        } else { // Aggiunta nuovo giocatore al DB Live (Firestore genera ID)
-                            await livePlayersCollectionRef.add(dataToSave);
-                            setDbStatusMessage("Giocatore aggiunto (Live).");
+                        await targetCollectionRef.doc(playerId).delete();
+                        showSuccess(`Giocatore "${playerName}" eliminato da ${dbNameToConfirm}.`);
+                        if (currentDbMode === 'master') {
+                            setPlayers(prevPlayers => prevPlayers.filter(p => p.id !== playerId));
                         }
-                        setEditingPlayer(null); // Chiudi form
-                    } catch (error) {
-                        console.error("Errore salvataggio Live:", error);
-                        alert(`Errore salvataggio Live: ${error.message}`);
-                        setDbStatusMessage(`Errore salvataggio Live: ${error.message}`);
-                    } finally {
-                         setTimeout(() => setDbStatusMessage(''), 3000);
-                         // Il listener aggiornerà automaticamente lo stato `players`
-                    }
-
-                } else {
-                    // --- SALVATAGGIO LOCALE ---
-                    if (id) { // Modifica locale
-                        setPlayers(prev => prev.map(p => p.id === id ? { ...p, ...dataToSave, id: id } : p));
-                        setDbStatusMessage('Giocatore modificato (Locale).');
-                    } else { // Aggiunta locale
-                        const newPlayer = { ...dataToSave, id: `local_${crypto.randomUUID()}` };
-                        setPlayers(prev => [...prev, newPlayer]);
-                        setDbStatusMessage('Giocatore aggiunto (Locale).');
-                    }
-                    setEditingPlayer(null);
-                    setTimeout(() => setDbStatusMessage(''), 3000);
-                }
-            };
-
-            const handleDeletePlayer = async (playerId) => {
-                 const playerToDelete = players.find(p => p.id === playerId);
-                 if (!playerToDelete) return;
-
-                if (operatingMode === 'live') {
-                    // --- ELIMINAZIONE LIVE DA FIRESTORE ---
-                    if (!livePlayersCollectionRef) { alert("Errore: DB Live non connesso."); return; }
-                    if (playerId.startsWith('local_')) {
-                         alert("Errore: Non puoi eliminare un giocatore locale mentre sei in modalità Live."); return;
-                    }
-                    if (window.confirm(`Eliminare ${playerToDelete.nome} dalla sessione Live condivisa?\n(L'azione è immediata per tutti)`)) {
-                        setDbStatusMessage("Eliminazione Live in corso...");
-                        try {
-                            await livePlayersCollectionRef.doc(playerId).delete();
-                            setDbStatusMessage("Giocatore eliminato (Live).");
-                             // Non serve pulire stato locale, il listener lo farà
-                            if (editingPlayer?.id === playerId) setEditingPlayer(null);
-                        } catch(error) {
-                            console.error("Errore eliminazione Live:", error);
-                            alert(`Errore eliminazione Live: ${error.message}`);
-                            setDbStatusMessage(`Errore eliminazione Live: ${error.message}`);
-                        } finally {
-                            setTimeout(() => setDbStatusMessage(''), 3000);
-                        }
-                    }
-                } else {
-                     // --- ELIMINAZIONE LOCALE ---
-                     if (window.confirm(`Eliminare ${playerToDelete.nome} dalla lista locale?`)) {
-                        setPlayers(prev => prev.filter(p => p.id !== playerId));
-                        // Pulisci dipendenze locali
                         setSelectedPlayerIds(prev => prev.filter(id => id !== playerId));
-                        setTeams(prev => ({ teamA: prev.teamA.filter(p => p.id !== playerId), teamB: prev.teamB.filter(p => p.id !== playerId) }));
-                        if (editingPlayer?.id === playerId) setEditingPlayer(null);
-                        setDbStatusMessage('Giocatore eliminato (Locale).');
-                        setTimeout(() => setDbStatusMessage(''), 3000);
-                    }
-                }
-            };
-
-            const handleEditPlayer = (playerId) => {
-                const playerToEdit = players.find(p => p.id === playerId);
-                 if (playerToEdit) { setEditingPlayer(playerToEdit); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-            };
-            const handleCancelEdit = () => { setEditingPlayer(null); };
-            // --- Fine Handlers CRUD ---
-
-
-            // --- Handlers DB MASTER (Carica/Salva) ---
-            const handleLoadFromFirestoreMaster = async () => {
-                if (!masterPlayersCollectionRef) { alert("Errore: DB Master non connesso."); return; }
-                if (window.confirm(`Caricare la lista giocatori dal DB Master (${MASTER_COLLECTION_NAME})?\nQuesto SOVRASCRIVERÀ la lista attuale e disattiverà la Sync Live (se attiva).`)) {
-
-                    // PRIMA disattiva la modalità live, se attiva
-                    if (operatingMode === 'live') {
-                         setOperatingMode('local'); // Questo triggera useEffect per staccare il listener
-                         // Aspetta un attimo per assicurare che il detach avvenga prima di procedere
-                         await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-
-                    setIsLoadingDb(true);
-                    setDbStatusMessage(`Caricamento da DB Master (${MASTER_COLLECTION_NAME})...`);
-                    setDbError(null);
-                    try {
-                        const snapshot = await masterPlayersCollectionRef.get();
-                        const masterPlayersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        setPlayers(masterPlayersData); // Sovrascrivi stato locale
-                        clearDependentState();
-                        setDbStatusMessage(`Caricati ${masterPlayersData.length} giocatori dal DB Master.`);
+                        setTeams(prevTeams => ({ teamA: prevTeams.teamA.filter(p => p.id !== playerId), teamB: prevTeams.teamB.filter(p => p.id !== playerId) }));
+                        if (editingPlayer?.id === playerId) { setEditingPlayer(null); }
                     } catch (error) {
-                        console.error("Errore caricamento DB Master:", error);
-                        setDbError(`Errore caricamento DB Master: ${error.message}.`);
-                        setDbStatusMessage(`Errore caricamento DB Master: ${error.message}`);
+                        console.error(`Errore eliminazione da ${dbNameToConfirm}:`, error);
+                        showError(`Errore eliminazione da ${dbNameToConfirm}: ${error.message}`);
                     } finally {
-                        setIsLoadingDb(false);
-                        setTimeout(() => setDbStatusMessage(''), 5000);
+                        setIsLoadingAction(false); // Rimuovi loading action
                     }
                 }
-            };
+            }, [currentDbMode, players, editingPlayer, setTeams, showSuccess, showError]);
+            const handleEditPlayer = useCallback((playerId) => { /* ... Identico ... */ }, [currentDbMode, players, showError, showInfo]);
+            const handleCancelEdit = useCallback(() => { setEditingPlayer(null); }, []);
 
-            const handleSaveToFirestoreMaster = async () => {
-                 if (!masterPlayersCollectionRef) { alert("Errore: DB Master non connesso."); return; }
-                 const password = window.prompt(`Inserisci la password per SALVARE sul DB Master (${MASTER_COLLECTION_NAME}):`);
-                 if (password === null) return;
-                 if (password !== SAVE_PASSWORD) { alert("Password errata!"); return; }
-                 if (!window.confirm(`ATTENZIONE!\nSOVRASCRIVERE l'intero DB Master (${MASTER_COLLECTION_NAME}) con i ${players.length} giocatori attualmente visualizzati (locali o live)?\nAzione IRREVERSIBILE.`)) return;
+            // --- Handlers Gestione DB (CON MERGE) ---
+            const handleSwitchMode = useCallback(async (newMode) => { if (newMode === currentDbMode || isLoadingAction) return; setEditingPlayer(null); setErrorState(null); setSuccessMessage(null); setInfoMessage(null); if (newMode === 'live') { setCurrentDbMode('live'); setPlayers(liveDataCache.current); setIsLoadingPlayers(false); showInfo("Modalità Live DB attiva.", 2500); } else if (newMode === 'master') { if (!masterCollectionRef) { showError("Errore: Ref Master non disponibile."); return; } setCurrentDbMode('master'); setIsLoadingAction(true); setPlayers([]); try { const masterSnapshot = await masterCollectionRef.orderBy("nome").get(); const masterData = masterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); setPlayers(masterData); showInfo(`Visualizzazione Master DB (${masterData.length} giocatori).`, 3000); } catch (error) { showError(`Errore caricamento Master DB: ${error.message}`); setPlayers([]); } finally { setIsLoadingAction(false); } } }, [currentDbMode, isLoadingAction, showError, showInfo]);
+            const findConflicts = useCallback((sourcePlayers, targetPlayers) => { /* ... Identico ... */ }, []);
+            // ** handleLoadFromMaster con finally **
+            const handleLoadFromMaster = useCallback(async () => { if (!masterCollectionRef) { showError("Errore: Conn Master non disponibile."); return; } if (!window.confirm("Caricare/Unire da Master a Live? Richiede risoluzione conflitti.")) return; setIsLoadingAction(true); setErrorState(null); setSuccessMessage(null); try { console.log("LFM: Getting master data..."); const masterSnapshot = await masterCollectionRef.orderBy("nome").get(); const sourcePlayers = masterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); console.log(`LFM: Found ${sourcePlayers.length} players in master.`); const targetPlayers = Array.isArray(liveDataCache.current) ? liveDataCache.current : []; console.log(`LFM: Found ${targetPlayers.length} players in live cache.`); const conflicts = findConflicts(sourcePlayers, targetPlayers); console.log(`LFM: Found ${conflicts.length} conflicts.`); const processMerge = (resolutions = {}) => { console.log("LFM: Processing merge..."); const finalPlayersMap = new Map(); targetPlayers.forEach(p => { if(p && p.nome) finalPlayersMap.set(p.nome.trim().toLowerCase(), p) }); sourcePlayers.forEach(sourceP => { if (!sourceP || !sourceP.nome) return; const LCaseName = sourceP.nome.trim().toLowerCase(); const resolvedPlayer = resolutions[sourceP.nome]; if (resolvedPlayer) { finalPlayersMap.set(LCaseName, resolvedPlayer); } else if (!finalPlayersMap.has(LCaseName)) { finalPlayersMap.set(LCaseName, sourceP); } }); const finalPlayerList = Array.from(finalPlayersMap.values()).sort((a,b) => a.nome.localeCompare(b.nome)); setPlayers(finalPlayerList); liveDataCache.current = finalPlayerList; setCurrentDbMode('live'); showSuccess(`Unione da Master completata (${finalPlayerList.length} giocatori).`); setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); setEditingPlayer(null); console.log("LFM: Merge complete."); }; if (conflicts.length > 0) { console.log("LFM: Opening merge modal..."); setConflictsToResolve(conflicts); setMergeSourceLabel("Master DB"); setMergeTargetLabel("Live DB"); mergeResolutionCallback.current = processMerge; setIsMergeModalOpen(true); // isLoadingAction rimane true finché il modale non si chiude } else { processMerge(); // Chiama direttamente se non ci sono conflitti setIsLoadingAction(false); // Ferma loading qui se non c'è modale } } catch (error) { console.error("Errore unione da MASTER:", error); showError(`Errore Unione da Master: ${error.message}`); setIsLoadingAction(false); // Assicura stop loading su errore } }, [showError, showSuccess, setTeams, findConflicts]);
+            const handleSaveToMasterPrompt = useCallback(() => { /* ... Identico ... */ }, [currentDbMode, players]);
+            const handleCancelSaveToMaster = useCallback(() => { setShowMasterPasswordPrompt(false); setMasterPasswordInput(''); setIsLoadingAction(false); }, []);
+            // ** handleConfirmSaveToMaster con finally **
+            const handleConfirmSaveToMaster = useCallback(async () => { if (masterPasswordInput !== MASTER_DB_PASSWORD) { alert("Password errata!"); return; } if (!masterCollectionRef) { showError("Errore: Ref Master non disponibile."); return; } const sourcePlayers = [...players]; if (sourcePlayers.length === 0) { alert("Vista attuale vuota."); handleCancelSaveToMaster(); return; } setIsLoadingAction(true); setErrorState(null); setSuccessMessage(null); console.log(`Saving ${sourcePlayers.length} players to MASTER...`); try { const masterSnapshot = await masterCollectionRef.get(); const targetPlayers = masterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); const conflicts = findConflicts(sourcePlayers, targetPlayers); const processSave = async (resolutions = {}) => { console.log("STM: Processing save..."); const finalMasterMap = new Map(); const finalSourcePlayerIds = new Set(); sourcePlayers.forEach(sourceP => { const LCaseName = sourceP.nome.trim().toLowerCase(); const resolvedPlayer = resolutions[sourceP.nome]; let playerToSave = resolvedPlayer ? resolvedPlayer : sourceP; if (!playerToSave.id) playerToSave.id = crypto.randomUUID(); finalMasterMap.set(LCaseName, playerToSave); finalSourcePlayerIds.add(playerToSave.id); }); const finalPlayerList = Array.from(finalMasterMap.values()); const batch = db.batch(); finalPlayerList.forEach(player => { batch.set(masterCollectionRef.doc(player.id), player); }); targetPlayers.forEach(targetP => { if (!finalSourcePlayerIds.has(targetP.id)) { batch.delete(masterCollectionRef.doc(targetP.id)); } }); console.log("STM: Committing batch..."); await batch.commit(); console.log("STM: Batch successful."); showSuccess(`${finalPlayerList.length} giocatori salvati/aggiornati su Master DB!`); handleCancelSaveToMaster(); }; if (conflicts.length > 0) { console.log("STM: Opening merge modal..."); setConflictsToResolve(conflicts); setMergeSourceLabel("Vista Attuale"); setMergeTargetLabel("Master DB"); mergeResolutionCallback.current = processSave; setIsMergeModalOpen(true); // isLoadingAction rimane true } else { await processSave(); // Processa direttamente setIsLoadingAction(false); // Ferma loading qui se non c'è modale } } catch (error) { console.error("Errore salvataggio MASTER:", error); showError(`Errore Salvataggio Master: ${error.message}`); setIsLoadingAction(false); // Assicura stop loading su errore handleCancelSaveToMaster(); } }, [players, currentDbMode, masterPasswordInput, handleCancelSaveToMaster, showSuccess, showError, findConflicts]);
 
-                 setIsSavingDb(true);
-                 setDbStatusMessage(`Salvataggio su DB Master (${MASTER_COLLECTION_NAME})...`);
-                 setDbError(null);
-                 try {
-                     const batch = db.batch();
-                     const snapshot = await masterPlayersCollectionRef.get();
-                     snapshot.docs.forEach(doc => batch.delete(doc.ref)); // Elimina vecchi
+            // --- Handlers Partita/Selezione/Squadre ---
+            const handleMatchTypeChange = useCallback((type) => { /* ... */ }, [setMatchType, setTeams]);
+            const handleOpenSelectionModal = useCallback(() => setIsSelectionModalOpen(true), []);
+            const handleCloseSelectionModal = useCallback(() => setIsSelectionModalOpen(false), []);
+            const handleTogglePlayerSelection = useCallback((playerId) => { /* ... */ }, [matchType]);
+            const handleConfirmSelection = useCallback(() => { /* ... */ }, [setTeams, handleCloseSelectionModal]); // Rimossa dipendenza non necessaria
+            const handleClearSelectionAndTeams = useCallback(() => { /* ... */ }, [setTeams]);
+            const handleToggleBalanceByRole = useCallback(() => { /* ... */ }, [setBalanceByRoleEnabled]);
+            const handleUpdateTeams = useCallback((newTeams) => { /* ... */ }, [setTeams]);
+            const handleGenerateBalancedTeams = useCallback((playersToBalance, unpredictability, balanceByRole) => { /* ... */ }, [setTeams]);
 
-                     // Aggiungi quelli correnti (dallo stato 'players')
-                     players.forEach(player => {
-                         const { id, ...playerData } = player;
-                         if (!playerData.photoUrl) delete playerData.photoUrl;
-                         // Se l'ID è 'local_', lascia che Firestore generi un ID nuovo nel DB Master
-                         const docRef = id && !id.startsWith('local_')
-                            ? masterPlayersCollectionRef.doc(id)
-                            : masterPlayersCollectionRef.doc();
-                         batch.set(docRef, playerData);
-                     });
+            // --- Handlers File IO ---
+            const handleSaveToFile = useCallback(() => { /* ... */ }, [players, currentDbMode]);
+            const handleLoadTrigger = useCallback(() => { fileInputRef.current?.click(); }, []);
+            const handleFileSelected = useCallback((event) => { /* ... */ }, [setTeams, showInfo]);
 
-                     await batch.commit();
-                     setDbStatusMessage(`DB Master (${MASTER_COLLECTION_NAME}) sovrascritto con ${players.length} giocatori.`);
-                     // Potresti voler ricaricare da Master per ottenere ID corretti se hai salvato giocatori 'local_'
-                 } catch (error) {
-                     console.error("Errore salvataggio DB Master:", error);
-                     setDbError(`Errore salvataggio DB Master: ${error.message}.`);
-                     setDbStatusMessage(`Errore salvataggio DB Master: ${error.message}`);
-                 } finally {
-                     setIsSavingDb(false);
-                     // setTimeout(() => setDbStatusMessage(''), 8000);
-                 }
-            };
-            // --- Fine Handlers DB Master ---
-
-
-            // --- Handlers Partita/Selezione/Squadre (Invariati, operano su 'players' attuale) ---
-            const handleMatchTypeChange = (type) => { /*...*/ };
-            const handleOpenSelectionModal = () => setIsModalOpen(true);
-            const handleCloseSelectionModal = () => setIsModalOpen(false);
-            const handleTogglePlayerSelection = (playerId) => { /*...*/ };
-            const handleConfirmSelection = () => { /*...*/ };
-            const handleClearSelectionAndTeams = () => { /*...*/ };
-            const handleToggleBalanceByRole = () => { /*...*/ };
-            const handleUpdateTeams = useCallback((newTeams) => { /*...*/ }, [setTeams]);
-            const handleGenerateBalancedTeams = useCallback((playersToBalance, unpredictability, balanceByRole) => { /*...*/ }, [setTeams]);
-            // --- Fine Handlers Partita/Selezione/Squadre ---
-
-            // --- Handlers File IO (Snapshot Locale - Invariati, operano su 'players' attuale) ---
-            const handleSaveToFile = () => { /*...*/ };
-            const handleLoadTrigger = () => { /*...*/ };
-            const handleFileSelected = (event) => { /*...*/ };
-            // --- Fine Handlers File IO ---
 
             // --- Render App ---
-            const disableDbActions = isDbLoading || isDbSaving || !!firebaseInitializationError;
-            const isLive = operatingMode === 'live';
+            const dbModeLabel = currentDbMode === 'live' ? 'Live DB (Real-time)' : 'Master DB (Read-only)';
+            const showContent = !firebaseInitializationError && !isLoadingPlayers;
 
             return (
                 <div className="container">
-                     <h1>El Clasico Team Manager <small>({isLive ? `Live Sync Attiva - DB: ${LIVE_COLLECTION_NAME}` : `Modalità Locale`})</small></h1>
+                    <h1>El Clasico Team Manager <small>Modalità: {dbModeLabel} (Debug Finale)</small></h1>
+                    {errorState && <div className="error-message">{errorState}</div>}
+                    {successMessage && <div className="success-message">{successMessage}</div>}
+                    {infoMessage && <div className="info-message">{infoMessage}</div>}
+                    <div className="warning-message"><strong>Attenzione Sicurezza:</strong> Regole DB pubbliche. Password Master visibile nel codice.</div>
+                    {isLoadingPlayers && <div className="loading-message">Caricamento giocatori...</div>}
+                    {isLoadingAction && !isLoadingPlayers && <div className="loading-message">Operazione DB in corso...</div>}
+                    {isMergeModalOpen && ( <PlayerMergeModal conflicts={conflictsToResolve} sourceLabel={mergeSourceLabel} targetLabel={mergeTargetLabel} onResolve={(resolutions) => { setIsMergeModalOpen(false); if (mergeResolutionCallback.current) { try { mergeResolutionCallback.current(resolutions); } catch(e){ console.error("Error in merge callback:", e); showError("Errore post-merge."); setIsLoadingAction(false); } } else { setIsLoadingAction(false); } mergeResolutionCallback.current = null; }} onCancel={() => { setIsMergeModalOpen(false); setIsLoadingAction(false); showInfo("Operazione annullata."); mergeResolutionCallback.current = null; }} /> )}
 
-                    {/* Messaggi Stato/Errore */}
-                    {dbError && <div className="error-message">{dbError}</div>}
-                    {(isDbLoading || isDbSaving) && <div className="loading-message">Operazione Database in corso...</div>}
-                    {dbStatusMessage && !isDbLoading && !isDbSaving && <div className="db-status-message">{dbStatusMessage}</div>}
-
-
-                    {!firebaseInitializationError && (
+                    {showContent && (
                         <>
-                            <section id="gestione-giocatori">
-                                <h2>Gestione Giocatori</h2>
-
-                                <div className="file-io-section">
-                                     {/* Toggle Live Sync */}
-                                     <div className="live-sync-toggle">
-                                        <input
-                                            type="checkbox"
-                                            id="liveSyncCheck"
-                                            checked={isLive}
-                                            onChange={handleToggleLiveSync}
-                                            disabled={isDbLoading || isDbSaving}
-                                        />
-                                        <label htmlFor="liveSyncCheck">Attiva Sincronizzazione Live</label>
-                                    </div>
-
-                                    {/* Controlli DB e Snapshot */}
-                                    <div className="db-controls">
-                                        <button onClick={handleLoadFromFirestoreMaster} className="btn-load-db" disabled={disableDbActions} title={`Carica da DB Master (${MASTER_COLLECTION_NAME})`}>
-                                            Carica da DB Master
-                                        </button>
-                                        <button onClick={handleSaveToFirestoreMaster} className="btn-save-db" disabled={disableDbActions || players.length === 0} title={`Salva su DB Master (${MASTER_COLLECTION_NAME}) (PW)`}>
-                                            Salva su DB Master
-                                        </button>
-                                        <button onClick={handleSaveToFile} className="btn-save-file" disabled={disableDbActions || players.length === 0} title="Salva Snapshot Locale">Salva Snapshot</button>
-                                        <button onClick={handleLoadTrigger} className="btn-load-file" disabled={disableDbActions} title="Carica Snapshot Locale">Carica Locale</button>
-                                        <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} />
-                                    </div>
-
-                                     <div className="status-indicator">
-                                        Modalità: {isLive ? <span className="mode-live">LIVE SYNC</span> : <span className="mode-local">LOCALE</span>}
-                                        {isLive && <span> (Modifiche condivise su <i>{LIVE_COLLECTION_NAME}</i>)</span>}
-                                        {!isLive && <span> (Modifiche solo locali, usa i bottoni DB per sincronizzare con Master)</span>}
-                                    </div>
-                                </div>
-
-                               {/* Form e Lista */}
-                               <PlayerForm onSave={handleSavePlayer} editingPlayer={editingPlayer} onCancelEdit={handleCancelEdit} currentMode={operatingMode}/>
-                               <PlayerList players={players} onEdit={handleEditPlayer} onDelete={handleDeletePlayer} currentMode={operatingMode}/>
-
-                            </section>
-
-                            <hr className="section-divider" />
-
-                            {/* Sezioni Partita e Squadre (operano sui players correnti) */}
-                            <section id="imposta-partita">
-                                <MatchSetup matchType={matchType} onMatchTypeChange={handleMatchTypeChange} onOpenSelection={handleOpenSelectionModal} availablePlayerCount={players.length}/>
-                            </section>
-
-                            {isModalOpen && ( <PlayerSelectionModal players={players} selectedPlayerIds={selectedPlayerIds} requiredCount={getRequiredPlayers(matchType)} onToggleSelect={handleTogglePlayerSelection} onConfirm={handleConfirmSelection} onClose={handleCloseSelectionModal} /> )}
-
-                            <hr className="section-divider" />
-
-                            <section id="crea-squadre">
-                                <TeamDisplay players={players} selectedPlayerIds={selectedPlayerIds} teams={teams} matchType={matchType} onUpdateTeams={handleUpdateTeams} onClearSelection={handleClearSelectionAndTeams} balanceByRoleEnabled={balanceByRoleEnabled} onToggleBalanceByRole={handleToggleBalanceByRole} onGenerateTeams={handleGenerateBalancedTeams} />
-                            </section>
+                            <div className="db-controls-section"> <p>Gestione DB:</p> <button onClick={() => handleSwitchMode('live')} className={`btn-db-action ${currentDbMode === 'live' ? 'active' : ''}`} disabled={isLoadingAction}>Visualizza Live DB</button> <button onClick={() => handleSwitchMode('master')} className={`btn-db-action ${currentDbMode === 'master' ? 'active' : ''}`} disabled={isLoadingAction}>Visualizza Master DB</button> <button onClick={handleLoadFromMaster} className="btn-db-action" disabled={isLoadingAction}>Carica/Unisci da Master a Live</button> <button onClick={handleSaveToMasterPrompt} className="btn-save-master" disabled={isLoadingAction || showMasterPasswordPrompt}>Salva Vista su Master...</button> {showMasterPasswordPrompt && ( <div className="password-prompt"> <label htmlFor="masterPass">Password:</label><input type="password" id="masterPass" value={masterPasswordInput} onChange={(e) => setMasterPasswordInput(e.target.value)} /><button onClick={handleConfirmSaveToMaster} className="btn-save-master-confirm" disabled={!masterPasswordInput}>Conferma</button><button onClick={handleCancelSaveToMaster} className="btn-cancel">Annulla</button> </div> )} </div>
+                            <div className="file-io-section"> <p>File Locali:</p> <button onClick={handleSaveToFile} className="btn-save-file" disabled={players.length === 0 || isLoadingAction}>Salva Snap.</button> <button onClick={handleLoadTrigger} className="btn-load-file" disabled={isLoadingAction}>Carica Locale</button> <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} /> </div>
+                            <section id="gestione-giocatori"> <PlayerForm onSave={handleSavePlayer} editingPlayer={editingPlayer} onCancelEdit={handleCancelEdit} currentDbMode={currentDbMode} /> <PlayerList players={players} onEdit={handleEditPlayer} onDelete={handleDeletePlayer} currentDbMode={currentDbMode} isLoadingPlayers={isLoadingPlayers} /> </section>
+                            <hr className="section-divider" /> <section id="imposta-partita"> <MatchSetup matchType={matchType} onMatchTypeChange={handleMatchTypeChange} onOpenSelection={() => setIsSelectionModalOpen(true)} availablePlayerCount={players.length} /> </section>
+                            {isSelectionModalOpen && ( <PlayerSelectionModal players={players} selectedPlayerIds={selectedPlayerIds} requiredCount={getRequiredPlayers(matchType)} onToggleSelect={handleTogglePlayerSelection} onConfirm={handleConfirmSelection} onClose={() => setIsSelectionModalOpen(false)} /> )}
+                            {matchType && players.length >= getRequiredPlayers(matchType) && ( <> <hr className="section-divider" /> <section id="crea-squadre"> <TeamDisplay players={players} selectedPlayerIds={selectedPlayerIds} teams={teams} matchType={matchType} onUpdateTeams={handleUpdateTeams} onClearSelection={handleClearSelectionAndTeams} balanceByRoleEnabled={balanceByRoleEnabled} onToggleBalanceByRole={handleToggleBalanceByRole} onGenerateTeams={handleGenerateBalancedTeams} /> </section> </> )}
+                            {matchType && players.length < getRequiredPlayers(matchType) && ( <div className="info-message" style={{marginTop: '20px'}}>Giocatori insuff. ({players.length}/{getRequiredPlayers(matchType)}) in {dbModeLabel}.</div> )}
                         </>
                     )}
+                    {firebaseInitializationError && !isLoadingPlayers && <div className="error-message">{firebaseInitializationError}</div>}
                 </div>
             );
         } // --- Fine App ---
 
-
-        // === Monta l'App React nel DOM con Error Boundary (Invariato) ===
-        const rootElement = document.getElementById('root');
-        if (rootElement) {
-            try {
-                 const root = ReactDOM.createRoot(rootElement);
-                 class ErrorBoundary extends React.Component { /* ... */ }
-                 root.render(<ErrorBoundary><App /></ErrorBoundary>);
-            } catch (error) { /* ... */ }
-        } else { /* ... */ }
+        // === Monta l'App React nel DOM con Error Boundary ===
+        const rootElement = document.getElementById('root'); if (rootElement) { try { const root = ReactDOM.createRoot(rootElement); class ErrorBoundary extends React.Component { constructor(props) { super(props); this.state = { hasError: false, error: null, errorInfo: null }; } static getDerivedStateFromError(error) { return { hasError: true, error }; } componentDidCatch(error, errorInfo) { console.error("React Error Boundary:", error, errorInfo); this.setState({errorInfo: errorInfo}); } render() { if (this.state.hasError) { return ( <div className="container"> <div className="error-message" style={{textAlign: 'left'}}> <h2>Oops! Qualcosa è andato storto.</h2><p>Errore che impedisce il funzionamento.</p><details style={{ whiteSpace: 'pre-wrap', marginTop: '15px' }}><summary>Dettagli Tecnici</summary>{this.state.error && this.state.error.toString()}<br />{this.state.errorInfo && this.state.errorInfo.componentStack}</details><p style={{marginTop: '15px'}}>Prova a ricaricare (F5) o controlla la console (F12).</p> </div> </div> ); } return this.props.children; } } root.render(<ErrorBoundary><App /></ErrorBoundary>); } catch (error) { console.error("Errore rendering iniziale:", error); rootElement.innerHTML = '<div class="container"><div class="error-message">Errore critico avvio applicazione.</div></div>'; } } else { console.error("#root non trovato!"); document.body.innerHTML = '<div style="padding:20px; color:red;">Errore: #root mancante.</div>'; }
 
     </script>
 
