@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>El Clasico - Admin Panel (JSON IO)</title>
+    <title>El Clasico - Admin Panel (Sync + Add Logic)</title>
 
     <!-- React, ReactDOM, Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -14,7 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
-    <!-- CSS (Identico alla versione precedente) -->
+    <!-- CSS (Identico) -->
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.6; }
         .container { max-width: 1100px; margin: 20px auto; padding: 15px; background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
@@ -42,7 +42,7 @@
 
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #495057; }
         input[type="text"], input[type="number"], input[type="password"], select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1em; margin-bottom: 10px; box-sizing: border-box; }
-        input[type="file"] { padding: 5px; /* Needed even if hidden for spacing */ }
+        input[type="file"] { padding: 5px; }
         .checkbox-group { display: flex; align-items: center; margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
         .checkbox-group input[type="checkbox"] { width: auto; margin-right: 10px; transform: scale(1.3); cursor: pointer; }
         .checkbox-group label { margin-bottom: 0; font-weight: normal; cursor: pointer; }
@@ -161,49 +161,18 @@
 
         // === Componenti React ===
 
-        // PlayerForm (Unchanged from previous version)
-        function PlayerForm({ onSave, editingLivePlayer, editingMasterPlayer, onCancelEdit }) {
-            const initialFormData = { nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5, velocita: 5, scatto: 5, pressing: 5, determinazione: 5, peso: 75, altezza: 175, robustezza: 5, photoUrl: null };
-            const [formData, setFormData] = useState(initialFormData);
-            const [isVisible, setIsVisible] = useState(false);
-            const [photoPreview, setPhotoPreview] = useState(null);
-            const [isSaving, setIsSaving] = useState(false);
-            const editingPlayer = editingLivePlayer || editingMasterPlayer;
-            const editingDbType = editingLivePlayer ? 'live' : (editingMasterPlayer ? 'master' : null);
-            useEffect(() => { if (editingPlayer) { const dataToEdit = {...initialFormData, ...editingPlayer}; setFormData(dataToEdit); setPhotoPreview(dataToEdit.photoUrl || null); setIsVisible(true); } else { if(isVisible) { setFormData(initialFormData); setPhotoPreview(null); setIsVisible(false); } } }, [editingLivePlayer, editingMasterPlayer]);
-            const handleChange = (e) => { const { name, value, type } = e.target; setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value })); };
-            const handlePhotoChange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => { setFormData(prev => ({ ...prev, photoUrl: reader.result })); setPhotoPreview(reader.result); }; reader.onerror = (error) => { console.error("File reading error:", error); alert("Errore nel caricamento dell'immagine."); }; reader.readAsDataURL(file); } else { setFormData(prev => ({ ...prev, photoUrl: editingPlayer?.photoUrl || null })); setPhotoPreview(editingPlayer?.photoUrl || null); } e.target.value = null; };
-            const handleSubmit = async (e) => { e.preventDefault(); if (!formData.nome.trim()) { alert("Il nome è obbligatorio!"); return; } if (!editingPlayer && editingDbType === 'master') { alert("Errore: Non è possibile aggiungere nuovi giocatori direttamente a Master tramite questo form."); return; } setIsSaving(true); try { await onSave(formData, editingDbType); handleCancel(); } catch (error) { console.error(`Errore durante il salvataggio (${editingDbType || 'new'}):`, error); } finally { setIsSaving(false); } };
-            const handleCancel = () => { onCancelEdit(); setFormData(initialFormData); setPhotoPreview(null); setIsVisible(false); setIsSaving(false); };
-            const toggleVisibility = () => { if (!editingPlayer) { setIsVisible(!isVisible); if (isVisible) { handleCancel(); } else { setFormData(initialFormData); setPhotoPreview(null); } } else if (!isVisible) { setIsVisible(true); } };
-            let formTitle = 'Nuovo Giocatore (Live)'; let saveButtonText = 'Aggiungi Giocatore (Live)';
-            if (editingDbType === 'live') { formTitle = `Modifica Giocatore (Live): ${editingLivePlayer.nome}`; saveButtonText = 'Salva Modifiche (Live)'; } else if (editingDbType === 'master') { formTitle = `Modifica Giocatore (Master): ${editingMasterPlayer.nome}`; saveButtonText = 'Salva Modifiche (Master)'; }
-            return ( <div className="player-form-container"> {!editingPlayer && !isVisible && ( <button onClick={toggleVisibility} className="btn-toggle-form btn-create">+ Aggiungi Giocatore (Live)</button> )} {isVisible && ( <form onSubmit={handleSubmit} className="player-form"> <fieldset disabled={isSaving}> <h3>{formTitle}</h3> {/* Campi identici... */} <div className="form-group"><label htmlFor="nome">Nome:</label><input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required /></div> <div className="form-group"><label htmlFor="ruolo">Ruolo Preferito:</label><select id="ruolo" name="ruolo" value={formData.ruolo} onChange={handleChange}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div> {[ { name: 'abilitaDifensiva', label: 'Difesa' }, { name: 'abilitaOffensiva', label: 'Attacco' }, { name: 'velocita', label: 'Velocità' }, { name: 'scatto', label: 'Scatto' }, { name: 'pressing', label: 'Pressing' }, { name: 'determinazione', label: 'Determ.' }, { name: 'robustezza', label: 'Robustezza' } ].map(({ name, label }) => ( <div className="form-group" key={name}><label htmlFor={name}>{label} (1-10):</label><input type="number" id={name} name={name} min="1" max="10" step="1" value={formData[name] ?? ''} onChange={handleChange} required /></div> ))} <div className="form-group"><label htmlFor="peso">Peso (kg):</label><input type="number" id="peso" name="peso" min="30" max="150" step="0.1" value={formData.peso ?? ''} onChange={handleChange} required /></div> <div className="form-group"><label htmlFor="altezza">Altezza (cm):</label><input type="number" id="altezza" name="altezza" min="100" max="230" step="1" value={formData.altezza ?? ''} onChange={handleChange} required /></div> <div className="form-group form-group-photo"> <label htmlFor="photo"> Foto (Visualizza anteprima) <small>(Upload non attivo)</small> </label> <input type="file" id="photo" name="photo" accept="image/png, image/jpeg, image/webp" onChange={handlePhotoChange} /> <br/> {photoPreview && <img src={photoPreview} alt="Anteprima" className="photo-preview" />} {!photoPreview && editingPlayer?.photoUrl && <span> (Foto esistente: <a href={editingPlayer.photoUrl} target="_blank" rel="noopener noreferrer">link</a>)</span>} {photoPreview && <button type="button" onClick={() => { setPhotoPreview(null); setFormData(prev => ({...prev, photoUrl: null})); }} style={{backgroundColor: '#ffc107', color: '#333', fontSize:'0.8em', padding:'3px 6px'}}>Rimuovi Selezione</button>} </div> <div className="form-actions"> <button type="submit" className="btn-save" disabled={isSaving}> {isSaving ? 'Salvataggio...' : saveButtonText} </button> <button type="button" onClick={handleCancel} className="btn-cancel" disabled={isSaving}>Annulla</button> </div> </fieldset> </form> )} </div> );
-        }
-
+        // PlayerForm (Unchanged)
+        function PlayerForm({ onSave, editingLivePlayer, editingMasterPlayer, onCancelEdit }) { const initialFormData = { nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5, velocita: 5, scatto: 5, pressing: 5, determinazione: 5, peso: 75, altezza: 175, robustezza: 5, photoUrl: null }; const [formData, setFormData] = useState(initialFormData); const [isVisible, setIsVisible] = useState(false); const [photoPreview, setPhotoPreview] = useState(null); const [isSaving, setIsSaving] = useState(false); const editingPlayer = editingLivePlayer || editingMasterPlayer; const editingDbType = editingLivePlayer ? 'live' : (editingMasterPlayer ? 'master' : null); useEffect(() => { if (editingPlayer) { const dataToEdit = {...initialFormData, ...editingPlayer}; setFormData(dataToEdit); setPhotoPreview(dataToEdit.photoUrl || null); setIsVisible(true); } else { if(isVisible) { setFormData(initialFormData); setPhotoPreview(null); setIsVisible(false); } } }, [editingLivePlayer, editingMasterPlayer]); const handleChange = (e) => { const { name, value, type } = e.target; setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value })); }; const handlePhotoChange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => { setFormData(prev => ({ ...prev, photoUrl: reader.result })); setPhotoPreview(reader.result); }; reader.onerror = (error) => { console.error("File reading error:", error); alert("Errore nel caricamento dell'immagine."); }; reader.readAsDataURL(file); } else { setFormData(prev => ({ ...prev, photoUrl: editingPlayer?.photoUrl || null })); setPhotoPreview(editingPlayer?.photoUrl || null); } e.target.value = null; }; const handleSubmit = async (e) => { e.preventDefault(); if (!formData.nome.trim()) { alert("Il nome è obbligatorio!"); return; } if (!editingPlayer && editingDbType === 'master') { alert("Errore: Non è possibile aggiungere nuovi giocatori direttamente a Master tramite questo form."); return; } setIsSaving(true); try { await onSave(formData, editingDbType); handleCancel(); } catch (error) { console.error(`Errore durante il salvataggio (${editingDbType || 'new'}):`, error); } finally { setIsSaving(false); } }; const handleCancel = () => { onCancelEdit(); setFormData(initialFormData); setPhotoPreview(null); setIsVisible(false); setIsSaving(false); }; const toggleVisibility = () => { if (!editingPlayer) { setIsVisible(!isVisible); if (isVisible) { handleCancel(); } else { setFormData(initialFormData); setPhotoPreview(null); } } else if (!isVisible) { setIsVisible(true); } }; let formTitle = 'Nuovo Giocatore (Live)'; let saveButtonText = 'Aggiungi Giocatore (Live)'; if (editingDbType === 'live') { formTitle = `Modifica Giocatore (Live): ${editingLivePlayer.nome}`; saveButtonText = 'Salva Modifiche (Live)'; } else if (editingDbType === 'master') { formTitle = `Modifica Giocatore (Master): ${editingMasterPlayer.nome}`; saveButtonText = 'Salva Modifiche (Master)'; } return ( <div className="player-form-container"> {!editingPlayer && !isVisible && ( <button onClick={toggleVisibility} className="btn-toggle-form btn-create">+ Aggiungi Giocatore (Live)</button> )} {isVisible && ( <form onSubmit={handleSubmit} className="player-form"> <fieldset disabled={isSaving}> <h3>{formTitle}</h3> <div className="form-group"><label htmlFor="nome">Nome:</label><input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required /></div> <div className="form-group"><label htmlFor="ruolo">Ruolo Preferito:</label><select id="ruolo" name="ruolo" value={formData.ruolo} onChange={handleChange}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div> {[ { name: 'abilitaDifensiva', label: 'Difesa' }, { name: 'abilitaOffensiva', label: 'Attacco' }, { name: 'velocita', label: 'Velocità' }, { name: 'scatto', label: 'Scatto' }, { name: 'pressing', label: 'Pressing' }, { name: 'determinazione', label: 'Determ.' }, { name: 'robustezza', label: 'Robustezza' } ].map(({ name, label }) => ( <div className="form-group" key={name}><label htmlFor={name}>{label} (1-10):</label><input type="number" id={name} name={name} min="1" max="10" step="1" value={formData[name] ?? ''} onChange={handleChange} required /></div> ))} <div className="form-group"><label htmlFor="peso">Peso (kg):</label><input type="number" id="peso" name="peso" min="30" max="150" step="0.1" value={formData.peso ?? ''} onChange={handleChange} required /></div> <div className="form-group"><label htmlFor="altezza">Altezza (cm):</label><input type="number" id="altezza" name="altezza" min="100" max="230" step="1" value={formData.altezza ?? ''} onChange={handleChange} required /></div> <div className="form-group form-group-photo"> <label htmlFor="photo"> Foto (Visualizza anteprima) <small>(Upload non attivo)</small> </label> <input type="file" id="photo" name="photo" accept="image/png, image/jpeg, image/webp" onChange={handlePhotoChange} /> <br/> {photoPreview && <img src={photoPreview} alt="Anteprima" className="photo-preview" />} {!photoPreview && editingPlayer?.photoUrl && <span> (Foto esistente: <a href={editingPlayer.photoUrl} target="_blank" rel="noopener noreferrer">link</a>)</span>} {photoPreview && <button type="button" onClick={() => { setPhotoPreview(null); setFormData(prev => ({...prev, photoUrl: null})); }} style={{backgroundColor: '#ffc107', color: '#333', fontSize:'0.8em', padding:'3px 6px'}}>Rimuovi Selezione</button>} </div> <div className="form-actions"> <button type="submit" className="btn-save" disabled={isSaving}> {isSaving ? 'Salvataggio...' : saveButtonText} </button> <button type="button" onClick={handleCancel} className="btn-cancel" disabled={isSaving}>Annulla</button> </div> </fieldset> </form> )} </div> ); }
         // PlayerItem (Unchanged)
-        function PlayerItem({ player, onEdit, onDelete, dbType, isSelected, onSelect }) {
-            const avgScore = getAvgScore(player);
-            return ( <li className="player-item"> <div className={`player-info ${isSelected ? 'selected' : ''}`} onClick={() => onSelect(player.id, dbType)}> {player.photoUrl ? (<img src={player.photoUrl} alt={player.nome} className="player-photo-thumbnail" onError={(e) => e.target.style.display='none'} />) : (<span className="player-photo-thumbnail"></span>)} <div className="player-details"> <span className="player-name">{player.nome}</span> <span className="player-meta"> <span className="player-role">{player.ruolo}</span> <span className="player-avg-score">Avg: {avgScore}</span> </span> </div> </div> <div className="player-actions"> <button onClick={() => onEdit(player.id, dbType)} className="btn-edit" title={`Modifica giocatore ${dbType}`}>Modifica</button> <button onClick={() => onDelete(player.id, dbType)} className="btn-delete" title={`Elimina giocatore da ${dbType}`}>Elimina ({dbType})</button> </div> </li> );
-        }
-
+        function PlayerItem({ player, onEdit, onDelete, dbType, isSelected, onSelect }) { const avgScore = getAvgScore(player); return ( <li className="player-item"> <div className={`player-info ${isSelected ? 'selected' : ''}`} onClick={() => onSelect(player.id, dbType)}> {player.photoUrl ? (<img src={player.photoUrl} alt={player.nome} className="player-photo-thumbnail" onError={(e) => e.target.style.display='none'} />) : (<span className="player-photo-thumbnail"></span>)} <div className="player-details"> <span className="player-name">{player.nome}</span> <span className="player-meta"> <span className="player-role">{player.ruolo}</span> <span className="player-avg-score">Avg: {avgScore}</span> </span> </div> </div> <div className="player-actions"> <button onClick={() => onEdit(player.id, dbType)} className="btn-edit" title={`Modifica giocatore ${dbType}`}>Modifica</button> <button onClick={() => onDelete(player.id, dbType)} className="btn-delete" title={`Elimina giocatore da ${dbType}`}>Elimina ({dbType})</button> </div> </li> ); }
         // PlayerList (Unchanged)
-        function PlayerList({ players, dbType, title, onEdit, onDelete, selectedIds, onSelect, isLoading, error }) {
-             const sortedPlayers = [...players].sort((a, b) => a.nome.localeCompare(b.nome));
-             return ( <div className="player-list-container admin-column"> <h2>{title} ({players.length})</h2> {isLoading && <p>Caricamento...</p>} {error && <p className="error-message">{error}</p>} {!isLoading && !error && players.length === 0 && ( <p>Nessun giocatore in questa lista.</p> )} {!isLoading && !error && players.length > 0 && ( <ul className="player-list"> {sortedPlayers.map(p => ( <PlayerItem key={p.id} player={p} onEdit={onEdit} onDelete={onDelete} dbType={dbType} isSelected={selectedIds.includes(p.id)} onSelect={onSelect} /> ))} </ul> )} </div> );
-        }
-
+        function PlayerList({ players, dbType, title, onEdit, onDelete, selectedIds, onSelect, isLoading, error }) { const sortedPlayers = [...players].sort((a, b) => a.nome.localeCompare(b.nome)); return ( <div className="player-list-container admin-column"> <h2>{title} ({players.length})</h2> {isLoading && <p>Caricamento...</p>} {error && <p className="error-message">{error}</p>} {!isLoading && !error && players.length === 0 && ( <p>Nessun giocatore in questa lista.</p> )} {!isLoading && !error && players.length > 0 && ( <ul className="player-list"> {sortedPlayers.map(p => ( <PlayerItem key={p.id} player={p} onEdit={onEdit} onDelete={onDelete} dbType={dbType} isSelected={selectedIds.includes(p.id)} onSelect={onSelect} /> ))} </ul> )} </div> ); }
         // ComparisonModal (Unchanged)
-        function ComparisonModal({ conflicts, onResolve, onCancel, sourceLabel, targetLabel, operationType }) {
-            const [resolutions, setResolutions] = useState(() => { const initialResolutions = {}; conflicts.forEach(conflict => { initialResolutions[conflict.name] = 'update'; }); return initialResolutions; });
-            const handleResolutionChange = (name, choice) => { setResolutions(prev => ({ ...prev, [name]: choice })); };
-            const renderPlayerCard = (player, otherPlayer, titleClass) => { if (!player) return <div className={`comparison-player-card ${titleClass}`}><p>Giocatore non presente.</p></div>; const fields = [ 'ruolo', 'abilitaDifensiva', 'abilitaOffensiva', 'velocita', 'scatto', 'pressing', 'determinazione', 'peso', 'altezza', 'robustezza', 'photoUrl']; return ( <div className={`comparison-player-card`}> <h5 className={titleClass}>{player.nome} ({titleClass === 'source' ? sourceLabel : targetLabel})</h5> {fields.map(field => { let displayValue = player[field] ?? 'N/D'; const otherValue = otherPlayer ? (otherPlayer[field] ?? 'N/D') : 'N/A'; const isDifferent = otherPlayer && (player[field] ?? null) !== (otherPlayer[field] ?? null); if (field === 'photoUrl') { const photoLink = displayValue !== 'N/D' && displayValue !== null ? <a href={displayValue} target="_blank" rel="noopener noreferrer">Link Foto</a> : 'Nessuna'; displayValue = <span className={isDifferent ? 'comparison-highlight' : ''}>{photoLink}</span>; } else { displayValue = <span className={isDifferent ? 'comparison-highlight' : ''}>{displayValue}</span>; } return <p key={field}><strong>{field}:</strong> {displayValue}</p>; })} </div> ); };
-             return ( <div className="modal-overlay" onClick={onCancel}> <div className="modal-content comparison-modal" onClick={(e) => e.stopPropagation()}> <h3>Confronta Giocatori Duplicati ({conflicts.length})</h3> <p>I seguenti giocatori hanno lo stesso nome ma dati diversi tra <strong>{sourceLabel}</strong> e <strong>{targetLabel}</strong>. Scegli quale versione mantenere per ciascuno.</p> {operationType === 'save' && <p className="info-message">Nota: Verrà aggiornato SOLO il giocatore in {targetLabel} se scegli 'Aggiorna'. Giocatori unici non verranno toccati.</p>} <ul className="comparison-list"> {conflicts.map(conflict => ( <li key={conflict.name} className="comparison-item"> <h4>{conflict.name}</h4> <div className="comparison-details"> {renderPlayerCard(conflict.sourcePlayer, conflict.targetPlayer, 'source')} {renderPlayerCard(conflict.targetPlayer, conflict.sourcePlayer, 'target')} </div> <div className="comparison-actions"> <label> <input type="radio" name={`resolve_${conflict.name}`} value="update" checked={resolutions[conflict.name] === 'update'} onChange={() => handleResolutionChange(conflict.name, 'update')} /> Aggiorna {targetLabel} con dati {sourceLabel} </label> <label> <input type="radio" name={`resolve_${conflict.name}`} value="keep" checked={resolutions[conflict.name] === 'keep'} onChange={() => handleResolutionChange(conflict.name, 'keep')} /> Mantieni dati {targetLabel} esistenti </label> </div> </li> ))} </ul> <div className="modal-actions"> <button onClick={() => onResolve(resolutions)} className="btn-confirm"> Applica Scelte e Procedi </button> <button onClick={onCancel} className="btn-cancel">Annulla Operazione</button> </div> </div> </div> );
-        }
+        function ComparisonModal({ conflicts, onResolve, onCancel, sourceLabel, targetLabel, operationType }) { const [resolutions, setResolutions] = useState(() => { const initialResolutions = {}; conflicts.forEach(conflict => { initialResolutions[conflict.name] = 'update'; }); return initialResolutions; }); const handleResolutionChange = (name, choice) => { setResolutions(prev => ({ ...prev, [name]: choice })); }; const renderPlayerCard = (player, otherPlayer, titleClass) => { if (!player) return <div className={`comparison-player-card ${titleClass}`}><p>Giocatore non presente.</p></div>; const fields = [ 'ruolo', 'abilitaDifensiva', 'abilitaOffensiva', 'velocita', 'scatto', 'pressing', 'determinazione', 'peso', 'altezza', 'robustezza', 'photoUrl']; return ( <div className={`comparison-player-card`}> <h5 className={titleClass}>{player.nome} ({titleClass === 'source' ? sourceLabel : targetLabel})</h5> {fields.map(field => { let displayValue = player[field] ?? 'N/D'; const otherValue = otherPlayer ? (otherPlayer[field] ?? 'N/D') : 'N/A'; const isDifferent = otherPlayer && (player[field] ?? null) !== (otherPlayer[field] ?? null); if (field === 'photoUrl') { const photoLink = displayValue !== 'N/D' && displayValue !== null ? <a href={displayValue} target="_blank" rel="noopener noreferrer">Link Foto</a> : 'Nessuna'; displayValue = <span className={isDifferent ? 'comparison-highlight' : ''}>{photoLink}</span>; } else { displayValue = <span className={isDifferent ? 'comparison-highlight' : ''}>{displayValue}</span>; } return <p key={field}><strong>{field}:</strong> {displayValue}</p>; })} </div> ); }; return ( <div className="modal-overlay" onClick={onCancel}> <div className="modal-content comparison-modal" onClick={(e) => e.stopPropagation()}> <h3>Confronta Giocatori Duplicati ({conflicts.length})</h3> <p>I seguenti giocatori hanno lo stesso nome ma dati diversi tra <strong>{sourceLabel}</strong> e <strong>{targetLabel}</strong>. Scegli quale versione mantenere per ciascuno.</p> {operationType === 'save' && <p className="info-message">Nota: Verrà aggiornato SOLO il giocatore in {targetLabel} se scegli 'Aggiorna'. Giocatori unici non verranno toccati.</p>} <ul className="comparison-list"> {conflicts.map(conflict => ( <li key={conflict.name} className="comparison-item"> <h4>{conflict.name}</h4> <div className="comparison-details"> {renderPlayerCard(conflict.sourcePlayer, conflict.targetPlayer, 'source')} {renderPlayerCard(conflict.targetPlayer, conflict.sourcePlayer, 'target')} </div> <div className="comparison-actions"> <label> <input type="radio" name={`resolve_${conflict.name}`} value="update" checked={resolutions[conflict.name] === 'update'} onChange={() => handleResolutionChange(conflict.name, 'update')} /> Aggiorna {targetLabel} con dati {sourceLabel} </label> <label> <input type="radio" name={`resolve_${conflict.name}`} value="keep" checked={resolutions[conflict.name] === 'keep'} onChange={() => handleResolutionChange(conflict.name, 'keep')} /> Mantieni dati {targetLabel} esistenti </label> </div> </li> ))} </ul> <div className="modal-actions"> <button onClick={() => onResolve(resolutions)} className="btn-confirm"> Applica Scelte e Procedi </button> <button onClick={onCancel} className="btn-cancel">Annulla Operazione</button> </div> </div> </div> ); }
 
         // === Componente Admin App Principale ===
         function AdminApp() {
-            // --- STATI ---
+            // --- STATI --- (Unchanged)
             const [livePlayers, setLivePlayers] = useState([]);
             const [masterPlayers, setMasterPlayers] = useState([]);
             const [isLoadingLive, setIsLoadingLive] = useState(true);
@@ -221,19 +190,20 @@
             const [isSavingToMaster, setIsSavingToMaster] = useState(false);
             const [showComparisonModal, setShowComparisonModal] = useState(false);
             const [comparisonData, setComparisonData] = useState({ conflicts: [], sourceLabel: '', targetLabel: '', operationType: '', onResolve: null });
-            const fileInputRef = useRef(null); // Ref for file input
+            const fileInputRef = useRef(null); // Added ref
 
-            // --- FUNZIONI MESSAGGI ---
+            // --- FUNZIONI MESSAGGI --- (Unchanged)
             const showSuccess = useCallback((msg, duration = 3000) => { setSuccessMessage(msg); setTimeout(() => setSuccessMessage(null), duration); }, []);
             const showError = useCallback((msg, source, duration = 5000) => { if (source === 'live') setErrorLive(msg); else setErrorMaster(msg); setTimeout(() => { if (source === 'live') setErrorLive(null); else setErrorMaster(null); }, duration); }, []);
             const showInfo = useCallback((msg, duration = 4000) => { setInfoMessage(msg); setTimeout(() => setInfoMessage(null), duration); }, []);
 
-            // --- EFFETTI LISTENER/FETCH FIRESTORE ---
+            // --- EFFETTI LISTENER/FETCH FIRESTORE --- (Unchanged)
             useEffect(() => { if (firebaseInitializationError || !liveCollectionRef) { setIsLoadingLive(false); return; } const unsubscribe = liveCollectionRef.orderBy("nome").onSnapshot(snapshot => { const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); setLivePlayers(playersData); if (isLoadingLive) setIsLoadingLive(false); if (errorLive && !firebaseInitializationError) setErrorLive(null); }, error => { console.error(`Errore listener Firestore Live Admin:`, error); if (!firebaseInitializationError) setErrorLive(`Errore DB Live: ${error.message}`); setIsLoadingLive(false); setLivePlayers([]); }); return () => { unsubscribe(); }; }, [firebaseInitializationError]);
             const fetchMasterPlayers = useCallback(async () => { if (firebaseInitializationError || !masterCollectionRef) { setIsLoadingMaster(false); return; } setIsLoadingMaster(true); setErrorMaster(null); try { const masterSnapshot = await masterCollectionRef.orderBy("nome").get(); const masterData = masterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); setMasterPlayers(masterData); } catch (error) { console.error("Errore fetch Master Admin:", error); if (!firebaseInitializationError) setErrorMaster(`Errore DB Master: ${error.message}`); setMasterPlayers([]); } finally { setIsLoadingMaster(false); } }, [firebaseInitializationError]);
             useEffect(() => { fetchMasterPlayers(); }, [fetchMasterPlayers]);
 
-            // --- Handlers Gestione Giocatori ---
+
+            // --- Handlers Gestione Giocatori --- (Unchanged from previous version with master edit)
             const handleSaveLivePlayer = useCallback(async (playerData) => { if (!db || !liveCollectionRef) { throw new Error("Firestore Live non inizializzato."); } const { id, ...dataToSave } = playerData; try { if (id) { await liveCollectionRef.doc(id).update(dataToSave); showSuccess("Giocatore Live aggiornato!"); } else { const docRef = await liveCollectionRef.add(dataToSave); showSuccess(`Giocatore "${dataToSave.nome}" aggiunto a Live (ID: ${docRef.id})`); } setEditingLivePlayer(null); } catch (error) { console.error("Errore salvataggio Firestore (Live Admin):", error); showError(`Errore salvataggio Live: ${error.message}`, 'live'); throw error; } }, [showSuccess, showError]);
             const handleSaveMasterPlayer = useCallback(async (playerData) => { if (!db || !masterCollectionRef) { throw new Error("Firestore Master non inizializzato."); } const { id, ...dataToSave } = playerData; if (!id) { throw new Error("ID mancante per salvataggio Master."); } const pwd = prompt(`Inserisci la password Master ("${MASTER_DB_PASSWORD}") per salvare le modifiche a ${playerData.nome} in Master:`); if (pwd !== MASTER_DB_PASSWORD) { alert("Password errata. Modifiche a Master annullate."); throw new Error("Password Master errata per modifica."); } try { await masterCollectionRef.doc(id).update(dataToSave); showSuccess("Giocatore Master aggiornato!"); setEditingMasterPlayer(null); fetchMasterPlayers(); } catch (error) { console.error("Errore salvataggio Firestore (Master Admin):", error); showError(`Errore salvataggio Master: ${error.message}`, 'master'); throw error; } }, [showSuccess, showError, fetchMasterPlayers]);
             const handleSavePlayer = useCallback(async (playerData, dbType) => { if (dbType === 'live' || dbType === null) { await handleSaveLivePlayer(playerData); } else if (dbType === 'master') { await handleSaveMasterPlayer(playerData); } else { throw new Error("Tipo DB non valido per il salvataggio."); } }, [handleSaveLivePlayer, handleSaveMasterPlayer]);
@@ -243,28 +213,153 @@
             const handleSelectPlayer = useCallback((playerId, dbType) => { if (dbType === 'live') { setSelectedLiveIds(prev => prev.includes(playerId) ? prev.filter(id => id !== playerId) : [...prev, playerId]); } else { setSelectedMasterIds(prev => prev.includes(playerId) ? prev.filter(id => id !== playerId) : [...prev, playerId]); } }, []);
             const clearSelections = useCallback(() => { setSelectedLiveIds([]); setSelectedMasterIds([]); }, []);
 
-             // --- Action Handlers (Copy, Sync Master) ---
-             const handleCopySelectedLiveToMaster = useCallback(async () => { if (selectedLiveIds.length === 0) { alert("Seleziona almeno un giocatore Live da copiare."); return; } if (!masterCollectionRef || !db) { showError("Errore DB Master non disponibile.", 'master'); return; } const playersToCopy = livePlayers.filter(p => selectedLiveIds.includes(p.id)); if (!window.confirm(`Stai per copiare/aggiornare ${playersToCopy.length} giocatori da Live a Master.\nI giocatori esistenti in Master con lo stesso NOME verranno SOVRASCRITTI.\nProcedere?`)) return; console.log(`Copiando ${playersToCopy.length} giocatori da Live a Master...`); showInfo("Copia in corso..."); setIsLoadingMaster(true); const batch = db.batch(); let copiedCount = 0; let errorCount = 0; let currentMasterPlayersByName = new Map(); try { const masterSnapshot = await masterCollectionRef.get(); currentMasterPlayersByName = new Map(masterSnapshot.docs.map(doc => [doc.data().nome?.trim().toLowerCase(), {id: doc.id, ...doc.data()}])); } catch(e) { console.error("Failed to fetch master players before copy:", e); showError("Errore nel leggere Master DB prima della copia.", 'master'); setIsLoadingMaster(false); return; } playersToCopy.forEach(player => { const { id, ...dataToCopy } = player; const masterMatch = currentMasterPlayersByName.get(player.nome?.trim().toLowerCase()); try { if (masterMatch) { batch.set(masterCollectionRef.doc(masterMatch.id), dataToCopy); } else { if (id && typeof id === 'string' && id.length > 5) batch.set(masterCollectionRef.doc(id), dataToCopy); else { const newDocRef = masterCollectionRef.doc(); batch.set(newDocRef, dataToCopy); } } copiedCount++; } catch(e) { console.error(`Errore durante la preparazione batch per ${player.nome}:`, e); errorCount++; } }); if (errorCount > 0) { showError(`Errore durante la preparazione della copia per ${errorCount} giocatori. Vedi console.`, 'master'); setIsLoadingMaster(false); return; } try { await batch.commit(); showSuccess(`${copiedCount} giocatori copiati/aggiornati da Live a Master.`); clearSelections(); fetchMasterPlayers(); } catch (error) { console.error("Errore commit batch copia Live->Master:", error); showError(`Errore durante la copia su Master: ${error.message}`, 'master'); } finally { setIsLoadingMaster(false); } }, [livePlayers, selectedLiveIds, showSuccess, showError, showInfo, clearSelections, fetchMasterPlayers]);
-             const handleSaveLiveToMasterPrompt = useCallback(() => { if (livePlayers.length === 0) { alert("Nessun giocatore Live da usare per la sincronizzazione."); return; } if (!window.confirm(`Stai per confrontare i ${livePlayers.length} giocatori Live con il DB Master.\nPER I SOLI GIOCATORI CON LO STESSO NOME:\n - Se i dati sono diversi, ti verrà chiesto se aggiornare Master con i dati Live.\n - Se i dati sono uguali, non verrà fatto nulla.\nGIOCATORI PRESENTI SOLO IN LIVE NON SARANNO AGGIUNTI A MASTER.\nGIOCATORI PRESENTI SOLO IN MASTER NON SARANNO ELIMINATI.\nL'operazione richiede la password.\n\nSei sicuro di voler procedere con la sincronizzazione?`)) return; setShowMasterPasswordPrompt(true); setMasterPasswordInput(''); }, [livePlayers]);
-             const handleCancelSaveToMaster = useCallback(() => { setShowMasterPasswordPrompt(false); setMasterPasswordInput(''); setIsSavingToMaster(false); }, []);
-             const handleConfirmSaveLiveToMaster = useCallback(async () => { if (masterPasswordInput !== MASTER_DB_PASSWORD) { alert("Password errata!"); return; } if (!masterCollectionRef || !db) { showError("Errore DB Master non disponibile.", 'master'); return; } if (livePlayers.length === 0) { alert("Nessun giocatore Live da sincronizzare."); handleCancelSaveToMaster(); return; } console.log(`Preparing to SYNC ${livePlayers.length} LIVE players with MASTER (matching names only)...`); setIsSavingToMaster(true); setErrorLive(null); setErrorMaster(null); setSuccessMessage(null); try { const masterSnapshot = await masterCollectionRef.get(); const currentMasterPlayers = masterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); console.log(`Fetched Master DB for comparison: ${currentMasterPlayers.length} players.`); const conflicts = []; const masterPlayersMapByName = new Map(currentMasterPlayers.map(p => [p.nome.trim().toLowerCase(), p])); let identicalCount = 0; livePlayers.forEach(livePlayer => { const liveNameKey = livePlayer.nome.trim().toLowerCase(); const masterMatch = masterPlayersMapByName.get(liveNameKey); if (masterMatch) { if (arePlayersDifferent(livePlayer, masterMatch)) { conflicts.push({ name: livePlayer.nome, sourcePlayer: livePlayer, targetPlayer: masterMatch }); } else { identicalCount++; } masterPlayersMapByName.delete(liveNameKey); } }); const performSave = async (resolutions = {}) => { console.log("Performing SYNC Live->Master (conflicts only) with resolutions:", resolutions); const batch = db.batch(); let updated = 0; let kept = 0; conflicts.forEach(conflict => { if (resolutions[conflict.name] === 'keep') { kept++; console.log(`  - Sync: Keeping Master version for ${conflict.name}`); } else { const { id, ...dataToSave } = conflict.sourcePlayer; batch.set(masterCollectionRef.doc(conflict.targetPlayer.id), dataToSave); updated++; console.log(`  - Sync: Updating Master version for ${conflict.name} (ID: ${conflict.targetPlayer.id})`); } }); if (updated === 0 && kept === 0 && identicalCount === 0 && conflicts.length === 0) { showInfo("Nessun giocatore con nome corrispondente trovato tra Live e Master per sincronizzare."); setIsSavingToMaster(false); handleCancelSaveToMaster(); return; } if (updated === 0 && kept > 0 && conflicts.length === kept) { showInfo(`Sincronizzazione Live->Master: Nessun aggiornamento effettuato. ${kept} giocatori mantenuti in Master, ${identicalCount} già identici.`); setIsSavingToMaster(false); handleCancelSaveToMaster(); return; } if (updated === 0 && kept === 0 && identicalCount > 0 && conflicts.length === 0) { showInfo(`Sincronizzazione Live->Master: Nessun aggiornamento effettuato. ${identicalCount} giocatori già identici.`); setIsSavingToMaster(false); handleCancelSaveToMaster(); return; } try { await batch.commit(); console.log("Batch write SYNC to MASTER successful."); showSuccess(`Sincronizzazione Live->Master completata: ${updated} giocatori Master aggiornati, ${kept} mantenuti (conflitti), ${identicalCount} già identici. Giocatori unici non sono stati modificati.`); fetchMasterPlayers(); } catch (error) { console.error("Errore commit batch SYNC Live->Master:", error); showError(`Errore sincronizzazione Master: ${error.message}`, 'master'); } finally { setIsSavingToMaster(false); handleCancelSaveToMaster(); } }; if (conflicts.length > 0) { console.log(`Found ${conflicts.length} conflicts for SYNC (Live vs Master). Opening modal.`); setComparisonData({ conflicts: conflicts, sourceLabel: 'Live DB (Sorgente)', targetLabel: 'Master DB (Destinazione)', operationType: 'save', onResolve: (res) => { setShowComparisonModal(false); performSave(res); } }); setShowComparisonModal(true); } else { if (identicalCount > 0) { console.log(`No conflicts for SYNC (Live vs Master), ${identicalCount} players identical. No batch needed.`); showInfo(`Nessun conflitto trovato. ${identicalCount} giocatori con nome corrispondente sono già identici. Nessuna modifica effettuata.`); } else { console.log("No conflicts and no identical players found with matching names between Live and Master."); showInfo("Nessun giocatore con nome corrispondente trovato tra Live e Master. Nessuna modifica effettuata."); } setIsSavingToMaster(false); handleCancelSaveToMaster(); } } catch (error) { console.error("Errore preparazione sincronizzazione Live->Master:", error); showError(`Errore preparazione sincronizzazione: ${error.message}`, 'master'); setIsSavingToMaster(false); handleCancelSaveToMaster(); } }, [livePlayers, masterPasswordInput, handleCancelSaveToMaster, showSuccess, showError, showInfo, fetchMasterPlayers]);
+             // --- Action Handlers ---
 
-            // --- Handlers File IO ---
+             // Copy Live to Master (Unchanged)
+             const handleCopySelectedLiveToMaster = useCallback(async () => { if (selectedLiveIds.length === 0) { alert("Seleziona almeno un giocatore Live da copiare."); return; } if (!masterCollectionRef || !db) { showError("Errore DB Master non disponibile.", 'master'); return; } const playersToCopy = livePlayers.filter(p => selectedLiveIds.includes(p.id)); if (!window.confirm(`Stai per copiare/aggiornare ${playersToCopy.length} giocatori da Live a Master.\nI giocatori esistenti in Master con lo stesso NOME verranno SOVRASCRITTI.\nProcedere?`)) return; console.log(`Copiando ${playersToCopy.length} giocatori da Live a Master...`); showInfo("Copia in corso..."); setIsLoadingMaster(true); const batch = db.batch(); let copiedCount = 0; let errorCount = 0; let currentMasterPlayersByName = new Map(); try { const masterSnapshot = await masterCollectionRef.get(); currentMasterPlayersByName = new Map(masterSnapshot.docs.map(doc => [doc.data().nome?.trim().toLowerCase(), {id: doc.id, ...doc.data()}])); } catch(e) { console.error("Failed to fetch master players before copy:", e); showError("Errore nel leggere Master DB prima della copia.", 'master'); setIsLoadingMaster(false); return; } playersToCopy.forEach(player => { const { id, ...dataToCopy } = player; const masterMatch = currentMasterPlayersByName.get(player.nome?.trim().toLowerCase()); try { if (masterMatch) { batch.set(masterCollectionRef.doc(masterMatch.id), dataToCopy); } else { if (id && typeof id === 'string' && id.length > 5) batch.set(masterCollectionRef.doc(id), dataToCopy); else { const newDocRef = masterCollectionRef.doc(); batch.set(newDocRef, dataToCopy); } } copiedCount++; } catch(e) { console.error(`Errore durante la preparazione batch per ${player.nome}:`, e); errorCount++; } }); if (errorCount > 0) { showError(`Errore durante la preparazione della copia per ${errorCount} giocatori. Vedi console.`, 'master'); setIsLoadingMaster(false); return; } try { await batch.commit(); showSuccess(`${copiedCount} giocatori copiati/aggiornati da Live a Master.`); clearSelections(); fetchMasterPlayers(); } catch (error) { console.error("Errore commit batch copia Live->Master:", error); showError(`Errore durante la copia su Master: ${error.message}`, 'master'); } finally { setIsLoadingMaster(false); } }, [livePlayers, selectedLiveIds, showSuccess, showError, showInfo, clearSelections, fetchMasterPlayers]);
+
+             // Sync Live to Master (Prompt Corrected to ADD players)
+             const handleSaveLiveToMasterPrompt = useCallback(() => {
+                if (livePlayers.length === 0) { alert("Nessun giocatore Live da usare per la sincronizzazione."); return; }
+                 // *** UPDATED CONFIRMATION MESSAGE TO INCLUDE ADDING ***
+                 if (!window.confirm(`Stai per confrontare i ${livePlayers.length} giocatori Live con il DB Master.\nPER I GIOCATORI CON LO STESSO NOME:\n - Se i dati sono diversi, ti verrà chiesto se aggiornare Master con i dati Live.\n - Se i dati sono uguali, non verrà fatto nulla.\nGIOCATORI PRESENTI SOLO IN LIVE SARANNO AGGIUNTI A MASTER.\nGIOCATORI PRESENTI SOLO IN MASTER NON SARANNO ELIMINATI.\nL'operazione richiede la password.\n\nSei sicuro di voler procedere?`)) return;
+                 setShowMasterPasswordPrompt(true); setMasterPasswordInput('');
+            }, [livePlayers]);
+
+             // Cancel Save to Master (Unchanged)
+             const handleCancelSaveToMaster = useCallback(() => {
+                setShowMasterPasswordPrompt(false); setMasterPasswordInput(''); setIsSavingToMaster(false);
+            }, []);
+
+            // Confirm Sync Live to Master (Logic MODIFIED to ADD players)
+            const handleConfirmSaveLiveToMaster = useCallback(async () => {
+                 if (masterPasswordInput !== MASTER_DB_PASSWORD) { alert("Password errata!"); return; }
+                 if (!masterCollectionRef || !db) { showError("Errore DB Master non disponibile.", 'master'); return; }
+                 if (livePlayers.length === 0) { alert("Nessun giocatore Live da sincronizzare."); handleCancelSaveToMaster(); return; }
+                 console.log(`Preparing to SYNC/ADD ${livePlayers.length} LIVE players with MASTER...`);
+                 setIsSavingToMaster(true); setErrorLive(null); setErrorMaster(null); setSuccessMessage(null);
+                 try {
+                    const masterSnapshot = await masterCollectionRef.get();
+                    const currentMasterPlayers = masterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    console.log(`Fetched Master DB for comparison: ${currentMasterPlayers.length} players.`);
+
+                    const conflicts = [];
+                    const playersToAdd = []; // RE-INTRODUCED list for players unique to Live
+                    const masterPlayersMapByName = new Map(currentMasterPlayers.map(p => [p.nome.trim().toLowerCase(), p]));
+                    let identicalCount = 0;
+
+                    // Identify conflicts AND players to add
+                    livePlayers.forEach(livePlayer => {
+                        const liveNameKey = livePlayer.nome.trim().toLowerCase();
+                        const masterMatch = masterPlayersMapByName.get(liveNameKey);
+                        if (masterMatch) {
+                            // Player exists in both
+                            if (arePlayersDifferent(livePlayer, masterMatch)) {
+                                conflicts.push({ name: livePlayer.nome, sourcePlayer: livePlayer, targetPlayer: masterMatch });
+                            } else {
+                                identicalCount++; // Identical, do nothing
+                            }
+                            masterPlayersMapByName.delete(liveNameKey); // Mark as processed
+                        } else {
+                            // Player is unique to Live -> ADD TO LIST
+                            playersToAdd.push(livePlayer);
+                        }
+                    });
+                    // masterPlayersMapByName now contains only players unique to Master (we won't delete them)
+
+                    const performSave = async (resolutions = {}) => {
+                         console.log("Performing SYNC/ADD Live->Master with resolutions:", resolutions);
+                         const batch = db.batch();
+                         let added = 0; let updated = 0; let kept = 0;
+
+                         // 1. Handle conflicts
+                         conflicts.forEach(conflict => {
+                            if (resolutions[conflict.name] === 'keep') {
+                                kept++; console.log(`  - Sync: Keeping Master version for ${conflict.name}`);
+                            } else {
+                                const { id, ...dataToSave } = conflict.sourcePlayer;
+                                batch.set(masterCollectionRef.doc(conflict.targetPlayer.id), dataToSave); // Use Master ID
+                                updated++; console.log(`  - Sync: Updating Master version for ${conflict.name} (ID: ${conflict.targetPlayer.id})`);
+                            }
+                         });
+
+                         // 2. ADD players unique to Live
+                         playersToAdd.forEach(player => {
+                             const { id, ...dataToAdd } = player;
+                             if (id && typeof id === 'string' && id.length > 5) {
+                                 batch.set(masterCollectionRef.doc(id), dataToAdd); // Try using Live ID
+                                 console.log(`  - Sync: Adding ${player.nome} to Master (using Live ID: ${id})`);
+                             } else {
+                                 const newDocRef = masterCollectionRef.doc(); // Let Master generate ID
+                                 batch.set(newDocRef, dataToAdd);
+                                 console.log(`  - Sync: Adding ${player.nome} to Master (new ID: ${newDocRef.id})`);
+                             }
+                             added++;
+                         });
+
+                         // 3. DO NOTHING for players only in Master
+
+                         // Check if any operation is actually happening
+                         if (added === 0 && updated === 0 && kept === 0 && identicalCount === 0 && conflicts.length === 0 && playersToAdd.length === 0) {
+                            showInfo("Nessun giocatore trovato in Live per aggiungere o sincronizzare con Master.");
+                            setIsSavingToMaster(false); handleCancelSaveToMaster(); return;
+                         }
+                         if (added === 0 && updated === 0 && (kept > 0 || identicalCount > 0) ) {
+                            showInfo(`Sincronizzazione Live->Master: Nessun aggiornamento o aggiunta effettuata. ${kept} conflitti mantenuti in Master, ${identicalCount} già identici.`);
+                            setIsSavingToMaster(false); handleCancelSaveToMaster(); return;
+                         }
+
+                         try {
+                            await batch.commit();
+                            console.log("Batch write SYNC/ADD to MASTER successful.");
+                            // *** UPDATED SUCCESS MESSAGE ***
+                            showSuccess(`Sincronizzazione Live->Master: ${added} aggiunti, ${updated} aggiornati, ${kept} mantenuti (conflitti), ${identicalCount} già identici. Giocatori solo Master non modificati.`);
+                            fetchMasterPlayers(); // Refresh Master list UI
+                         } catch (error) {
+                            console.error("Errore commit batch SYNC/ADD Live->Master:", error);
+                            showError(`Errore sincronizzazione/aggiunta Master: ${error.message}`, 'master');
+                         } finally {
+                             setIsSavingToMaster(false); handleCancelSaveToMaster();
+                         }
+                    }; // End performSave
+
+                    // Show comparison modal only if there are CONFLICTS to resolve
+                    if (conflicts.length > 0) {
+                        console.log(`Found ${conflicts.length} conflicts for SYNC/ADD (Live vs Master). Opening modal. ${playersToAdd.length} players will be added automatically.`);
+                        setComparisonData({
+                            conflicts: conflicts, sourceLabel: 'Live DB (Sorgente)', targetLabel: 'Master DB (Destinazione)',
+                            operationType: 'save', // Modal text might refer to 'save' context
+                            onResolve: (res) => { setShowComparisonModal(false); performSave(res); } // performSave handles both conflicts and additions
+                        });
+                        setShowComparisonModal(true);
+                    } else {
+                        // No conflicts, but maybe additions?
+                        if (playersToAdd.length > 0) {
+                             console.log(`No conflicts for SYNC/ADD. ${playersToAdd.length} players unique to Live will be added.`);
+                            performSave(); // Call save directly, resolutions will be empty, only additions will happen
+                        } else if (identicalCount > 0) {
+                             console.log("No conflicts or additions needed.");
+                             showInfo(`Nessun conflitto o nuovo giocatore da aggiungere. ${identicalCount} giocatori con nome corrispondente sono già identici.`);
+                             setIsSavingToMaster(false); handleCancelSaveToMaster();
+                        } else {
+                             console.log("No players found in Live to sync or add.");
+                             showInfo("Nessun giocatore trovato in Live per aggiungere o sincronizzare con Master.");
+                             setIsSavingToMaster(false); handleCancelSaveToMaster();
+                        }
+                    }
+                 } catch (error) {
+                    console.error("Errore preparazione sincronizzazione/aggiunta Live->Master:", error);
+                    showError(`Errore preparazione sincronizzazione: ${error.message}`, 'master');
+                    setIsSavingToMaster(false); handleCancelSaveToMaster();
+                 }
+            }, [livePlayers, masterPasswordInput, handleCancelSaveToMaster, showSuccess, showError, showInfo, fetchMasterPlayers]);
+
+            // --- Handlers File IO --- (Added Import/Export)
             const handleExportSnapshot = useCallback((dbType) => {
                  const playersToSave = dbType === 'live' ? livePlayers : masterPlayers;
                  if (playersToSave.length === 0) { alert(`Nessun giocatore ${dbType} da esportare.`); return; }
-                 try {
-                    const dataStr = JSON.stringify(playersToSave, null, 2);
-                    const blob = new Blob([dataStr], { type: "application/json" });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `elclasico_admin_players_${dbType}_${new Date().toISOString().split('T')[0]}.json`;
-                    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                    showInfo(`Snapshot ${dbType} esportato.`);
-                 } catch (error) { console.error(`Errore esportazione snapshot ${dbType}:`, error); alert(`Errore durante l'esportazione del file ${dbType}.`); }
-            }, [livePlayers, masterPlayers, showInfo]); // Added showInfo
+                 try { const dataStr = JSON.stringify(playersToSave, null, 2); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `elclasico_admin_players_${dbType}_${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); showInfo(`Snapshot ${dbType} esportato.`); } catch (error) { console.error(`Errore esportazione snapshot ${dbType}:`, error); alert(`Errore durante l'esportazione del file ${dbType}.`); }
+            }, [livePlayers, masterPlayers, showInfo]);
 
             const handleImportTrigger = useCallback(() => {
                 fileInputRef.current?.click();
@@ -280,72 +375,26 @@
                         if (!e.target?.result) throw new Error("File vuoto o illeggibile.");
                         const loadedData = JSON.parse(e.target.result);
                         if (!Array.isArray(loadedData)) throw new Error("Il contenuto del file JSON non è un array di giocatori.");
-
-                        // *** Confirmation for Overwriting LIVE list ***
                         if (window.confirm(`Stai per importare ${loadedData.length} giocatori da file.\nQUESTO SOVRASCRIVERÀ LA LISTA LIVE ATTUALE VISUALIZZATA.\nIl database Live effettivo NON verrà modificato finché non salvi manualmente.\nIl database Master NON verrà modificato.\n\nProcedere?`)) {
-                            // Sanitize data (basic validation)
-                            const sanitizedPlayers = loadedData.map(p => ({
-                                id: p.id || crypto.randomUUID(), // Assign UUID if missing
-                                nome: p.nome || "Sconosciuto",
-                                ruolo: ALL_ROLES.includes(p.ruolo) ? p.ruolo : 'Centrocampista',
-                                abilitaDifensiva: p.abilitaDifensiva ?? 5,
-                                abilitaOffensiva: p.abilitaOffensiva ?? 5,
-                                velocita: p.velocita ?? 5,
-                                scatto: p.scatto ?? 5,
-                                pressing: p.pressing ?? 5,
-                                determinazione: p.determinazione ?? 5,
-                                peso: p.peso ?? 75,
-                                altezza: p.altezza ?? 175,
-                                robustezza: p.robustezza ?? 5,
-                                photoUrl: p.photoUrl || null
-                            }));
-                            // Update LIVE players state
-                            setLivePlayers(sanitizedPlayers);
-                            // Clear selections and editing state
-                            clearSelections();
-                            handleCancelEdit();
+                            const sanitizedPlayers = loadedData.map(p => ({ id: p.id || crypto.randomUUID(), nome: p.nome || "Sconosciuto", ruolo: ALL_ROLES.includes(p.ruolo) ? p.ruolo : 'Centrocampista', abilitaDifensiva: p.abilitaDifensiva ?? 5, abilitaOffensiva: p.abilitaOffensiva ?? 5, velocita: p.velocita ?? 5, scatto: p.scatto ?? 5, pressing: p.pressing ?? 5, determinazione: p.determinazione ?? 5, peso: p.peso ?? 75, altezza: p.altezza ?? 175, robustezza: p.robustezza ?? 5, photoUrl: p.photoUrl || null }));
+                            setLivePlayers(sanitizedPlayers); // Sovrascrivi stato Live
+                            clearSelections(); handleCancelEdit();
                             showSuccess(`Importati ${sanitizedPlayers.length} giocatori nella lista Live.`);
                             showInfo("Ricorda: Le modifiche importate non sono ancora salvate nel database Live effettivo.");
                         }
-                    } catch (error) {
-                        console.error("Errore importazione file JSON:", error);
-                        alert(`Errore durante l'importazione: ${error.message}`);
-                        showError("Errore importazione file.", "live"); // Show error related to Live list
-                    } finally {
-                         if(event.target) event.target.value = null; // Reset file input
-                    }
+                    } catch (error) { console.error("Errore importazione file JSON:", error); alert(`Errore durante l'importazione: ${error.message}`); showError("Errore importazione file.", "live"); } finally { if(event.target) event.target.value = null; }
                 };
-                 reader.onerror = () => {
-                    alert("Errore lettura file.");
-                    showError("Errore lettura file.", "live");
-                    if(event.target) event.target.value = null;
-                 };
+                 reader.onerror = () => { alert("Errore lettura file."); showError("Errore lettura file.", "live"); if(event.target) event.target.value = null; };
                 reader.readAsText(file);
-            }, [showSuccess, showInfo, showError, clearSelections, handleCancelEdit]); // Added dependencies
+            }, [showSuccess, showInfo, showError, clearSelections, handleCancelEdit]);
 
 
             // --- Render Admin App ---
-            return ( <div className="container"> <h1>El Clasico - Pannello Admin</h1> {successMessage && <div className="success-message">{successMessage}</div>} {infoMessage && <div className="info-message">{infoMessage}</div>} {errorLive && <div className="error-message">Errore Live: {errorLive}</div>} {errorMaster && <div className="error-message">Errore Master: {errorMaster}</div>} <div className="warning-message"><strong>Attenzione:</strong> Stai modificando direttamente i database. Procedi con cautela. La password Master è nel codice.</div> {showComparisonModal && ( <ComparisonModal conflicts={comparisonData.conflicts} sourceLabel={comparisonData.sourceLabel} targetLabel={comparisonData.targetLabel} operationType={comparisonData.operationType} onResolve={comparisonData.onResolve} onCancel={() => { setShowComparisonModal(false); if (comparisonData.operationType === 'save') { setIsSavingToMaster(false); handleCancelSaveToMaster(); } showInfo("Operazione annullata."); }} /> )} {!isSavingToMaster && ( <> <PlayerForm onSave={handleSavePlayer} editingLivePlayer={editingLivePlayer} editingMasterPlayer={editingMasterPlayer} onCancelEdit={handleCancelEdit} /> <hr className="section-divider" /> <div className="action-section"> <p>Azioni DB:</p> <button onClick={handleCopySelectedLiveToMaster} className="btn-copy" disabled={selectedLiveIds.length === 0} title="Copia i giocatori selezionati da Live a Master (sovrascrive per nome)"> Copia Selez. Live -> Master ({selectedLiveIds.length}) </button> <button onClick={handleSaveLiveToMasterPrompt} className="btn-save-master" disabled={showMasterPasswordPrompt || livePlayers.length === 0} title="Sincronizza Master con i dati Live SOLO per giocatori con lo stesso nome (confronta e richiede password)"> Sincronizza Live -> Master (Confronta)... </button> <button onClick={clearSelections} className="btn-clear-selection" disabled={selectedLiveIds.length === 0 && selectedMasterIds.length === 0} title="Deseleziona tutti i giocatori"> Azzera Selezioni </button> <button onClick={fetchMasterPlayers} className="btn-db-action" title="Ricarica la lista Master dal database"> Ricarica Lista Master </button> </div> {showMasterPasswordPrompt && ( <div className="password-prompt db-controls-section"> <label htmlFor="masterPass">Password Master:</label> <input type="password" id="masterPass" value={masterPasswordInput} onChange={(e) => setMasterPasswordInput(e.target.value)} disabled={isSavingToMaster}/> <button onClick={handleConfirmSaveLiveToMaster} className="btn-save-master-confirm" disabled={isSavingToMaster || !masterPasswordInput}> {isSavingToMaster ? 'Sincronizzazione...' : 'Conferma e Confronta'} </button> <button onClick={handleCancelSaveToMaster} className="btn-cancel" disabled={isSavingToMaster}>Annulla</button> </div> )} <div className="admin-columns"> <PlayerList players={livePlayers} dbType="live" title="Giocatori Live" onEdit={handleEditPlayer} onDelete={handleDeletePlayer} selectedIds={selectedLiveIds} onSelect={handleSelectPlayer} isLoading={isLoadingLive} error={errorLive} /> <PlayerList players={masterPlayers} dbType="master" title="Giocatori Master" onEdit={handleEditPlayer} onDelete={handleDeletePlayer} selectedIds={selectedMasterIds} onSelect={handleSelectPlayer} isLoading={isLoadingMaster} error={errorMaster} /> </div> {/* File IO Section */} <div className="file-io-section"> <p>Importa/Esporta Liste:</p> <button onClick={() => handleExportSnapshot('live')} className="btn-save-file" disabled={livePlayers.length === 0}>Esporta Live JSON</button> <button onClick={() => handleExportSnapshot('master')} className="btn-save-file" disabled={masterPlayers.length === 0}>Esporta Master JSON</button> <button onClick={handleImportTrigger} className="btn-load-file">Importa Live da JSON</button> <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} /> </div> </> )} {isSavingToMaster && <div className="loading-message">Sincronizzazione con Master in corso...</div>} </div> );
+            return ( <div className="container"> <h1>El Clasico - Pannello Admin</h1> {successMessage && <div className="success-message">{successMessage}</div>} {infoMessage && <div className="info-message">{infoMessage}</div>} {errorLive && <div className="error-message">Errore Live: {errorLive}</div>} {errorMaster && <div className="error-message">Errore Master: {errorMaster}</div>} <div className="warning-message"><strong>Attenzione:</strong> Stai modificando direttamente i database. Procedi con cautela. La password Master è nel codice.</div> {showComparisonModal && ( <ComparisonModal conflicts={comparisonData.conflicts} sourceLabel={comparisonData.sourceLabel} targetLabel={comparisonData.targetLabel} operationType={comparisonData.operationType} onResolve={comparisonData.onResolve} onCancel={() => { setShowComparisonModal(false); if (comparisonData.operationType === 'save') { setIsSavingToMaster(false); handleCancelSaveToMaster(); } showInfo("Operazione annullata."); }} /> )} {!isSavingToMaster && ( <> <PlayerForm onSave={handleSavePlayer} editingLivePlayer={editingLivePlayer} editingMasterPlayer={editingMasterPlayer} onCancelEdit={handleCancelEdit} /> <hr className="section-divider" /> <div className="action-section"> <p>Azioni DB:</p> <button onClick={handleCopySelectedLiveToMaster} className="btn-copy" disabled={selectedLiveIds.length === 0} title="Copia i giocatori selezionati da Live a Master (sovrascrive per nome)"> Copia Selez. Live -> Master ({selectedLiveIds.length}) </button> <button onClick={handleSaveLiveToMasterPrompt} className="btn-save-master" disabled={showMasterPasswordPrompt || livePlayers.length === 0} title="Sincronizza/Aggiunge da Live a Master: Aggiorna per nome, Aggiunge unici Live (confronta e richiede password)"> Sincronizza/Aggiungi Live -> Master... </button> <button onClick={clearSelections} className="btn-clear-selection" disabled={selectedLiveIds.length === 0 && selectedMasterIds.length === 0} title="Deseleziona tutti i giocatori"> Azzera Selezioni </button> <button onClick={fetchMasterPlayers} className="btn-db-action" title="Ricarica la lista Master dal database"> Ricarica Lista Master </button> </div> {showMasterPasswordPrompt && ( <div className="password-prompt db-controls-section"> <label htmlFor="masterPass">Password Master:</label> <input type="password" id="masterPass" value={masterPasswordInput} onChange={(e) => setMasterPasswordInput(e.target.value)} disabled={isSavingToMaster}/> <button onClick={handleConfirmSaveLiveToMaster} className="btn-save-master-confirm" disabled={isSavingToMaster || !masterPasswordInput}> {isSavingToMaster ? 'Sincronizzazione...' : 'Conferma e Confronta'} </button> <button onClick={handleCancelSaveToMaster} className="btn-cancel" disabled={isSavingToMaster}>Annulla</button> </div> )} <div className="admin-columns"> <PlayerList players={livePlayers} dbType="live" title="Giocatori Live" onEdit={handleEditPlayer} onDelete={handleDeletePlayer} selectedIds={selectedLiveIds} onSelect={handleSelectPlayer} isLoading={isLoadingLive} error={errorLive} /> <PlayerList players={masterPlayers} dbType="master" title="Giocatori Master" onEdit={handleEditPlayer} onDelete={handleDeletePlayer} selectedIds={selectedMasterIds} onSelect={handleSelectPlayer} isLoading={isLoadingMaster} error={errorMaster} /> </div> {/* File IO Section */} <div className="file-io-section"> <p>Importa/Esporta Liste:</p> <button onClick={() => handleExportSnapshot('live')} className="btn-save-file" disabled={livePlayers.length === 0}>Esporta Live JSON</button> <button onClick={() => handleExportSnapshot('master')} className="btn-save-file" disabled={masterPlayers.length === 0}>Esporta Master JSON</button> <button onClick={handleImportTrigger} className="btn-load-file">Importa Live da JSON</button> <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} /> </div> </> )} {isSavingToMaster && <div className="loading-message">Sincronizzazione/Aggiunta a Master in corso...</div>} </div> );
         } // --- Fine AdminApp ---
 
         // === Funzione per Montare l'App React (chiamata dopo login) ===
-        function mountAdminApp() {
-            console.log("Tentativo di montare AdminApp...");
-            const rootElement = document.getElementById('root');
-            if (rootElement) {
-                try {
-                    const root = ReactDOM.createRoot(rootElement);
-                    class ErrorBoundary extends React.Component { constructor(props) { super(props); this.state = { hasError: false, error: null, errorInfo: null }; } static getDerivedStateFromError(error) { return { hasError: true, error }; } componentDidCatch(error, errorInfo) { console.error("React Error Boundary catturato:", error, errorInfo); this.setState({errorInfo: errorInfo}); } render() { if (this.state.hasError) { return ( <div className="container"> <div className="error-message" style={{textAlign: 'left'}}> <h2>Oops! Qualcosa è andato storto nell'applicazione Admin.</h2> <p>Si è verificato un errore React.</p> <details style={{ whiteSpace: 'pre-wrap', marginTop: '15px' }}> <summary>Dettagli Tecnici</summary> {this.state.error && this.state.error.toString()} <br /> {this.state.errorInfo && this.state.errorInfo.componentStack} </details> <p style={{marginTop: '15px'}}>Prova a ricaricare (Ctrl+Shift+R). Controlla la console (F12).</p> </div> </div> ); } return this.props.children; } }
-                    root.render(<ErrorBoundary><AdminApp /></ErrorBoundary>);
-                    console.log("AdminApp montata con successo.");
-                } catch (error) {
-                    console.error("Errore critico durante il rendering React Admin:", error);
-                    rootElement.innerHTML = '<div class="container"><div class="error-message">Errore critico durante l\'avvio dell\'applicazione Admin. Impossibile montare React. Controlla console.</div></div>';
-                }
-            } else {
-                console.error("Errore fatale Admin: Elemento #root non trovato durante il tentativo di montaggio!");
-            }
-        } // --- Fine mountAdminApp ---
+        function mountAdminApp() { console.log("Tentativo di montare AdminApp..."); const rootElement = document.getElementById('root'); if (rootElement) { try { const root = ReactDOM.createRoot(rootElement); class ErrorBoundary extends React.Component { constructor(props) { super(props); this.state = { hasError: false, error: null, errorInfo: null }; } static getDerivedStateFromError(error) { return { hasError: true, error }; } componentDidCatch(error, errorInfo) { console.error("React Error Boundary catturato:", error, errorInfo); this.setState({errorInfo: errorInfo}); } render() { if (this.state.hasError) { return ( <div className="container"> <div className="error-message" style={{textAlign: 'left'}}> <h2>Oops! Qualcosa è andato storto nell'applicazione Admin.</h2> <p>Si è verificato un errore React.</p> <details style={{ whiteSpace: 'pre-wrap', marginTop: '15px' }}> <summary>Dettagli Tecnici</summary> {this.state.error && this.state.error.toString()} <br /> {this.state.errorInfo && this.state.errorInfo.componentStack} </details> <p style={{marginTop: '15px'}}>Prova a ricaricare (Ctrl+Shift+R). Controlla la console (F12).</p> </div> </div> ); } return this.props.children; } } root.render(<ErrorBoundary><AdminApp /></ErrorBoundary>); console.log("AdminApp montata con successo."); } catch (error) { console.error("Errore critico durante il rendering React Admin:", error); rootElement.innerHTML = '<div class="container"><div class="error-message">Errore critico durante l\'avvio dell\'applicazione Admin. Impossibile montare React. Controlla console.</div></div>'; } } else { console.error("Errore fatale Admin: Elemento #root non trovato durante il tentativo di montaggio!"); } } // --- Fine mountAdminApp ---
     </script>
 
 </body>
