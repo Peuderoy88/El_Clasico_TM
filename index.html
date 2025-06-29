@@ -1,733 +1,370 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>El Clasico Team Manager (V2.1 - Compare/Sync Fix)</title>
+import React, { useState, useEffect } from 'react';
 
-    <!-- React, ReactDOM, Babel -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+// URL delle immagini per la vittoria
+const STELLA_VICTORY_IMAGE = 'https://i.postimg.cc/pdDt0xzb/Stel.png';
+const EDOARDO_VICTORY_IMAGE = 'https://i.postimg.cc/T1PMYDSf/Edo.png';
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+const RuotaDellaFortuna = () => {
+  // --- STATI DEL GIOCO ---
+  const [gameState, setGameState] = useState('profile_selection'); // profile_selection, playing, victory
+  const [playerProfile, setPlayerProfile] = useState(null); // 'Edoardo' o 'Stella'
+  
+  const [mysteryPhrase, setMysteryPhrase] = useState('GLI ANIMALI SONO I NOSTRI AMICI');
+  const [guessedLetters, setGuessedLetters] = useState([]);
+  const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
 
-    <!-- CSS -->
-    <style>
-        /* CSS Identico alla versione precedente - con aggiunte per ComparisonModal */
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; margin: 0; background-color: #f4f7f6; color: #333; line-height: 1.6; }
-        .container { max-width: 900px; margin: 20px auto; padding: 15px; background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
-        h1, h2, h3 { color: #333; }
-        h1 { text-align: center; color: #fff; background-color: #28a745; padding: 15px; margin: -15px -15px 20px -15px; border-radius: 8px 8px 0 0; }
-        h1 small { font-size: 0.6em; display: block; margin-top: 5px; font-weight: normal;}
-        h2 { border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; margin-bottom: 20px; }
-        h3 { margin-top: 0; margin-bottom: 15px; }
-        .section-divider { border: none; height: 1px; background-color: #e0e0e0; margin: 40px 0; }
-        button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s ease, transform 0.1s ease; margin: 5px; background-color: #007bff; color: white; }
-        button:hover { opacity: 0.9; }
-        button:active { transform: scale(0.98); }
-        button:disabled { background-color: #cccccc; cursor: not-allowed; opacity: 0.7; }
-        .btn-create { background-color: #007bff; }
-        .btn-save, .btn-save-master-confirm { background-color: #28a745; }
-        .btn-cancel, .btn-delete, .btn-clear-selection { background-color: #dc3545; }
-        .btn-edit { background-color: #ffc107; color: #333; }
-        .btn-select-players, .btn-generate, .btn-confirm { background-color: #17a2b8; }
-        .btn-swap { background-color: #fd7e14; }
-        .btn-generate-img { background-color: #6f42c1; }
-        .btn-save-file, .btn-load-file, .btn-db-action { background-color: #5a6268; }
-        .btn-db-action.active { background-color: #17a2b8; font-weight: bold;} /* Stile per bottone DB attivo */
-        .btn-save-master { background-color: #ffc107; color: #333; } /* Diverso colore per save master */
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [showLetterPicker, setShowLetterPicker] = useState(false);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [tempMysteryPhrase, setTempMysteryPhrase] = useState(mysteryPhrase);
+  const [showSolveModal, setShowSolveModal] = useState(false);
+  const [solveAttempt, setSolveAttempt] = useState('');
 
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #495057; }
-        input[type="text"], input[type="number"], input[type="password"], select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1em; margin-bottom: 10px; box-sizing: border-box; }
-        input[type="file"] { padding: 5px; }
-        .checkbox-group { display: flex; align-items: center; margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
-        .checkbox-group input[type="checkbox"] { width: auto; margin-right: 10px; transform: scale(1.3); cursor: pointer; }
-        .checkbox-group label { margin-bottom: 0; font-weight: normal; cursor: pointer; }
-        .photo-preview { max-width: 80px; max-height: 80px; margin-top: 5px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
-        .player-photo-thumbnail { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 1px solid #eee; vertical-align: middle; background-color: #eee;}
+  // --- DATI E CONFIGURAZIONE ---
+  const colors = {
+    primary: '#FF6B6B',      // Rosso corallo
+    secondary: '#4ECDC4',    // Turchese
+    accent: '#FFE66D',       // Giallo sole
+    success: '#95E1D3',      // Verde menta
+    purple: '#A8E6CF',       // Viola chiaro
+    orange: '#FFA500',       // Arancione
+    pink: '#FFB6C1',         // Rosa
+    background: '#F8F9FA',   // Grigio chiaro
+    text: '#2D3436'          // Grigio scuro
+  };
 
-        /* PlayerForm */
-        .player-form-container { margin-bottom: 20px; }
-        .player-form { background-color: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-top: 15px; }
-        .form-group { margin-bottom: 15px; }
-        .form-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
-        .btn-toggle-form { display: block; width: auto; margin: 0 auto 15px auto;}
-        .form-group-photo label { display: flex; align-items: center; justify-content: space-between;}
-        .form-group-photo small { font-weight: normal; color: #6c757d; }
+  const questions = [
+    { question: "🐘 Qual è l'animale più grande del mondo?", answers: ["Elefante", "Balena blu", "Giraffa"], correct: 1 },
+    { question: "🦩 Di che colore è il fenicottero?", answers: ["Blu", "Verde", "Rosa"], correct: 2 },
+    { question: "🐧 Dove vivono i pinguini?", answers: ["Deserto", "Antartide", "Foresta"], correct: 1 },
+    { question: "🦁 Come si chiama il verso del leone?", answers: ["Ruggito", "Miagolio", "Abbaiare"], correct: 0 },
+    { question: "🐢 Cosa hanno le tartarughe sul dorso?", answers: ["Pelliccia", "Guscio", "Piume"], correct: 1 },
+    { question: "🦋 Da cosa nascono le farfalle?", answers: ["Uova", "Semi", "Bruchi"], correct: 2 },
+    { question: "🐶 Qual è il migliore amico dell'uomo?", answers: ["Gatto", "Cane", "Pappagallo"], correct: 1 },
+    { question: "🦖 Il T-Rex era un dinosauro...", answers: ["Erbivoro", "Carnivoro", "Onnivoro"], correct: 1 },
+    { question: "🐆 Qual è l'animale terrestre più veloce?", answers: ["Leone", "Ghepardo", "Tigre"], correct: 1 },
+    { question: "🐝 Cosa producono le api?", answers: ["Miele", "Latte", "Succo d'arancia"], correct: 0 },
+    { question: "🕷️ Quante zampe ha un ragno?", answers: ["Sei", "Otto", "Dieci"], correct: 1 },
+    { question: "🌎 Su quale pianeta viviamo?", answers: ["Marte", "Giove", "Terra"], correct: 2 },
+    { question: "☀️ Qual è la stella che illumina il nostro giorno?", answers: ["Luna", "Sirio", "Sole"], correct: 2 },
+    { question: "🍌 Di che colore è una banana matura?", answers: ["Giallo", "Verde", "Rosso"], correct: 0 },
+    { question: "🚗 Quante ruote ha una macchina?", answers: ["Due", "Tre", "Quattro"], correct: 2 },
+    { question: "💧 In cosa si trasforma l'acqua quando fa molto freddo?", answers: ["Vapore", "Ghiaccio", "Sabbia"], correct: 1 },
+    { question: "🎨 Se mescoli il giallo e il blu, che colore ottieni?", answers: ["Rosso", "Arancione", "Verde"], correct: 2 },
+    { question: "🦓 Che colori ha la zebra?", answers: ["Marrone e bianco", "Nero e giallo", "Bianco e nero"], correct: 2 },
+    { question: "🐄 Cosa ci dà la mucca?", answers: ["Uova", "Latte", "Lana"], correct: 1 },
+    { question: "🤥 A chi si allunga il naso quando dice le bugie?", answers: ["Pinocchio", "Peter Pan", "Gepetto"], correct: 0 },
+    { question: "🌙 Cosa vediamo nel cielo di notte?", answers: ["Il Sole", "L'arcobaleno", "La Luna e le stelle"], correct: 2 },
+    { question: "🌳 Cosa perdono gli alberi in autunno?", answers: ["I fiori", "Le foglie", "I rami"], correct: 1 },
+    { question: "🐸 Come si chiama il piccolo della rana?", answers: ["Pulcino", "Girino", "Cucciolo"], correct: 1 },
+    { question: "🎅🏻 Chi porta i regali a Natale?", answers: ["La Befana", "Babbo Natale", "Topolino"], correct: 1 },
+    { question: "🍎 Biancaneve ha mangiato una mela...", answers: ["Avvelenata", "D'oro", "Gigante"], correct: 0 },
+    { question: "🥕 Qual è il cibo preferito dei conigli?", answers: ["Formaggio", "Carote", "Pesce"], correct: 1 },
+    { question: "👑 Chi è il re della foresta?", answers: ["La tigre", "L'orso", "Il leone"], correct: 2 },
+    { question: "🌊 Di che colore è il mare?", answers: ["Verde", "Blu", "Giallo"], correct: 1 },
+    { question: "🐑 Cosa ci dà la pecora?", answers: ["Seta", "Lana", "Cotone"], correct: 1 },
+    { question: "🥦 Che tipo di alimento è il broccolo?", answers: ["Un frutto", "Una verdura", "Un dolce"], correct: 1 }
+  ];
 
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
-        /* PlayerList/PlayerItem */
-        .player-list-container { margin-top: 20px; }
-        .player-list { list-style: none; padding: 0; margin: 0; }
-        .player-item { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 10px 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 10px; background-color: #fff; }
-        .player-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-grow: 1; }
-        .player-details { display: flex; flex-direction: column; }
-        .player-name { font-weight: bold; font-size: 1.1em; }
-        .player-meta { font-size: 0.9em; color: #555; }
-        .player-role { font-style: italic; }
-        .player-avg-score { background-color: #e9ecef; padding: 2px 6px; border-radius: 10px; color: #495057; margin-left: 5px; }
-        .player-actions { display: flex; gap: 8px; margin-top: 5px; }
-        .player-actions button { padding: 6px 12px; font-size: 0.9em; }
+  // --- FUNZIONI DI GIOCO ---
+  const selectProfile = (profile) => {
+    setPlayerProfile(profile);
+    setGameState('playing');
+  };
 
-        /* File IO Section & DB Controls Section */
-        .file-io-section, .db-controls-section { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .file-io-section p, .db-controls-section p { margin: 0 10px 0 0; font-size: 0.9em; color: #6c757d; }
-        .password-prompt { margin-left: 15px; display: flex; align-items: center; gap: 8px; }
-        .password-prompt input[type="password"] { width: 150px; margin-bottom: 0; }
+  const handleAnswerClick = (answerIndex) => {
+    setSelectedAnswer(answerIndex);
+    const isAnswerCorrect = answerIndex === questions[currentQuestion].correct;
+    setIsCorrect(isAnswerCorrect);
+    setShowFeedback(true);
+    
+    setTimeout(() => {
+      if (isAnswerCorrect) {
+        setCorrectAnswersCount(count => count + 1);
+        setShowLetterPicker(true);
+      }
+      setShowFeedback(false);
+      setSelectedAnswer(null);
+    }, 1500);
+  };
 
-        /* MatchSetup */
-        .match-setup-container { padding: 15px; background-color: #eef; border-radius: 8px; }
-        .match-type-selector { margin-bottom: 15px; }
-        .match-type-selector label { margin-right: 10px; font-weight: bold; }
-        .match-type-selector select { padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; font-size: 1em; display: inline-block; width: auto; }
-        .match-setup-container p { font-weight: bold; margin-bottom: 15px; }
+  const selectLetter = (letter) => {
+    if (!guessedLetters.includes(letter)) {
+      setGuessedLetters([...guessedLetters, letter]);
+    }
+    setShowLetterPicker(false);
+    
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      setCurrentQuestion(0);
+    }
+  };
+  
+  const handleSolveAttempt = () => {
+    if (solveAttempt.trim().toUpperCase() === mysteryPhrase.trim().toUpperCase()) {
+      setGameState('victory');
+    } else {
+      alert('Peccato, non è corretto! Riprova a indovinare qualche lettera. 😊');
+    }
+    setSolveAttempt('');
+    setShowSolveModal(false);
+  };
 
-        /* PlayerSelectionModal */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
-        .modal-content { background-color: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .modal-content.comparison-modal { max-width: 800px; } /* Larger modal for comparison */
-        .modal-content h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-player-list { list-style: none; padding: 0; margin: 0 0 20px 0; max-height: 50vh; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; }
-        .modal-player-item { padding: 10px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background-color 0.2s; }
-        .modal-player-item:last-child { border-bottom: none; }
-        .modal-player-item:hover { background-color: #f8f9fa; }
-        .modal-player-item.selected { background-color: #d4edda; font-weight: bold; }
-        .modal-player-item.disabled { cursor: not-allowed; opacity: 0.6;}
-        .modal-player-item label { display: flex; align-items: center; width: 100%; cursor: pointer; }
-        .modal-player-item input[type="checkbox"] { margin-right: 12px; transform: scale(1.3); cursor: pointer; }
-        .modal-player-item.disabled label, .modal-player-item.disabled input { cursor: not-allowed; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  const getDisplayPhrase = () => {
+    return mysteryPhrase.toUpperCase().split('').map(char => {
+      if (char === ' ') return ' ';
+      if (guessedLetters.includes(char)) return char;
+      return '_';
+    }).join('');
+  };
 
-        /* TeamDisplay */
-        .team-display-container { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 8px; }
-        .balancing-options { margin-bottom: 15px; }
-        .unpredictability-slider { margin-bottom: 15px; background-color: #e9ecef; padding: 10px; border-radius: 5px; }
-        .unpredictability-slider label { display: block; margin-bottom: 8px; font-weight: bold; }
-        .unpredictability-slider input[type="range"] { width: 100%; cursor: pointer; }
-        .team-display-container button { margin-right: 10px; margin-bottom: 15px; }
-        .teams-output { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
-        .teams-output h3 { text-align: center; margin-bottom: 15px; }
-        .team-columns { display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap; }
-        .team-column { flex: 1; min-width: 250px; background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 15px; }
-        .team-column h4 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
-        .team-column h4 small { font-weight: normal; font-size: 0.85em; color: #555;}
-        .team-column:first-child h4 { color: #007bff; }
-        .team-column:last-child h4 { color: #dc3545; }
-        .team-column ul { list-style: none; padding: 0; margin: 0; }
-        .team-column li { padding: 10px 5px; border-bottom: 1px dashed #eee; font-size: 0.95em; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: background-color 0.2s; }
-        .team-column li:last-child { border-bottom: none; }
-        .team-column li.selected-for-swap { background-color: #fff3cd; outline: 2px solid #fd7e14; font-weight: bold; }
-        .team-player-info { flex-grow: 1; cursor: pointer; }
-        .team-player-name { font-weight: bold; }
-        .team-player-original-role { font-size: 0.8em; color: #777; display: block; }
-        .team-player-role-selector select { padding: 4px 6px; font-size: 0.9em; width: auto; border-radius: 4px; margin-left: 5px; border: 1px solid #ccc; }
-        .swap-controls { margin-top: 15px; text-align: center; }
+  useEffect(() => {
+    if (mysteryPhrase && gameState === 'playing' && !getDisplayPhrase().includes('_')) {
+      setGameState('victory');
+    }
+  }, [guessedLetters, mysteryPhrase, gameState]);
 
-        /* Immagine Generata */
-        .generated-image-container { margin-top: 25px; padding-top: 20px; border-top: 1px solid #ccc; text-align: center; }
-        .generated-image-container canvas { display: none; }
-        .generated-image-container img { max-width: 100%; height: auto; border: 1px solid #ddd; margin-top: 10px; background-color: #f9f9f9; }
-        .generated-image-container a { display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 0.9em; }
-        .generated-image-container a:hover { background-color: #218838; }
+  const resetGame = () => {
+    setGameState('profile_selection');
+    setPlayerProfile(null);
+    setGuessedLetters([]);
+    setCorrectAnswersCount(0);
+    setCurrentQuestion(0);
+    setShowLetterPicker(false);
+    setShowSettingsModal(false);
+    setShowSolveModal(false);
+  };
 
-        /* Comparison Modal Specific Styles */
-        .comparison-list { list-style: none; padding: 0; margin: 0; }
-        .comparison-item { border: 1px solid #ccc; border-radius: 5px; margin-bottom: 15px; padding: 15px; }
-        .comparison-item h4 { margin-top: 0; margin-bottom: 10px; font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 5px;}
-        .comparison-details { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        .comparison-player-card { background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 0.9em;}
-        .comparison-player-card h5 { margin-top: 0; margin-bottom: 8px; color: #007bff; }
-        .comparison-player-card h5.target { color: #dc3545; } /* Target label color */
-        .comparison-player-card h5.source { color: #17a2b8; } /* Source label color */
-        .comparison-player-card p { margin: 3px 0; }
-        .comparison-player-card strong { color: #333; }
-        .comparison-actions { text-align: center; }
-        .comparison-actions label { margin: 0 10px; cursor: pointer; display: inline-flex; align-items: center;}
-        .comparison-actions input[type="radio"] { margin-right: 5px; transform: scale(1.2); cursor: pointer;}
-        .comparison-highlight { background-color: #fff3cd; font-weight: bold; padding: 0 2px; border-radius: 2px; } /* Style for differences */
+  const saveSettings = () => {
+    setMysteryPhrase(tempMysteryPhrase.trim() ? tempMysteryPhrase.toUpperCase() : 'FRASE DI ESEMPIO');
+    setShowSettingsModal(false);
+    setGuessedLetters([]);
+    setCorrectAnswersCount(0);
+  };
 
-        /* Responsive */
-        @media (max-width: 768px) { /* Adjusted breakpoint */
-            .comparison-details { grid-template-columns: 1fr; } /* Stack columns on smaller screens */
-        }
-        @media (max-width: 600px) {
-             /* Previous responsive styles */
-            .container { margin: 10px; padding: 10px; }
-            h1 { font-size: 1.6em; padding: 12px; margin: -10px -10px 15px -10px; }
-            button { padding: 8px 14px; font-size: 0.95em; }
-            input[type="text"], input[type="number"], input[type="password"], select { padding: 8px; }
-            .player-item { flex-direction: column; align-items: flex-start; gap: 5px; }
-            .player-info { gap: 5px;}
-            .player-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
-            .file-io-section, .db-controls-section { flex-direction: column; align-items: stretch; text-align: center;}
-            .file-io-section p, .db-controls-section p { margin-bottom: 10px; }
-            .password-prompt { margin-left: 0; margin-top: 10px; flex-direction: column; align-items: stretch;}
-            .password-prompt input[type="password"] { width: 100%; }
-            .team-columns { flex-direction: column; }
-            .modal-content { padding: 15px; }
-            .balancing-options { display: flex; flex-direction: column; }
-            .checkbox-group { font-size: 0.9em; }
-            .team-column li { font-size: 0.9em; flex-wrap: wrap;}
-            .team-player-role-selector select { width: 100%; margin-left: 0; margin-top: 5px; }
-        }
+  // --- RENDER DEI COMPONENTI ---
 
-        /* Stili per messaggio di caricamento/errore/avviso */
-        .loading-message { text-align: center; padding: 40px; font-size: 1.2em; color: #555; font-weight: bold;}
-        .error-message { text-align: center; padding: 15px; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; margin: 10px 0;}
-        .warning-message { text-align: center; padding: 15px; color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 5px; margin: 10px 0; }
-        .success-message { text-align: center; padding: 15px; color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0; }
-        .info-message { text-align: center; padding: 15px; color: #0c5460; background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px; margin: 10px 0; }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <script type="text/babel">
-
-        // === Hook e Costanti ===
-        const { useState, useEffect, useCallback, useRef } = React;
-        const ALL_ROLES = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
-        const MASTER_DB_PASSWORD = "RoyClasico"; // Consider moving this out of client-side code for real security
-
-        // --- Hook useLocalStorage ---
-        function useLocalStorage(key, initialValue) { const [storedValue, setStoredValue] = useState(() => { try { const item = window.localStorage.getItem(key); return item ? JSON.parse(item) : initialValue; } catch (error) { console.error("Error reading localStorage key “"+key+"”:", error); return initialValue; } }); const setValue = useCallback((value) => { try { const valueToStore = value instanceof Function ? value(storedValue) : value; setStoredValue(valueToStore); window.localStorage.setItem(key, JSON.stringify(valueToStore)); } catch (error) { console.error("Error setting localStorage key “"+key+"”:", error); } }, [key, storedValue]); return [storedValue, setValue]; }
-
-        // --- Inizializzazione Firebase ---
-        const firebaseConfig = { apiKey: "AIzaSyCl-0Ini6m3MKRN-qTfGp1kcXtW0z6qGEE", authDomain: "el-clasico-app.firebaseapp.com", projectId: "el-clasico-app", storageBucket: "el-clasico-app.appspot.com", messagingSenderId: "816654567071", appId: "1:816654567071:web:318425d18e9b224c4b04aa", measurementId: "G-JVLZFP9PCR" };
-        let db; let liveCollectionRef; let masterCollectionRef; let firebaseInitializationError = null;
-        const LIVE_COLLECTION = 'giocatori_live'; const MASTER_COLLECTION = 'giocatori_master';
-        try { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); console.log("Firebase App inizializzata."); } else { firebase.app(); console.log("Firebase App già inizializzata."); } db = firebase.firestore(); liveCollectionRef = db.collection(LIVE_COLLECTION); masterCollectionRef = db.collection(MASTER_COLLECTION); console.log(`Riferimenti Firestore ottenuti: '${LIVE_COLLECTION}', '${MASTER_COLLECTION}'.`); } catch (error) { console.error("!!! ERRORE CRITICO NELL'INIZIALIZZAZIONE DI FIREBASE !!!", error); firebaseInitializationError = `Errore grave: Impossibile inizializzare Firebase (${error.message}). Controlla le credenziali Firebase e la connessione internet.`; }
-
-        // === Funzioni Utili ===
-        const calculatePlayerScore = (player) => { if (!player) return 0; return ( (player.abilitaDifensiva || 0) * 1.0 + (player.abilitaOffensiva || 0) * 1.0 + (player.velocita || 0) * 0.8 + (player.scatto || 0) * 0.8 + (player.pressing || 0) * 0.7 + (player.determinazione || 0) * 1.0 + (player.robustezza || 0) * 0.7 + ((player.peso || 75) / 20) + ((player.altezza || 175) / 40) ); };
-        const getRequiredPlayers = (matchType) => { switch (matchType) { case '5': return 10; case '6': return 12; case '8': return 16; case '11': return 22; default: return 0; } };
-        const calculateTeamFinalScore = (team) => team.reduce((sum, player) => sum + calculatePlayerScore(player), 0);
-        const roleOrder = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
-        const getAvgScore = (player) => { if (!player) return '0.0'; const scoreSum = ((player.abilitaDifensiva || 0) + (player.abilitaOffensiva || 0) + (player.velocita || 0) + (player.scatto || 0) + (player.pressing || 0) + (player.determinazione || 0) + (player.robustezza || 0)); return (scoreSum / 7).toFixed(1); };
-        const balanceTeams = (players, unpredictability, balanceByRole) => { if (!players || players.length === 0 || players.length % 2 !== 0) { console.error("Invalid player count for balancing:", players?.length); return { teamA: [], teamB: [] }; } const playersWithScores = players.map(player => { const baseScore = calculatePlayerScore(player); const randomFactor = (Math.random() - 0.5) * 2 * unpredictability * (baseScore * 0.05); return { ...player, tempScore: baseScore + randomFactor, baseScore: baseScore, currentRole: player.ruolo }; }); const sortedPlayers = playersWithScores.sort((a, b) => b.tempScore - a.tempScore); const teamA = []; const teamB = []; let scoreA = 0; let scoreB = 0; const rolesCountA = {}; const rolesCountB = {}; const rolesInGame = [...new Set(players.map(p => p.ruolo))]; rolesInGame.forEach(role => { rolesCountA[role] = 0; rolesCountB[role] = 0; }); sortedPlayers.forEach(player => { let assignToA = false; if (balanceByRole) { const role = player.ruolo; const countA = rolesCountA[role] || 0; const countB = rolesCountB[role] || 0; if (countA < countB) assignToA = true; else if (countB < countA) assignToA = false; else assignToA = scoreA <= scoreB; } else { assignToA = scoreA <= scoreB; } if (assignToA) { teamA.push(player); scoreA += player.tempScore; if (balanceByRole) rolesCountA[player.ruolo]++; } else { teamB.push(player); scoreB += player.tempScore; if (balanceByRole) rolesCountB[player.ruolo]++; } }); const finalTeamA = teamA.map(({ tempScore, baseScore, ...player }) => player); const finalTeamB = teamB.map(({ tempScore, baseScore, ...player }) => player); return { teamA: finalTeamA, teamB: finalTeamB }; };
-        async function drawFormation(canvas, teamA, teamB, matchType) { const ctx = canvas.getContext('2d'); if (!ctx) return; const W = canvas.width = 700; const H = canvas.height = 450; const playerRadius = 15; const fieldColor = '#28a745'; const lineColor = '#FFFFFF'; const teamAColor = '#007bff'; const teamBColor = '#dc3545'; const playerNameColor = '#000000'; const defaultTextColor = '#FFFFFF'; const imageCache = {}; const loadImage = (url) => { if (!url) return Promise.resolve(null); if (imageCache[url]) return Promise.resolve(imageCache[url]); const img = new Image(); img.crossOrigin = "anonymous"; return new Promise((resolve) => { img.onload = () => { imageCache[url] = img; resolve(img); }; img.onerror = () => { console.warn(`Failed to load image: ${url}`); imageCache[url] = null; resolve(null); }; img.src = url; }); }; ctx.clearRect(0, 0, W, H); ctx.fillStyle = fieldColor; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = lineColor; ctx.lineWidth = 2; ctx.strokeRect(5, 5, W - 10, H - 10); ctx.beginPath(); ctx.moveTo(W / 2, 5); ctx.lineTo(W / 2, H - 5); ctx.stroke(); ctx.beginPath(); ctx.arc(W / 2, H / 2, 60, 0, 2 * Math.PI); ctx.stroke(); ctx.fillStyle = lineColor; ctx.beginPath(); ctx.arc(W / 2, H / 2, 4, 0, 2 * Math.PI); ctx.fill(); ctx.strokeRect(5, H * 0.2, W * 0.2, H * 0.6); ctx.strokeRect(W - 5 - W * 0.2, H * 0.2, W * 0.2, H * 0.6); const getPositions = (team, isTeamA) => { const positions = {}; const sideXBase = isTeamA ? W * 0.25 : W * 0.75; const roleOffsets = { Portiere: -W * 0.18, Difensore: -W * 0.1, Centrocampista: 0, Attaccante: W * 0.1 }; ALL_ROLES.forEach(role => { const playersInRole = team.filter(p => p.currentRole === role); if (playersInRole.length === 0) return; const baseX = sideXBase + (roleOffsets[role] || 0); const availableHeight = H * 0.8; const startY = H * 0.1; const yStep = playersInRole.length > 1 ? availableHeight / (playersInRole.length -1) : availableHeight / 2; playersInRole.forEach((player, index) => { let yPos = startY + (playersInRole.length === 1 ? availableHeight / 2 : index * yStep) + (Math.random() - 0.5) * 10; let xPos = baseX + (Math.random() - 0.5) * 20; positions[player.id] = { x: Math.max(playerRadius + 5, Math.min(W - playerRadius - 5, xPos)), y: Math.max(playerRadius + 5, Math.min(H - playerRadius - 5, yPos)) }; }); }); return positions; }; const drawPlayer = async (player, pos, teamColor) => { if (!pos) return; const { x, y } = pos; let img = null; if (player.photoUrl) { img = await loadImage(player.photoUrl); } ctx.save(); ctx.beginPath(); ctx.arc(x, y, playerRadius, 0, 2 * Math.PI); ctx.fillStyle = teamColor; ctx.fill(); if (img) { ctx.beginPath(); ctx.arc(x, y, playerRadius, 0, 2 * Math.PI); ctx.clip(); const aspectRatio = img.naturalWidth / img.naturalHeight; let drawWidth, drawHeight, offsetX, offsetY; if (img.naturalWidth >= img.naturalHeight) { drawHeight = playerRadius * 2; drawWidth = drawHeight * aspectRatio; offsetX = x - drawWidth / 2; offsetY = y - playerRadius; } else { drawWidth = playerRadius * 2; drawHeight = drawWidth / aspectRatio; offsetX = x - playerRadius; offsetY = y - drawHeight / 2; } try { ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight); } catch (e) { console.warn("Error drawing image for", player.nome, e); } } ctx.restore(); ctx.beginPath(); ctx.arc(x, y, playerRadius, 0, 2 * Math.PI); ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = playerNameColor; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; const displayName = player.nome.length > 12 ? player.nome.split(' ')[0] : player.nome; ctx.fillText(displayName, x, y + playerRadius + 12); }; const drawAllPlayers = async () => { const positionsA = getPositions(teamA, true); const positionsB = getPositions(teamB, false); const drawPromises = []; teamA.forEach(p => drawPromises.push(drawPlayer(p, positionsA[p.id], teamAColor))); teamB.forEach(p => drawPromises.push(drawPlayer(p, positionsB[p.id], teamBColor))); await Promise.all(drawPromises); console.log("Formation drawing complete."); }; return drawAllPlayers(); };
-
-        // Helper function to compare player data (excluding ID)
-        const arePlayersDifferent = (playerA, playerB) => {
-            if (!playerA || !playerB) return true;
-            const fieldsToCompare = [ 'nome', 'ruolo', 'abilitaDifensiva', 'abilitaOffensiva', 'velocita', 'scatto', 'pressing', 'determinazione', 'peso', 'altezza', 'robustezza', 'photoUrl' ];
-            for (const field of fieldsToCompare) {
-                const valA = playerA[field] ?? null;
-                const valB = playerB[field] ?? null;
-                if (valA !== valB) {
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        // === Componenti React ===
-        // PlayerForm, PlayerItem, PlayerList, PlayerSelectionModal, MatchSetup, TeamDisplay (Identiche)
-        function PlayerForm({ onSave, editingPlayer, onCancelEdit, currentDbMode }) { const initialFormData = { nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5, velocita: 5, scatto: 5, pressing: 5, determinazione: 5, peso: 75, altezza: 175, robustezza: 5, photoUrl: null }; const [formData, setFormData] = useState(initialFormData); const [isVisible, setIsVisible] = useState(false); const [photoPreview, setPhotoPreview] = useState(null); const [isSaving, setIsSaving] = useState(false); useEffect(() => { if (editingPlayer) { const dataToEdit = {...initialFormData, ...editingPlayer}; setFormData(dataToEdit); setPhotoPreview(dataToEdit.photoUrl || null); setIsVisible(true); } else { if(!isVisible) { setFormData(initialFormData); setPhotoPreview(null); } } }, [editingPlayer, isVisible]); useEffect(() => { if (currentDbMode === 'master') { setIsVisible(false); onCancelEdit(); } }, [currentDbMode, onCancelEdit]); const handleChange = (e) => { const { name, value, type } = e.target; setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value })); }; const handlePhotoChange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => { setFormData(prev => ({ ...prev, photoUrl: reader.result })); setPhotoPreview(reader.result); }; reader.onerror = (error) => { console.error("File reading error:", error); alert("Errore nel caricamento dell'immagine."); }; reader.readAsDataURL(file); } else { setFormData(prev => ({ ...prev, photoUrl: editingPlayer?.photoUrl || null })); setPhotoPreview(editingPlayer?.photoUrl || null); } e.target.value = null; }; const handleSubmit = async (e) => { e.preventDefault(); if (!formData.nome.trim()) { alert("Il nome è obbligatorio!"); return; } if (currentDbMode !== 'live') { alert("Puoi salvare modifiche solo quando sei in modalità 'Live DB'."); return; } setIsSaving(true); try { await onSave(formData); handleCancel(); } catch (error) { console.error("Errore durante il salvataggio dal form:", error); } finally { setIsSaving(false); } }; const handleCancel = () => { setFormData(initialFormData); setPhotoPreview(null); setIsVisible(false); setIsSaving(false); onCancelEdit(); }; const toggleVisibility = () => { if (currentDbMode !== 'live') { alert("Puoi aggiungere giocatori solo in modalità 'Live DB'"); return; } if (!editingPlayer) { setIsVisible(!isVisible); if (isVisible) { handleCancel(); } else { setFormData(initialFormData); setPhotoPreview(null); } } else if (!isVisible) { setIsVisible(true); } }; const formDisabled = currentDbMode !== 'live' || isSaving; return ( <div className="player-form-container"> {!isVisible && !editingPlayer && currentDbMode === 'live' && ( <button onClick={toggleVisibility} className="btn-toggle-form btn-create" disabled={formDisabled}>+ Crea Nuovo Giocatore (Live)</button> )} {isVisible && ( <form onSubmit={handleSubmit} className="player-form"> <fieldset disabled={formDisabled}> <h3>{editingPlayer ? `Modifica Giocatore (Live): ${editingPlayer.nome}` : 'Nuovo Giocatore (Live)'}</h3> <div className="form-group"><label htmlFor="nome">Nome:</label><input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required /></div> <div className="form-group"><label htmlFor="ruolo">Ruolo Preferito:</label><select id="ruolo" name="ruolo" value={formData.ruolo} onChange={handleChange}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div> {[ { name: 'abilitaDifensiva', label: 'Difesa' }, { name: 'abilitaOffensiva', label: 'Attacco' }, { name: 'velocita', label: 'Velocità' }, { name: 'scatto', label: 'Scatto' }, { name: 'pressing', label: 'Pressing' }, { name: 'determinazione', label: 'Determ.' }, { name: 'robustezza', label: 'Robustezza' } ].map(({ name, label }) => ( <div className="form-group" key={name}><label htmlFor={name}>{label} (1-10):</label><input type="number" id={name} name={name} min="1" max="10" step="1" value={formData[name] ?? ''} onChange={handleChange} required /></div> ))} <div className="form-group"><label htmlFor="peso">Peso (kg):</label><input type="number" id="peso" name="peso" min="30" max="150" step="0.1" value={formData.peso ?? ''} onChange={handleChange} required /></div> <div className="form-group"><label htmlFor="altezza">Altezza (cm):</label><input type="number" id="altezza" name="altezza" min="100" max="230" step="1" value={formData.altezza ?? ''} onChange={handleChange} required /></div> <div className="form-group form-group-photo"> <label htmlFor="photo"> Foto (Visualizza anteprima) <small>(Upload non attivo)</small> </label> <input type="file" id="photo" name="photo" accept="image/png, image/jpeg, image/webp" onChange={handlePhotoChange} /> <br/> {photoPreview && <img src={photoPreview} alt="Anteprima" className="photo-preview" />} {!photoPreview && editingPlayer?.photoUrl && <span> (Foto esistente: <a href={editingPlayer.photoUrl} target="_blank" rel="noopener noreferrer">link</a>)</span>} {photoPreview && <button type="button" onClick={() => { setPhotoPreview(null); setFormData(prev => ({...prev, photoUrl: null})); }} style={{backgroundColor: '#ffc107', color: '#333', fontSize:'0.8em', padding:'3px 6px'}}>Rimuovi Selezione</button>} </div> <div className="form-actions"> <button type="submit" className="btn-save" disabled={formDisabled}> {isSaving ? 'Salvataggio...' : (editingPlayer ? 'Salva Modifiche (Live)' : 'Aggiungi Giocatore (Live)')} </button> <button type="button" onClick={handleCancel} className="btn-cancel" disabled={isSaving}>Annulla</button> </div> </fieldset> {currentDbMode !== 'live' && <p style={{color:'orange', marginTop:'10px'}}>Modifiche disabilitate in visualizzazione Master DB.</p>} </form> )} </div> ); }
-        function PlayerItem({ player, onEdit, onDelete, currentDbMode }) { const avgScore = getAvgScore(player); const actionsDisabled = currentDbMode !== 'live'; return ( <li className="player-item"> <div className="player-info"> {player.photoUrl ? (<img src={player.photoUrl} alt={player.nome} className="player-photo-thumbnail" onError={(e) => e.target.style.display='none'} />) : (<span className="player-photo-thumbnail"></span>)} <div className="player-details"> <span className="player-name">{player.nome}</span> <span className="player-meta"> <span className="player-role">{player.ruolo}</span> <span className="player-avg-score">Avg: {avgScore}</span> </span> </div> </div> <div className="player-actions"> <button onClick={() => onEdit(player.id)} className="btn-edit" disabled={actionsDisabled} title={actionsDisabled ? "Modifica disponibile solo in Live DB" : "Modifica giocatore"}>Modifica</button> <button onClick={() => onDelete(player.id)} className="btn-delete" disabled={actionsDisabled} title={actionsDisabled ? "Elimina disponibile solo in Live DB" : "Elimina giocatore"}>Elimina</button> </div> </li> ); }
-        function PlayerList({ players, onEdit, onDelete, currentDbMode, isLoadingPlayers }) { const sortedPlayers = [...players].sort((a, b) => a.nome.localeCompare(b.nome)); const dbName = currentDbMode === 'live' ? LIVE_COLLECTION : MASTER_COLLECTION; return ( <div className="player-list-container"> <h2>Giocatori ({dbName}) ({players.length})</h2> {players.length === 0 && !isLoadingPlayers ? ( <p>Nessun giocatore in questa vista ({dbName}). {currentDbMode === 'live' ? 'Aggiungine uno o carica da Master.' : 'Carica i dati per visualizzarli.'}</p> ) : ( <ul className="player-list"> {sortedPlayers.map(p => ( <PlayerItem key={p.id} player={p} onEdit={onEdit} onDelete={onDelete} currentDbMode={currentDbMode}/> ))} </ul> )} </div> ); }
-        function PlayerSelectionModal({ players, selectedPlayerIds, requiredCount, onToggleSelect, onConfirm, onClose }) { const selectedCount = selectedPlayerIds.length; const canConfirm = selectedCount === requiredCount; const sortedPlayers = [...players].sort((a, b) => a.nome.localeCompare(b.nome)); return ( <div className="modal-overlay" onClick={onClose}> <div className="modal-content" onClick={(e) => e.stopPropagation()}> <h3>Seleziona Giocatori ({selectedCount} / {requiredCount})</h3> <p>Seleziona esattamente {requiredCount} giocatori dalla lista per la partita.</p> <ul className="modal-player-list"> {sortedPlayers.map(player => { const isSelected = selectedPlayerIds.includes(player.id); const isDisabled = !isSelected && selectedCount >= requiredCount; return ( <li key={player.id} className={`modal-player-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`} onClick={() => !isDisabled && onToggleSelect(player.id)}> <label className={isDisabled ? 'disabled' : ''}> <input type="checkbox" checked={isSelected} onChange={() => {}} disabled={isDisabled} /> {player.photoUrl ? <img src={player.photoUrl} alt="" className="player-photo-thumbnail" style={{width: '25px', height: '25px'}} onError={(e) => e.target.style.display='none'}/> : <span className="player-photo-thumbnail" style={{width: '25px', height: '25px', display: 'inline-block'}}></span>} {player.nome} ({player.ruolo} - Avg: {getAvgScore(player)}) </label> </li> ); })} </ul> <div className="modal-actions"> <button onClick={onConfirm} disabled={!canConfirm} className="btn-confirm"> Conferma Selezione ({selectedCount}/{requiredCount}) </button> <button onClick={onClose} className="btn-cancel">Annulla</button> </div> </div> </div> ); }
-        function MatchSetup({ matchType, onMatchTypeChange, onOpenSelection, availablePlayerCount }) { const requiredPlayers = getRequiredPlayers(matchType); const canOpenSelector = matchType && availablePlayerCount >= requiredPlayers; let infoText = ''; if (matchType) { if (availablePlayerCount < requiredPlayers) { infoText = `Servono ${requiredPlayers} giocatori per questa modalità, ma ne hai solo ${availablePlayerCount} nella vista attuale.`; } else { infoText = `Modalità selezionata: Calcio a ${matchType}. Servono ${requiredPlayers} giocatori.`; } } return ( <div className="match-setup-container"> <h2>Imposta Partita</h2> <div className="match-type-selector"> <label htmlFor="matchType">Tipo Partita:</label> <select id="matchType" value={matchType || ''} onChange={(e) => onMatchTypeChange(e.target.value)}> <option value="" disabled>Seleziona tipo...</option> <option value="5">Calcio a 5 (10 giocatori)</option> <option value="6">Calcio a 6 (12 giocatori)</option> <option value="8">Calciotto (16 giocatori)</option> <option value="11">Calcio a 11 (22 giocatori)</option> </select> </div> {infoText && (<p>{infoText}</p>)} <button onClick={onOpenSelection} disabled={!canOpenSelector} className="btn-select-players" title={!matchType ? "Seleziona prima il tipo di partita" : (availablePlayerCount < requiredPlayers ? "Giocatori insufficienti nella vista attuale" : "Seleziona i giocatori per la partita")}> Seleziona Giocatori Convocati </button> </div> ); }
-        function TeamDisplay({ players, selectedPlayerIds, teams, matchType, onUpdateTeams, onClearSelection, balanceByRoleEnabled, onToggleBalanceByRole, onGenerateTeams }) { const [unpredictability, setUnpredictability] = useState(1); const [playersToSwap, setPlayersToSwap] = useState({ teamA: null, teamB: null }); const [imageDataUrl, setImageDataUrl] = useState(null); const [isGeneratingImage, setIsGeneratingImage] = useState(false); const canvasRef = useRef(null); const requiredPlayers = getRequiredPlayers(matchType); const teamsExist = teams.teamA.length > 0 || teams.teamB.length > 0; const correctPlayersSelectedForCreation = selectedPlayerIds.length === requiredPlayers && requiredPlayers > 0; const generationPossible = teamsExist || correctPlayersSelectedForCreation; const buttonGenerateText = teamsExist ? 'Rigenera Squadre' : 'Crea Squadre'; const buttonGenerateTitle = teamsExist ? 'Rigenera le squadre con le impostazioni attuali' : (correctPlayersSelectedForCreation ? 'Crea le squadre con i giocatori selezionati' : 'Seleziona il numero corretto di giocatori'); const swapButtonEnabled = playersToSwap.teamA !== null && playersToSwap.teamB !== null; const handleGenerateOrRegenerate = () => { const playersForGeneration = teamsExist ? [...teams.teamA, ...teams.teamB] : players.filter(p => selectedPlayerIds.includes(p.id)); if (playersForGeneration.length !== requiredPlayers) { alert(`Errore: Per la modalità Calcio a ${matchType} servono ${requiredPlayers} giocatori, ma ne sono stati forniti ${playersForGeneration.length}.`); return; } setImageDataUrl(null); setPlayersToSwap({ teamA: null, teamB: null }); onGenerateTeams(playersForGeneration, unpredictability, balanceByRoleEnabled); }; const handleSelectPlayerForSwap = (playerId, teamKey) => { setPlayersToSwap(prev => (prev[teamKey] === playerId ? { ...prev, [teamKey]: null } : { ...prev, [teamKey]: playerId })); }; const handleExecuteSwap = () => { if (!swapButtonEnabled) return; const playerA_ID = playersToSwap.teamA; const playerB_ID = playersToSwap.teamB; const playerA = teams.teamA.find(p => p.id === playerA_ID); const playerB = teams.teamB.find(p => p.id === playerB_ID); if (!playerA || !playerB) { console.error("Swap error: Player not found", playerA_ID, playerB_ID); return; } const newTeamA = teams.teamA.filter(p => p.id !== playerA_ID).concat(playerB); const newTeamB = teams.teamB.filter(p => p.id !== playerB_ID).concat(playerA); onUpdateTeams({ teamA: newTeamA, teamB: newTeamB }); setPlayersToSwap({ teamA: null, teamB: null }); setImageDataUrl(null); }; const handleRoleChange = (playerId, newRole, teamKey) => { const currentTeams = { teamA: [...teams.teamA], teamB: [...teams.teamB] }; const team = currentTeams[teamKey]; const playerIndex = team.findIndex(p => p.id === playerId); if (playerIndex === -1) return; const updatedPlayer = { ...team[playerIndex], currentRole: newRole }; const updatedTeam = [ ...team.slice(0, playerIndex), updatedPlayer, ...team.slice(playerIndex + 1) ]; onUpdateTeams({ ...currentTeams, [teamKey]: updatedTeam }); setImageDataUrl(null); }; const handleGenerateImage = async () => { if (!canvasRef.current || !teamsExist || isGeneratingImage) return; setIsGeneratingImage(true); setImageDataUrl(null); try { const teamA_withRoles = teams.teamA.map(p => ({ ...p, currentRole: p.currentRole ?? p.ruolo })); const teamB_withRoles = teams.teamB.map(p => ({ ...p, currentRole: p.currentRole ?? p.ruolo })); console.log("Generating image for teams:", teamA_withRoles, teamB_withRoles); await drawFormation(canvasRef.current, teamA_withRoles, teamB_withRoles, matchType); await new Promise(resolve => setTimeout(resolve, 100)); const dataUrl = canvasRef.current.toDataURL('image/png'); setImageDataUrl(dataUrl); } catch (error) { console.error("Error generating formation image:", error); alert("Errore durante la generazione dell'immagine della formazione."); setImageDataUrl(null); } finally { setIsGeneratingImage(false); } }; const scoreA = teams.teamA.length > 0 ? calculateTeamFinalScore(teams.teamA).toFixed(1) : 0; const scoreB = teams.teamB.length > 0 ? calculateTeamFinalScore(teams.teamB).toFixed(1) : 0; const sortTeamForDisplay = (team) => { return [...team].sort((a, b) => { const roleA = a.currentRole ?? a.ruolo; const roleB = b.currentRole ?? b.ruolo; const indexA = roleOrder.indexOf(roleA); const indexB = roleOrder.indexOf(roleB); const effectiveIndexA = indexA === -1 ? 99 : indexA; const effectiveIndexB = indexB === -1 ? 99 : indexB; if (effectiveIndexA !== effectiveIndexB) { return effectiveIndexA - effectiveIndexB; } return a.nome.localeCompare(b.nome); }); }; const sortedTeamA = sortTeamForDisplay(teams.teamA); const sortedTeamB = sortTeamForDisplay(teams.teamB); return ( <div className="team-display-container"> <h2>{teamsExist ? 'Gestisci Squadre' : 'Crea Squadre'}</h2> {!teamsExist && !correctPlayersSelectedForCreation && requiredPlayers > 0 && ( <p>Seleziona {requiredPlayers} giocatori per creare le squadre.</p> )} {!teamsExist && correctPlayersSelectedForCreation && ( <p>Hai selezionato {selectedPlayerIds.length} giocatori ({requiredPlayers} richiesti). Clicca su '{buttonGenerateText}' per generare le squadre.</p> )} {teamsExist && ( <p>Squadre generate. Puoi rigenerarle, scambiare giocatori (cliccando sul nome), cambiare il ruolo in campo o generare l'immagine.</p> )} {requiredPlayers > 0 && ( <div className="balancing-options"> <div className="unpredictability-slider"> <label htmlFor="unpredictability">Imprevedibilità bilanciamento (0=max equilibrio, 5=più casuale): {unpredictability}</label> <input type="range" id="unpredictability" min="0" max="5" step="0.5" value={unpredictability} onChange={(e) => setUnpredictability(parseFloat(e.target.value))} /> </div> <div className="checkbox-group"> <input type="checkbox" id="balanceByRole" checked={balanceByRoleEnabled} onChange={onToggleBalanceByRole} /> <label htmlFor="balanceByRole">Tenta bilanciamento per ruolo (oltre al punteggio)</label> </div> <button onClick={handleGenerateOrRegenerate} className="btn-generate" disabled={!generationPossible} title={buttonGenerateTitle}> {buttonGenerateText} </button> </div> )} {teamsExist && ( <React.Fragment> <div className="teams-output"> <h3>Squadre Generate</h3> <div className="team-columns"> <div className="team-column"> <h4>Squadra A <small>(Punteggio Tot: {scoreA})</small></h4> <ul> {sortedTeamA.map(p => (<li key={p.id} className={playersToSwap.teamA === p.id ? 'selected-for-swap' : ''}><div className="team-player-info" onClick={() => handleSelectPlayerForSwap(p.id, 'teamA')} title={`Clicca per selezionare ${p.nome} per lo scambio`}><span className="team-player-name">{p.photoUrl && <img src={p.photoUrl} alt="" className="player-photo-thumbnail" style={{width: '20px', height: '20px', marginRight:'5px'}} onError={(e) => e.target.style.display='none'}/>}{p.nome}</span><span className="team-player-original-role">(Pref: {p.ruolo} - Avg: {getAvgScore(p)})</span></div><div className="team-player-role-selector"><label htmlFor={`role-a-${p.id}`} style={{display:'none'}}>Ruolo A</label><select id={`role-a-${p.id}`} value={p.currentRole ?? p.ruolo} onChange={(e) => handleRoleChange(p.id, e.target.value, 'teamA')} title={`Cambia ruolo in campo per ${p.nome}`}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div></li>))}</ul> </div> <div className="team-column"> <h4>Squadra B <small>(Punteggio Tot: {scoreB})</small></h4> <ul> {sortedTeamB.map(p => (<li key={p.id} className={playersToSwap.teamB === p.id ? 'selected-for-swap' : ''}><div className="team-player-info" onClick={() => handleSelectPlayerForSwap(p.id, 'teamB')} title={`Clicca per selezionare ${p.nome} per lo scambio`}><span className="team-player-name">{p.photoUrl && <img src={p.photoUrl} alt="" className="player-photo-thumbnail" style={{width: '20px', height: '20px', marginRight:'5px'}} onError={(e) => e.target.style.display='none'}/>}{p.nome}</span><span className="team-player-original-role">(Pref: {p.ruolo} - Avg: {getAvgScore(p)})</span></div><div className="team-player-role-selector"><label htmlFor={`role-b-${p.id}`} style={{display:'none'}}>Ruolo B</label><select id={`role-b-${p.id}`} value={p.currentRole ?? p.ruolo} onChange={(e) => handleRoleChange(p.id, e.target.value, 'teamB')} title={`Cambia ruolo in campo per ${p.nome}`}>{ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div></li>))}</ul> </div> </div> <div className="swap-controls"> <button onClick={handleExecuteSwap} className="btn-swap" disabled={!swapButtonEnabled} title={!swapButtonEnabled ? "Seleziona un giocatore da Squadra A e uno da Squadra B" : "Esegui lo scambio tra i giocatori selezionati"}> Scambia Giocatori ({playersToSwap.teamA ? 'A✓' : 'A?'} {'↔'} {playersToSwap.teamB ? 'B✓' : 'B?'}) </button> </div> </div> <div className="generated-image-container"> <button onClick={handleGenerateImage} className="btn-generate-img" disabled={!teamsExist || isGeneratingImage}> {isGeneratingImage ? 'Generando Immagine...' : 'Genera Immagine Formazione'} </button> <canvas ref={canvasRef} style={{ display: 'none' }}></canvas> {imageDataUrl && ( <div> <img src={imageDataUrl} alt={`Formazione Calcio a ${matchType}`}/> <br/> <a href={imageDataUrl} download={`formazione_elclasico_${matchType}v${matchType}.png`}> Scarica Immagine Formazione </a> </div> )} </div> </React.Fragment> )} {(selectedPlayerIds.length > 0 || teamsExist) && ( <button onClick={onClearSelection} className="btn-clear-selection" style={{ marginTop: '20px' }}> Azzera Selezione Giocatori e Squadre </button> )} </div> ); }
-
-        // === Comparison Modal Component ===
-        function ComparisonModal({ conflicts, onResolve, onCancel, sourceLabel, targetLabel, operationType }) {
-            const [resolutions, setResolutions] = useState(() => {
-                const initialResolutions = {};
-                conflicts.forEach(conflict => {
-                    initialResolutions[conflict.name] = 'update'; // Default to using source data
-                });
-                return initialResolutions;
-            });
-
-            const handleResolutionChange = (name, choice) => {
-                setResolutions(prev => ({ ...prev, [name]: choice }));
-            };
-
-            // Function to highlight differences (optional but helpful)
-            // *** CORRECTION APPLIED HERE: Ensure the final closing brace is present ***
-            const renderPlayerCard = (player, otherPlayer, titleClass) => {
-                if (!player) return <div className={`comparison-player-card ${titleClass}`}><p>Giocatore non presente.</p></div>;
-                const fields = [ 'ruolo', 'abilitaDifensiva', 'abilitaOffensiva', 'velocita', 'scatto', 'pressing', 'determinazione', 'peso', 'altezza', 'robustezza', 'photoUrl'];
-                 return (
-                    <div className={`comparison-player-card`}>
-                        {/* Added distinct class names for source/target titles */}
-                        <h5 className={titleClass}>{player.nome} ({titleClass === 'source' ? sourceLabel : targetLabel})</h5>
-                        {fields.map(field => { // Map callback opens
-                             let displayValue = player[field] ?? 'N/D';
-                             const otherValue = otherPlayer ? (otherPlayer[field] ?? 'N/D') : 'N/A';
-                             const isDifferent = otherPlayer && (player[field] ?? null) !== (otherPlayer[field] ?? null);
-
-                             if (field === 'photoUrl') {
-                                 const photoLink = displayValue !== 'N/D' && displayValue !== null ? <a href={displayValue} target="_blank" rel="noopener noreferrer">Link Foto</a> : 'Nessuna';
-                                 // Apply highlight class directly to the span
-                                 displayValue = <span className={isDifferent ? 'comparison-highlight' : ''}>{photoLink}</span>;
-                             } else {
-                                 // Apply highlight class directly to the span
-                                 displayValue = <span className={isDifferent ? 'comparison-highlight' : ''}>{displayValue}</span>;
-                             }
-                             return <p key={field}><strong>{field}:</strong> {displayValue}</p>;
-                         })} {/* Map callback closes */}
-                    </div>
-                 );
-            }; // <<<====== THIS IS THE CLOSING BRACE THAT WAS MISSING OR MISPLACED BEFORE
-
-            return (
-                <div className="modal-overlay" onClick={onCancel}>
-                    <div className="modal-content comparison-modal" onClick={(e) => e.stopPropagation()}>
-                        <h3>Confronta Giocatori Duplicati ({conflicts.length})</h3>
-                        <p>I seguenti giocatori hanno lo stesso nome ma dati diversi tra <strong>{sourceLabel}</strong> e <strong>{targetLabel}</strong>. Scegli quale versione mantenere per ciascuno.</p>
-                        {operationType === 'save' && <p className="info-message">Nota: I giocatori presenti solo in {targetLabel} (Master DB) verranno eliminati se non scegli 'Mantieni dati {targetLabel}'.</p>}
-                        {operationType === 'load' && <p className="info-message">Nota: I giocatori presenti solo in {targetLabel} (Live Cache) verranno persi se non scegli 'Mantieni dati {targetLabel}'. L'obiettivo è allineare la vista attuale a {sourceLabel}.</p>}
-
-                        <ul className="comparison-list">
-                            {conflicts.map(conflict => (
-                                <li key={conflict.name} className="comparison-item">
-                                    <h4>{conflict.name}</h4>
-                                    <div className="comparison-details">
-                                        {renderPlayerCard(conflict.sourcePlayer, conflict.targetPlayer, 'source')} {/* Pass 'source' class */}
-                                        {renderPlayerCard(conflict.targetPlayer, conflict.sourcePlayer, 'target')} {/* Pass 'target' class */}
-                                    </div>
-                                    <div className="comparison-actions">
-                                        <label>
-                                            <input
-                                                type="radio"
-                                                name={`resolve_${conflict.name}`}
-                                                value="update"
-                                                checked={resolutions[conflict.name] === 'update'}
-                                                onChange={() => handleResolutionChange(conflict.name, 'update')}
-                                            />
-                                            {operationType === 'save' ? `Aggiorna ${targetLabel} con dati ${sourceLabel}` : `Usa dati ${sourceLabel}`}
-                                        </label>
-                                        <label>
-                                            <input
-                                                type="radio"
-                                                name={`resolve_${conflict.name}`}
-                                                value="keep"
-                                                checked={resolutions[conflict.name] === 'keep'}
-                                                onChange={() => handleResolutionChange(conflict.name, 'keep')}
-                                            />
-                                            Mantieni dati {targetLabel} esistenti
-                                        </label>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                        <div className="modal-actions">
-                            <button onClick={() => onResolve(resolutions)} className="btn-confirm">
-                                Applica Scelte e Procedi
-                            </button>
-                            <button onClick={onCancel} className="btn-cancel">Annulla Operazione</button>
-                        </div>
-                    </div>
+  // Schermata di selezione profilo
+  if (gameState === 'profile_selection') {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.background }}>
+          <div className="w-full max-w-lg text-center bg-white p-8 md:p-12 rounded-3xl shadow-2xl relative">
+              {/* Pulsante Impostazioni */}
+              <button 
+                  onClick={() => setShowSettingsModal(true)} 
+                  className="absolute top-4 right-4 text-3xl transform transition-transform hover:rotate-45" 
+                  title="Impostazioni"
+              >
+                  ⚙️
+              </button>
+              
+              <h1 className="text-4xl md:text-5xl font-bold mb-8" style={{ color: colors.primary }}>
+                Chi sta giocando?
+              </h1>
+              <div className="flex flex-col md:flex-row gap-6">
+                <div onClick={() => selectProfile('Edoardo')} className="flex-1 p-6 rounded-3xl shadow-lg cursor-pointer transform hover:scale-105 transition-transform" style={{backgroundColor: colors.secondary}}>
+                    <h2 className="text-3xl font-bold text-white mb-2">Edoardo</h2>
+                    <p className="text-5xl">🦕</p>
                 </div>
-            );
-        }
-
-
-        // === Componente App Principale ===
-        function App() {
-            // --- STATI ---
-            const [players, setPlayers] = useState([]);
-            const [isLoadingPlayers, setIsLoadingPlayers] = useState(true);
-            const [errorLoadingPlayers, setErrorLoadingPlayers] = useState(firebaseInitializationError);
-            const [successMessage, setSuccessMessage] = useState(null);
-            const [infoMessage, setInfoMessage] = useState(null);
-            const [currentDbMode, setCurrentDbMode] = useState('live');
-            const [showMasterPasswordPrompt, setShowMasterPasswordPrompt] = useState(false);
-            const [masterPasswordInput, setMasterPasswordInput] = useState('');
-            const [isSavingToMaster, setIsSavingToMaster] = useState(false);
-            const [matchType, setMatchType] = useLocalStorage('elClasico_matchType_v3_ns', null);
-            const [teams, setTeams] = useLocalStorage('elClasico_teams_v8_ns', { teamA: [], teamB: [] });
-            const [balanceByRoleEnabled, setBalanceByRoleEnabled] = useLocalStorage('elClasico_balanceByRole_v3_ns', true);
-            const [editingPlayer, setEditingPlayer] = useState(null);
-            const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
-            const [isModalOpen, setIsModalOpen] = useState(false);
-            const fileInputRef = useRef(null);
-            const liveDataCache = useRef([]);
-            const [showComparisonModal, setShowComparisonModal] = useState(false);
-            const [comparisonData, setComparisonData] = useState({ conflicts: [], sourceLabel: '', targetLabel: '', operationType: '', onResolve: null });
-
-            // --- FUNZIONI MESSAGGI ---
-            const showSuccess = useCallback((msg, duration = 3000) => { setSuccessMessage(msg); setTimeout(() => setSuccessMessage(null), duration); }, []);
-            const showError = useCallback((msg, duration = 5000) => { setErrorLoadingPlayers(msg); setTimeout(() => setErrorLoadingPlayers(null), duration); }, []);
-            const showInfo = useCallback((msg, duration = 4000) => { setInfoMessage(msg); setTimeout(() => setInfoMessage(null), duration); }, []);
-
-            // --- EFFETTO LISTENER FIRESTORE (Invariato) ---
-            useEffect(() => {
-                 if (firebaseInitializationError) { setErrorLoadingPlayers(firebaseInitializationError); setIsLoadingPlayers(false); return; }
-                 if (!liveCollectionRef) { setErrorLoadingPlayers("Errore: Riferimento Firestore Live non pronto."); setIsLoadingPlayers(false); return; }
-                 // console.log(`Attivazione listener su ${LIVE_COLLECTION}`);
-                 const unsubscribe = liveCollectionRef.orderBy("nome").onSnapshot(snapshot => {
-                    const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    liveDataCache.current = playersData;
-                    if (isLoadingPlayers) { setIsLoadingPlayers(false); }
-                    if (currentDbMode === 'live') { setPlayers(playersData); }
-                     if (errorLoadingPlayers && !firebaseInitializationError) { setErrorLoadingPlayers(null); }
-                 }, error => {
-                     console.error(`Errore listener Firestore su ${LIVE_COLLECTION}:`, error);
-                     if (!firebaseInitializationError) { setErrorLoadingPlayers(`Errore DB Live: ${error.message}. Riprova a caricare o controlla regole.`); }
-                     setIsLoadingPlayers(false);
-                     liveDataCache.current = [];
-                 });
-                 return () => { /* console.log(`Disattivazione listener su ${LIVE_COLLECTION}.`); */ unsubscribe(); };
-            }, [currentDbMode, firebaseInitializationError]);
-
-
-            // --- Handlers Gestione Giocatori (Invariati) ---
-            const handleSavePlayer = useCallback(async (playerData) => { if (!db || !liveCollectionRef) { throw new Error("Firestore non inizializzato correttamente."); } if (currentDbMode !== 'live') { throw new Error("Salvataggio possibile solo in modalità Live DB."); } const { id, ...dataToSave } = playerData; console.log("Salvataggio su Firestore (Live):", id ? `Modifica ID ${id}` : "Nuovo", dataToSave); try { if (id) { await liveCollectionRef.doc(id).update(dataToSave); showSuccess("Giocatore aggiornato con successo!"); setEditingPlayer(null); } else { const docRef = await liveCollectionRef.add(dataToSave); showSuccess(`Giocatore "${dataToSave.nome}" aggiunto con ID: ${docRef.id}`); } } catch (error) { console.error("Errore salvataggio Firestore (Live):", error); showError(`Errore salvataggio DB: ${error.message}`); throw error; } }, [currentDbMode, showSuccess, showError]);
-            const handleDeletePlayer = useCallback(async (playerId) => { if (!db || !liveCollectionRef) { alert("Errore: DB non connesso."); return; } if (currentDbMode !== 'live') { alert("Eliminazione possibile solo in modalità Live DB."); return; } const playerToDelete = players.find(p => p.id === playerId); if (playerToDelete && window.confirm(`Sei sicuro di voler eliminare ${playerToDelete.nome} dal database LIVE? L'azione è irreversibile.`)) { console.log("Tentativo eliminazione (Live):", playerId); try { await liveCollectionRef.doc(playerId).delete(); console.log("Giocatore eliminato da Firestore (Live):", playerId); showSuccess(`Giocatore "${playerToDelete.nome}" eliminato.`); setSelectedPlayerIds(prev => prev.filter(id => id !== playerId)); setTeams(prevTeams => ({ teamA: prevTeams.teamA.filter(p => p.id !== playerId), teamB: prevTeams.teamB.filter(p => p.id !== playerId) })); if (editingPlayer?.id === playerId) setEditingPlayer(null); } catch (error) { console.error("Errore eliminazione giocatore (Live):", error); showError(`Errore eliminazione: ${error.message}`); } } }, [currentDbMode, players, editingPlayer, setTeams, showSuccess, showError]);
-            const handleEditPlayer = useCallback((playerId) => { const playerToEdit = players.find(p => p.id === playerId); if (playerToEdit) { setEditingPlayer(playerToEdit); window.scrollTo({ top: 0, behavior: 'smooth' }); console.log("Editing player:", playerToEdit); } else { console.warn("Edit: Player non trovato con ID", playerId); showError(`Errore: Giocatore con ID ${playerId} non trovato per la modifica.`); } }, [players, showError]);
-            const handleCancelEdit = useCallback(() => { setEditingPlayer(null); }, []);
-
-
-            // --- Handlers Gestione DB (Con logica di confronto) ---
-            const handleSwitchMode = useCallback(async (newMode) => { if (newMode === currentDbMode) return; setEditingPlayer(null); setErrorLoadingPlayers(null); setSuccessMessage(null); setInfoMessage(null); if (newMode === 'live') { console.log("Switching to LIVE mode."); setCurrentDbMode('live'); if (liveDataCache.current.length > 0 || firebaseInitializationError) { setPlayers(liveDataCache.current); setIsLoadingPlayers(false); } else { setIsLoadingPlayers(true); } showInfo("Modalità Live DB attiva.", 2500); } else if (newMode === 'master') { if (!masterCollectionRef) { showError("Errore: Riferimento DB Master non disponibile."); return; } console.log("Switching to MASTER mode."); setCurrentDbMode('master'); setIsLoadingPlayers(true); setPlayers([]); try { const masterSnapshot = await masterCollectionRef.orderBy("nome").get(); const masterData = masterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); setPlayers(masterData); console.log(`Dati MASTER caricati: ${masterData.length} giocatori.`); showInfo(`Visualizzazione Master DB (${masterData.length} giocatori).`, 3000); } catch (error) { console.error("Errore caricamento dati MASTER:", error); showError(`Errore caricamento Master DB: ${error.message}`); setPlayers([]); } finally { setIsLoadingPlayers(false); } } }, [currentDbMode, showError, showInfo, firebaseInitializationError]);
-
-            const handleLoadFromMaster = useCallback(async () => {
-                if (!masterCollectionRef || !liveCollectionRef) { showError("Errore: Connessione DB non disponibile."); return; }
-                if (!window.confirm("Caricare i dati dal DB Master?\nQuesto confronterà i dati con quelli Live attuali (cache) e ti chiederà come risolvere le differenze per i giocatori con lo stesso nome.\nI giocatori Live senza corrispondenza nel Master verranno persi.\nLe modifiche verranno applicate alla vista attuale (che sarà in modalità Live).")) return;
-
-                console.log("Preparing to load data from MASTER and compare with LIVE cache...");
-                setIsLoadingPlayers(true); setErrorLoadingPlayers(null); setSuccessMessage(null);
-
-                try {
-                    const masterSnapshot = await masterCollectionRef.orderBy("nome").get();
-                    const masterPlayers = masterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    const livePlayers = liveDataCache.current; // Usa cache
-
-                    console.log(`Fetched Master: ${masterPlayers.length} players.`);
-                    console.log(`Using Live Cache: ${livePlayers.length} players.`);
-
-                    const conflicts = [];
-                    const masterPlayersMap = new Map(masterPlayers.map(p => [p.nome.trim().toLowerCase(), p]));
-                    const livePlayersMap = new Map(livePlayers.map(p => [p.nome.trim().toLowerCase(), p]));
-                    const nonConflictingMasterPlayers = []; // Players only in Master or identical in both
-
-                    masterPlayers.forEach(masterPlayer => {
-                        const masterNameKey = masterPlayer.nome.trim().toLowerCase();
-                        const liveMatch = livePlayersMap.get(masterNameKey);
-
-                        if (liveMatch) {
-                            if (arePlayersDifferent(masterPlayer, liveMatch)) {
-                                conflicts.push({ name: masterPlayer.nome, sourcePlayer: masterPlayer, targetPlayer: liveMatch });
-                            } else {
-                                nonConflictingMasterPlayers.push(masterPlayer); // Identical, use Master version
-                            }
-                            livePlayersMap.delete(masterNameKey); // Remove processed player from live map
-                        } else {
-                            nonConflictingMasterPlayers.push(masterPlayer); // Unique to Master
-                        }
-                        masterPlayersMap.delete(masterNameKey); // Remove processed player from master map
-                    });
-
-                    // Players remaining in livePlayersMap are unique to Live and will be discarded.
-
-                    const resolveLoadConflicts = (resolutions) => {
-                        console.log("Resolving conflicts from Load From Master:", resolutions);
-                        const resolvedConflictPlayers = [];
-                        conflicts.forEach(conflict => {
-                            if (resolutions[conflict.name] === 'keep') {
-                                resolvedConflictPlayers.push(conflict.targetPlayer); // Keep Live version
-                            } else {
-                                resolvedConflictPlayers.push(conflict.sourcePlayer); // Use Master version
-                            }
-                        });
-                        const combinedList = [...nonConflictingMasterPlayers, ...resolvedConflictPlayers];
-                        setPlayers(combinedList);
-                        liveDataCache.current = combinedList; // Update cache
-                        setCurrentDbMode('live');
-                        showSuccess(`Caricamento da Master completato (${conflicts.length} conflitti risolti). Totale ${combinedList.length} giocatori. Ora sei in modalità Live.`);
-                        setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); setEditingPlayer(null);
-                        setShowComparisonModal(false);
-                    };
-
-                    if (conflicts.length > 0) {
-                        console.log(`Found ${conflicts.length} conflicts. Opening comparison modal.`);
-                        setComparisonData({
-                            conflicts: conflicts, sourceLabel: 'Master DB', targetLabel: 'Live Cache',
-                            operationType: 'load', onResolve: resolveLoadConflicts
-                        });
-                        setShowComparisonModal(true);
-                    } else {
-                        console.log("No conflicts found. Applying Master data directly.");
-                        setPlayers(nonConflictingMasterPlayers);
-                        liveDataCache.current = nonConflictingMasterPlayers; // Update cache
-                        setCurrentDbMode('live');
-                        showSuccess(`Caricati ${nonConflictingMasterPlayers.length} giocatori da Master DB (nessun conflitto). Ora sei in modalità Live.`);
-                        setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); setEditingPlayer(null);
-                    }
-
-                } catch (error) { console.error("Errore durante Carica da Master:", error); showError(`Errore Caricamento da Master: ${error.message}`);
-                } finally { setIsLoadingPlayers(false); }
-            }, [setTeams, showSuccess, showError, liveDataCache]);
-
-
-            const handleSaveToMasterPrompt = useCallback(() => {
-                const playersToConsiderSaving = currentDbMode === 'live' ? players : liveDataCache.current;
-                 if (playersToConsiderSaving.length === 0) { alert("Nessun giocatore presente (in Live o nella cache) da salvare su Master."); return; }
-                 if (!window.confirm(`Stai per confrontare i ${playersToConsiderSaving.length} giocatori attuali (${currentDbMode === 'live' ? 'Live DB' : 'Cache Live'}) con il DB Master.\nTi verrà chiesto come risolvere eventuali conflitti (giocatori con stesso nome).\nI giocatori nel Master DB che NON sono presenti nella lista attuale verranno ELIMINATI.\nL'operazione richiede la password.\n\nSei sicuro di voler procedere?`)) return;
-                 setShowMasterPasswordPrompt(true); setMasterPasswordInput('');
-            }, [currentDbMode, players, liveDataCache]); // Added liveDataCache
-
-            const handleCancelSaveToMaster = useCallback(() => {
-                setShowMasterPasswordPrompt(false); setMasterPasswordInput(''); setIsSavingToMaster(false);
-            }, []);
-
-                        // MODIFIED: handleConfirmSaveToMaster (Fixed sourcePlayersMap error)
-            const handleConfirmSaveToMaster = useCallback(async () => {
-                if (masterPasswordInput !== MASTER_DB_PASSWORD) { alert("Password errata!"); return; }
-                if (!masterCollectionRef || !db) { showError("Errore: Riferimento DB Master non disponibile."); return; }
-
-                const sourcePlayers = currentDbMode === 'live' ? players : liveDataCache.current;
-                if (sourcePlayers.length === 0) { alert("Nessun giocatore da salvare su Master."); handleCancelSaveToMaster(); return; }
-
-                console.log(`Preparing to save ${sourcePlayers.length} players to MASTER, comparing first...`);
-                setIsSavingToMaster(true); setErrorLoadingPlayers(null); setSuccessMessage(null);
-
-                try {
-                    // 1. Fetch current Master data
-                    const masterSnapshot = await masterCollectionRef.get();
-                    const masterPlayers = masterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    console.log(`Fetched current Master DB: ${masterPlayers.length} players.`);
-
-                    // 2. Identify conflicts, unique source, unique target
-                    const conflicts = [];
-                    const playersToAdd = []; // Unique to source
-                    // const playersToPotentiallyUpdate = []; // Not strictly needed, handled by conflicts
-                    // const masterPlayersMapById = new Map(masterPlayers.map(p => [p.id, p])); // Not needed here
-                    // const sourcePlayersMapByName = new Map(sourcePlayers.map(p => [p.nome.trim().toLowerCase(), p])); // Defined but not used later, can remove if desired
-                    const masterPlayersMapByName = new Map(masterPlayers.map(p => [p.nome.trim().toLowerCase(), p]));
-                    const masterIdsToDelete = new Set(masterPlayers.map(p => p.id)); // Start with all master IDs
-
-                    sourcePlayers.forEach(sourcePlayer => {
-                        const sourceNameKey = sourcePlayer.nome.trim().toLowerCase();
-                        const masterMatch = masterPlayersMapByName.get(sourceNameKey);
-
-                        if (masterMatch) {
-                             masterIdsToDelete.delete(masterMatch.id); // Don't delete this one
-                            if (arePlayersDifferent(sourcePlayer, masterMatch)) {
-                                conflicts.push({ name: sourcePlayer.nome, sourcePlayer: sourcePlayer, targetPlayer: masterMatch });
-                            } else {
-                                // Identical - no action needed in batch for this player
-                            }
-                            masterPlayersMapByName.delete(sourceNameKey); // Remove processed from this map to correctly identify unique Master players later
-                        } else {
-                            playersToAdd.push(sourcePlayer); // Unique to source
-                        }
-                        // --- REMOVED UNNECESSARY LINE: sourcePlayersMap.delete(sourceNameKey); ---
-                    });
-
-                    // masterIdsToDelete now contains IDs of players only in Master (those whose names weren't found in sourcePlayers)
-
-                    // --- Inner function to perform the actual Firestore batch write ---
-                    const performSave = async (resolutions = {}) => {
-                        console.log("Performing save to Master with resolutions:", resolutions);
-                        const batch = db.batch();
-                        let added = 0, updated = 0, deleted = 0, kept = 0;
-
-                        // Handle conflicts
-                        conflicts.forEach(conflict => {
-                            if (resolutions[conflict.name] === 'keep') {
-                                // Keep Master version (do nothing in batch, already removed from delete set)
-                                kept++;
-                            } else {
-                                // Update Master version with source data (default)
-                                const { id, ...dataToSave } = conflict.sourcePlayer;
-                                const targetId = conflict.targetPlayer.id; // Use Master's ID!
-                                batch.set(masterCollectionRef.doc(targetId), dataToSave); // Overwrite existing doc
-                                updated++;
-                            }
-                        });
-
-                        // Add players unique to source
-                        playersToAdd.forEach(player => {
-                            const { id, ...dataToAdd } = player;
-                             if (id && typeof id === 'string' && id.length > 5) { // Basic check for plausible existing ID
-                                batch.set(masterCollectionRef.doc(id), dataToAdd); // Use existing ID
-                             } else {
-                                const newDocRef = masterCollectionRef.doc(); // Generate new ID in Master collection
-                                batch.set(newDocRef, dataToAdd);
-                             }
-                            added++;
-                        });
-
-                         // Delete players unique to Master (those remaining in masterIdsToDelete)
-                         masterIdsToDelete.forEach(idToDelete => {
-                            // We only need to check if a conflict involving this ID was resolved as 'keep'.
-                            // If it wasn't 'keep', it should be deleted (either it was never in source, or source overwrites it via conflict resolution)
-                            const conflictInvolvingThis = conflicts.find(c => c.targetPlayer.id === idToDelete);
-                            if (!conflictInvolvingThis || resolutions[conflictInvolvingThis.name] !== 'keep') {
-                                batch.delete(masterCollectionRef.doc(idToDelete));
-                                deleted++;
-                            }
-                         });
-
-                        try {
-                            await batch.commit();
-                            console.log("Batch write to MASTER successful.");
-                            showSuccess(`Salvataggio Master: ${added} aggiunti, ${updated} aggiornati, ${kept} mantenuti (conflitti), ${deleted} eliminati.`);
-                        } catch (error) {
-                            console.error("Errore batch write MASTER:", error);
-                            showError(`Errore salvataggio Master: ${error.message}`);
-                        } finally {
-                             setIsSavingToMaster(false);
-                             handleCancelSaveToMaster(); // Close password prompt etc.
-                             // Optionally switch view after successful save:
-                             // handleSwitchMode('master');
-                        }
-                    }; // --- End performSave ---
-
-
-                    // 3. Show comparison modal or proceed directly
-                    if (conflicts.length > 0) {
-                        console.log(`Found ${conflicts.length} conflicts. Opening comparison modal.`);
-                        setComparisonData({
-                            conflicts: conflicts,
-                            sourceLabel: currentDbMode === 'live' ? 'Live DB' : 'Cache Live',
-                            targetLabel: 'Master DB',
-                            operationType: 'save',
-                            onResolve: (resolutions) => { // Define the callback for the modal
-                                setShowComparisonModal(false);
-                                performSave(resolutions); // Call the save function with the user's choices
-                            }
-                        });
-                        setShowComparisonModal(true); // Show the modal
-                    } else {
-                        console.log("No conflicts found. Proceeding with direct save.");
-                        performSave(); // Call save function with empty resolutions (no conflicts)
-                    }
-
-                } catch (error) {
-                    console.error("Errore durante la preparazione salvataggio su MASTER:", error);
-                    // Make sure the error message clearly indicates the phase
-                    showError(`Errore preparazione salvataggio Master: ${error.message}`);
-                    setIsSavingToMaster(false);
-                    handleCancelSaveToMaster(); // Reset state even on preparation error
-                }
-            }, [players, masterPasswordInput, handleCancelSaveToMaster, showSuccess, showError, currentDbMode, liveDataCache]); // Dependencies kept the same
-
-
-             // --- Handlers Partita/Selezione/Squadre (Invariati) ---
-            const handleMatchTypeChange = useCallback((type) => { setMatchType(type); setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); }, [setMatchType, setTeams]);
-            const handleOpenSelectionModal = useCallback(() => setIsModalOpen(true), []);
-            const handleCloseSelectionModal = useCallback(() => setIsModalOpen(false), []);
-            const handleTogglePlayerSelection = useCallback((playerId) => { setSelectedPlayerIds(prevSelected => { const isSelected = prevSelected.includes(playerId); const required = getRequiredPlayers(matchType); if (isSelected) { return prevSelected.filter(id => id !== playerId); } else { return prevSelected.length < required ? [...prevSelected, playerId] : prevSelected; } }); }, [matchType]);
-            const handleConfirmSelection = useCallback(() => { handleCloseSelectionModal(); setTeams({ teamA: [], teamB: [] }); console.log("Giocatori selezionati:", selectedPlayerIds); }, [selectedPlayerIds, setTeams, handleCloseSelectionModal]);
-            const handleClearSelectionAndTeams = useCallback(() => { setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); }, [setTeams]);
-            const handleToggleBalanceByRole = useCallback(() => { setBalanceByRoleEnabled(prev => !prev); }, [setBalanceByRoleEnabled]);
-            const handleUpdateTeams = useCallback((newTeams) => { setTeams(newTeams); }, [setTeams]);
-            const handleGenerateBalancedTeams = useCallback((playersToBalance, unpredictability, balanceByRole) => { console.log("Generazione squadre..."); const balanced = balanceTeams(playersToBalance, unpredictability, balanceByRole); setTeams(balanced); }, [setTeams]);
-
-            // --- Handlers File IO (Invariati) ---
-            const handleSaveToFile = useCallback(() => { if (players.length === 0) { alert("Nessun giocatore presente nello stato attuale da salvare."); return; } try { const playersToSave = players.map(({ ...player }) => player); const dataStr = JSON.stringify(playersToSave, null, 2); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `elclasico_players_${currentDbMode}_snapshot_${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); } catch (error) { console.error("Errore salvataggio snapshot locale:", error); alert("Errore durante la preparazione del file di snapshot."); } }, [players, currentDbMode]);
-            const handleLoadTrigger = useCallback(() => { fileInputRef.current?.click(); }, []);
-            const handleFileSelected = useCallback((event) => { const file = event.target.files?.[0]; if (!file) return; if (!file.name.endsWith('.json')) { alert("Formato file non valido. Seleziona un file .json."); event.target.value = null; return; } const reader = new FileReader(); reader.onload = (e) => { try { if (!e.target?.result) throw new Error("File vuoto o illeggibile."); const loadedData = JSON.parse(e.target.result); if (!Array.isArray(loadedData)) throw new Error("Il contenuto del file JSON non è un array di giocatori."); if (window.confirm(`Stai per caricare ${loadedData.length} giocatori da un file locale.\nQUESTO SOVRASCRIVERÀ LA VISTA ATTUALE e ti metterà in modalità OFFLINE (Master Read-Only).\n\nProcedere?`)) { const sanitizedPlayers = loadedData.map(p => ({ id: p.id || crypto.randomUUID(), nome: p.nome || "Sconosciuto", ruolo: ALL_ROLES.includes(p.ruolo) ? p.ruolo : 'Centrocampista', abilitaDifensiva: p.abilitaDifensiva ?? 5, abilitaOffensiva: p.abilitaOffensiva ?? 5, velocita: p.velocita ?? 5, scatto: p.scatto ?? 5, pressing: p.pressing ?? 5, determinazione: p.determinazione ?? 5, peso: p.peso ?? 75, altezza: p.altezza ?? 175, robustezza: p.robustezza ?? 5, photoUrl: p.photoUrl || null })); setPlayers(sanitizedPlayers); setCurrentDbMode('master'); showInfo(`Caricati ${sanitizedPlayers.length} giocatori da file. Sei in visualizzazione Master DB (sola lettura).`); setSelectedPlayerIds([]); setTeams({ teamA: [], teamB: [] }); setEditingPlayer(null); liveDataCache.current = []; } } catch (error) { console.error("Errore caricamento file JSON:", error); alert(`Errore durante il caricamento: ${error.message}`); } finally { if(event.target) event.target.value = null; } }; reader.onerror = () => { alert("Errore lettura file."); if(event.target) event.target.value = null; }; reader.readAsText(file); }, [setTeams, showInfo]);
-
-
-            // --- Render App ---
-            const dbModeLabel = currentDbMode === 'live' ? 'Live DB (Real-time)' : 'Master DB (Read-only)';
-
-            return (
-                <div className="container">
-                    <h1>El Clasico Team Manager <small>Modalità: {dbModeLabel} (Compare/Sync - No Upload)</small></h1>
-
-                    {/* Messaggi Globali */}
-                    {errorLoadingPlayers && <div className="error-message">{errorLoadingPlayers}</div>}
-                    {successMessage && <div className="success-message">{successMessage}</div>}
-                    {infoMessage && <div className="info-message">{infoMessage}</div>}
-                    <div className="warning-message"><strong>Attenzione Sicurezza:</strong> Tenere Sardo lontano da Ilio.</div>
-
-                    {/* Gestione Caricamento */}
-                    {(isLoadingPlayers || isSavingToMaster) && <div className="loading-message">{isSavingToMaster ? 'Salvataggio su Master in corso...' : 'Caricamento giocatori...'}</div>}
-
-                    {/* Comparison Modal */}
-                    {showComparisonModal && (
-                        <ComparisonModal
-                            conflicts={comparisonData.conflicts}
-                            sourceLabel={comparisonData.sourceLabel}
-                            targetLabel={comparisonData.targetLabel}
-                            operationType={comparisonData.operationType}
-                            onResolve={comparisonData.onResolve}
-                            onCancel={() => {
-                                setShowComparisonModal(false);
-                                if (comparisonData.operationType === 'save') {
-                                    setIsSavingToMaster(false);
-                                    handleCancelSaveToMaster();
-                                }
-                                showInfo("Operazione annullata.");
-                            }}
-                        />
-                    )}
-
-                    {/* Contenuto Principale: Mostra se NON sta caricando O se c'è errore init E NON sta salvando */}
-                    {(!isLoadingPlayers || firebaseInitializationError) && !isSavingToMaster && (
-                        <>
-                            {/* Controlli DB e File IO */}
-                            <div className="db-controls-section">
-                                <p>Gestione DB:</p>
-                                <button onClick={() => handleSwitchMode('live')} className={`btn-db-action ${currentDbMode === 'live' ? 'active' : ''}`} title="Visualizza e modifica i dati in tempo reale">Visualizza Live DB</button>
-                                <button onClick={() => handleSwitchMode('master')} className={`btn-db-action ${currentDbMode === 'master' ? 'active' : ''}`} title="Visualizza i dati del DB Master (sola lettura)">Visualizza Master DB</button>
-                                <button onClick={handleLoadFromMaster} className="btn-db-action" title="Carica i dati Master, confronta con Live Cache e aggiorna la vista attuale (in mod Live)">Carica da Master (Confronta)</button>
-                                <button onClick={handleSaveToMasterPrompt} className="btn-save-master" disabled={showMasterPasswordPrompt} title="Confronta dati attuali con Master DB, risolvi conflitti e sovrascrivi Master (richiede password)">Salva su Master (Confronta)...</button>
-                                {showMasterPasswordPrompt && ( <div className="password-prompt"> <label htmlFor="masterPass">Password Master:</label><input type="password" id="masterPass" value={masterPasswordInput} onChange={(e) => setMasterPasswordInput(e.target.value)} /><button onClick={handleConfirmSaveToMaster} className="btn-save-master-confirm" disabled={!masterPasswordInput}>Conferma e Confronta</button><button onClick={handleCancelSaveToMaster} className="btn-cancel">Annulla</button> </div> )}
-                            </div>
-                             <div className="file-io-section">
-                                <p>File Locali:</p>
-                                <button onClick={handleSaveToFile} className="btn-save-file" disabled={players.length === 0}>Salva Snapshot</button>
-                                <button onClick={handleLoadTrigger} className="btn-load-file">Carica Locale</button>
-                                <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileSelected} />
-                            </div>
-
-                            {/* Gestione Giocatori */}
-                            <section id="gestione-giocatori">
-                               <PlayerForm
-                                  onSave={handleSavePlayer}
-                                  editingPlayer={editingPlayer}
-                                  onCancelEdit={handleCancelEdit}
-                                  currentDbMode={currentDbMode}
-                               />
-                               <PlayerList
-                                  players={players}
-                                  onEdit={handleEditPlayer}
-                                  onDelete={handleDeletePlayer}
-                                  currentDbMode={currentDbMode}
-                                  isLoadingPlayers={isLoadingPlayers}
-                               />
-                            </section>
-
-                            {/* Sezioni Partita e Squadre */}
-                            <hr className="section-divider" />
-                            <section id="imposta-partita">
-                                <MatchSetup
-                                    matchType={matchType}
-                                    onMatchTypeChange={handleMatchTypeChange}
-                                    onOpenSelection={handleOpenSelectionModal}
-                                    availablePlayerCount={players.length}
-                                />
-                            </section>
-                            {isModalOpen && ( <PlayerSelectionModal players={players} selectedPlayerIds={selectedPlayerIds} requiredCount={getRequiredPlayers(matchType)} onToggleSelect={handleTogglePlayerSelection} onConfirm={handleConfirmSelection} onClose={handleCloseSelectionModal} /> )}
-                            {matchType && players.length >= getRequiredPlayers(matchType) && (
-                                <>
-                                    <hr className="section-divider" />
-                                    <section id="crea-squadre"> <TeamDisplay players={players} selectedPlayerIds={selectedPlayerIds} teams={teams} matchType={matchType} onUpdateTeams={handleUpdateTeams} onClearSelection={handleClearSelectionAndTeams} balanceByRoleEnabled={balanceByRoleEnabled} onToggleBalanceByRole={handleToggleBalanceByRole} onGenerateTeams={handleGenerateBalancedTeams} /> </section>
-                                </>
-                            )}
-                            {matchType && players.length < getRequiredPlayers(matchType) && !isLoadingPlayers && ( <div className="info-message" style={{marginTop: '20px'}}>Non ci sono abbastanza giocatori ({players.length}/{getRequiredPlayers(matchType)}) nella vista attuale ({dbModeLabel}) per creare le squadre per Calcio a {matchType}.</div> )}
-                        </>
-                    )}
+                <div onClick={() => selectProfile('Stella')} className="flex-1 p-6 rounded-3xl shadow-lg cursor-pointer transform hover:scale-105 transition-transform" style={{backgroundColor: colors.pink}}>
+                    <h2 className="text-3xl font-bold text-white mb-2">Stella</h2>
+                    <p className="text-5xl">🐶</p>
                 </div>
-            );
-        } // --- Fine App ---
+              </div>
+          </div>
+        </div>
 
-        // === Monta l'App React nel DOM con Error Boundary (Invariato) ===
-        const rootElement = document.getElementById('root');
-        if (rootElement) { try { const root = ReactDOM.createRoot(rootElement); class ErrorBoundary extends React.Component { constructor(props) { super(props); this.state = { hasError: false, error: null, errorInfo: null }; } static getDerivedStateFromError(error) { return { hasError: true, error }; } componentDidCatch(error, errorInfo) { console.error("React Error Boundary catturato:", error, errorInfo); this.setState({errorInfo: errorInfo}); } render() { if (this.state.hasError) { return ( <div className="container"> <div className="error-message" style={{textAlign: 'left'}}> <h2>Oops! Qualcosa è andato storto nell'applicazione.</h2> <p>Si è verificato un errore che impedisce il corretto funzionamento.</p> <details style={{ whiteSpace: 'pre-wrap', marginTop: '15px' }}> <summary>Dettagli Tecnici (per debug)</summary> {this.state.error && this.state.error.toString()} <br /> {this.state.errorInfo && this.state.errorInfo.componentStack} </details> <p style={{marginTop: '15px'}}>Prova a ricaricare la pagina (F5 o Ctrl+Shift+R). Se il problema persiste, controlla la console sviluppatori (F12) per ulteriori dettagli.</p> </div> </div> ); } return this.props.children; } } root.render(<ErrorBoundary><App /></ErrorBoundary>); } catch (error) { console.error("Errore critico durante il rendering iniziale React:", error); rootElement.innerHTML = '<div class="container"><div class="error-message">Errore critico durante l\'avvio dell\'applicazione. Impossibile montare React. Controlla la console per errori di script o configurazione.</div></div>'; } } else { console.error("Errore fatale: Elemento #root non trovato nel DOM!"); document.body.innerHTML = '<div style="padding:20px; color:red; font-weight:bold;">Errore: L\'elemento con ID "root" non è stato trovato. L\'applicazione non può partire.</div>'; }
+        {/* Finestra Modale Impostazioni (visibile da questa schermata) */}
+        {showSettingsModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-md">
+                    <h2 className="text-2xl font-bold mb-4" style={{color: colors.primary}}>Impostazioni</h2>
+                    <label className="block text-lg font-medium mb-3" style={{ color: colors.text }}>
+                      Nuova frase misteriosa:
+                    </label>
+                    <input
+                      type="text"
+                      value={tempMysteryPhrase}
+                      onChange={(e) => setTempMysteryPhrase(e.target.value)}
+                      placeholder="Scrivi qui la nuova frase"
+                      className="w-full px-6 py-4 text-lg rounded-2xl border-2 mb-6"
+                      style={{ borderColor: colors.secondary, outline: 'none' }}
+                      />
+                      <div className="flex gap-4">
+                          <button onClick={() => setShowSettingsModal(false)} className="flex-1 py-3 font-bold rounded-xl" style={{backgroundColor: colors.background, color: colors.text}}>Annulla</button>
+                          <button onClick={saveSettings} className="flex-1 py-3 font-bold rounded-xl" style={{backgroundColor: colors.success, color: 'white'}}>Salva</button>
+                      </div>
+                </div>
+            </div>
+        )}
+      </>
+    );
+  }
+  
+  // Schermata di vittoria
+  if (gameState === 'victory') {
+    const victoryImage = playerProfile === 'Edoardo' ? EDOARDO_VICTORY_IMAGE : STELLA_VICTORY_IMAGE;
+    
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.background }}>
+        <div className="w-full max-w-lg text-center">
+          <div className="rounded-3xl shadow-2xl p-8" style={{ backgroundColor: 'white' }}>
+            <h1 className="text-5xl md:text-6xl font-bold mb-4 animate-bounce" style={{ color: colors.success }}>
+              🎉 Vittoria! 🎉
+            </h1>
+            <p className="text-2xl mb-6" style={{ color: colors.text }}>
+              {`Bravissim${playerProfile === 'Edoardo' ? 'o' : 'a'} ${playerProfile}!`}
+            </p>
+            <div className="text-3xl font-bold mb-8 p-4 rounded-2xl" style={{ backgroundColor: colors.accent, color: colors.text }}>
+              {mysteryPhrase.toUpperCase()}
+            </div>
+            <img 
+              src={victoryImage}
+              alt={`Vittoria di ${playerProfile}`} 
+              className="mx-auto mb-8 rounded-2xl shadow-lg w-full max-w-sm"
+            />
+            <button onClick={resetGame} className="py-4 px-8 text-xl font-bold rounded-2xl transform transition-all hover:scale-105" style={{ backgroundColor: colors.primary, color: 'white' }}>
+              Gioca Ancora! 🔄
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-    </script>
+  // Schermata di gioco principale
+  return (
+    <div className="min-h-screen p-4" style={{ backgroundColor: colors.background }}>
+      <div className="max-w-4xl mx-auto">
+        <div className="rounded-3xl shadow-lg p-6 mb-6" style={{ backgroundColor: 'white' }}>
+            <div className="flex justify-between items-center mb-4">
+                 <h2 className="text-2xl font-bold" style={{ color: colors.primary }}>
+                    Frase Misteriosa 🔮
+                </h2>
+                <button onClick={() => setShowSettingsModal(true)} className="text-3xl" title="Impostazioni">⚙️</button>
+            </div>
+            <div 
+              className="text-3xl md:text-4xl font-mono text-center tracking-widest transition-opacity duration-1000"
+              style={{ 
+                color: colors.text,
+                opacity: Math.min(1, 0.1 + correctAnswersCount * 0.1) 
+              }}
+            >
+              {getDisplayPhrase()}
+            </div>
+        </div>
 
-</body>
-</html>
+        {!showLetterPicker && (
+          <div className="rounded-3xl shadow-lg p-6 mb-6" style={{ backgroundColor: 'white' }}>
+            <h3 className="text-xl md:text-2xl font-bold mb-6" style={{ color: colors.secondary }}>
+              {questions[currentQuestion].question}
+            </h3>
+            <div className="space-y-3">
+              {questions[currentQuestion].answers.map((answer, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleAnswerClick(index)}
+                  disabled={showFeedback}
+                  className="w-full p-4 text-lg md:text-xl font-medium rounded-2xl transform transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: showFeedback && selectedAnswer === index ? (isCorrect ? colors.success : colors.primary) : colors.accent,
+                    color: showFeedback && selectedAnswer === index ? 'white' : colors.text,
+                    opacity: showFeedback && selectedAnswer !== index ? 0.5 : 1
+                  }}
+                >
+                  {answer} {showFeedback && selectedAnswer === index && (isCorrect ? '✅' : '❌')}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {showLetterPicker && (
+          <div className="rounded-3xl shadow-lg p-6" style={{ backgroundColor: 'white' }}>
+            <h3 className="text-xl md:text-2xl font-bold mb-6 text-center" style={{ color: colors.secondary }}>
+              Bravo! Ora scegli una lettera 🔤
+            </h3>
+            <div className="grid grid-cols-6 md:grid-cols-9 gap-2">
+              {alphabet.map(letter => (
+                <button
+                  key={letter}
+                  onClick={() => selectLetter(letter)}
+                  disabled={guessedLetters.includes(letter)}
+                  className="aspect-square text-lg md:text-xl font-bold rounded-xl transform transition-all hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: guessedLetters.includes(letter) ? colors.background : colors.pink, color: colors.text }}
+                >
+                  {letter}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 text-center space-y-4">
+            <button 
+                onClick={() => setShowSolveModal(true)}
+                className="py-3 px-6 text-lg font-bold rounded-2xl transform transition-all hover:scale-105"
+                style={{ backgroundColor: colors.orange, color: 'white' }}
+            >
+                Ho indovinato! 💡
+            </button>
+            <p className="text-lg" style={{ color: colors.text }}>
+                Lettere già scelte: {guessedLetters.length > 0 ? guessedLetters.join(', ') : 'Nessuna'}
+            </p>
+        </div>
+      </div>
+      
+      {showSettingsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-md">
+                  <h2 className="text-2xl font-bold mb-4" style={{color: colors.primary}}>Impostazioni</h2>
+                  <label className="block text-lg font-medium mb-3" style={{ color: colors.text }}>
+                    Nuova frase misteriosa:
+                  </label>
+                  <input
+                    type="text"
+                    value={tempMysteryPhrase}
+                    onChange={(e) => setTempMysteryPhrase(e.target.value)}
+                    className="w-full px-6 py-4 text-lg rounded-2xl border-2 mb-6"
+                    style={{ borderColor: colors.secondary, outline: 'none' }}
+                    />
+                    <div className="flex gap-4">
+                        <button onClick={() => setShowSettingsModal(false)} className="flex-1 py-3 font-bold rounded-xl" style={{backgroundColor: colors.background, color: colors.text}}>Annulla</button>
+                        <button onClick={saveSettings} className="flex-1 py-3 font-bold rounded-xl" style={{backgroundColor: colors.success, color: 'white'}}>Salva</button>
+                    </div>
+              </div>
+          </div>
+      )}
+
+       {showSolveModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-md">
+                  <h2 className="text-2xl font-bold mb-4" style={{color: colors.secondary}}>Tenta la soluzione!</h2>
+                  <input
+                    type="text"
+                    value={solveAttempt}
+                    onChange={(e) => setSolveAttempt(e.target.value)}
+                    placeholder="Scrivi qui la frase..."
+                    className="w-full px-6 py-4 text-lg rounded-2xl border-2 mb-6"
+                    style={{ borderColor: colors.secondary, outline: 'none' }}
+                    />
+                    <div className="flex gap-4">
+                        <button onClick={() => setShowSolveModal(false)} className="flex-1 py-3 font-bold rounded-xl" style={{backgroundColor: colors.background, color: colors.text}}>Annulla</button>
+                        <button onClick={handleSolveAttempt} className="flex-1 py-3 font-bold rounded-xl" style={{backgroundColor: colors.success, color: 'white'}}>Conferma</button>
+                    </div>
+              </div>
+          </div>
+      )}
+    </div>
+  );
+};
+
+export default RuotaDellaFortuna;
