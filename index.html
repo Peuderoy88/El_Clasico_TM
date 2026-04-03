@@ -126,8 +126,11 @@ const RuotaDellaFortuna = () => {
   };
 
   useEffect(() => {
-    if (mysteryPhrase && gameState === 'playing' && !getDisplayPhrase().includes('_')) {
-      setGameState('victory');
+    if (mysteryPhrase && gameState === 'playing') {
+      const allRevealed = !mysteryPhrase.toUpperCase().split('').some(
+        char => char !== ' ' && !guessedLetters.includes(char)
+      );
+      if (allRevealed) setGameState('victory');
     }
   }, [guessedLetters, mysteryPhrase, gameState]);
 
