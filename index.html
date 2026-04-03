@@ -169,17 +169,18 @@
             // ... persists the new value to localStorage.
             const setValue = useCallback((value) => {
                 try {
-                    // Use functional update to avoid capturing stale storedValue in closure
-                    setStoredValue(prev => {
-                        const valueToStore = value instanceof Function ? value(prev) : value;
-                        window.localStorage.setItem(key, JSON.stringify(valueToStore));
-                        return valueToStore;
-                    });
+                    // Allow value to be a function so we have same API as useState
+                    const valueToStore =
+                        value instanceof Function ? value(storedValue) : value;
+                    // Save state
+                    setStoredValue(valueToStore);
+                    // Save to local storage
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
                 } catch (error) {
                     // A more advanced implementation would handle the error case
-                    console.error(“Error setting localStorage key “”+key+””:”, error);
+                    console.error("Error setting localStorage key “"+key+"”:", error);
                 }
-            }, [key]); // storedValue removed: functional update always reads latest state
+            }, [key, storedValue]); // Include storedValue in dependency array if value is a function
 
             return [storedValue, setValue];
         }
@@ -307,9 +308,6 @@
 
 
         // === Funzione Disegno Campo (Un-minified) ===
-        // Image cache lives outside drawFormation so it persists across multiple calls
-        const imageCache = {};
-
         function drawFormation(canvas, teamA, teamB, matchType) {
             const ctx = canvas.getContext('2d');
             if (!ctx) {
@@ -326,15 +324,19 @@
             const playerNameColor = '#000000';
             const defaultTextColor = '#FFFFFF';
 
+            // Simple image cache (consider more robust loading for production)
+            const imageCache = {};
             const loadImage = (url) => {
                 if (!url) return null; // Handle null/undefined URLs
-                if (imageCache[url] !== undefined) return imageCache[url];
+                if (imageCache[url]) return imageCache[url];
                 const img = new Image();
                 img.src = url;
                 imageCache[url] = img;
                 img.onload = () => {
-                    // Trigger a redraw so the photo appears after async loading completes
-                    drawFormation(canvas, teamA, teamB, matchType);
+                    // Request redraw when image loads (might cause flicker, needs better handling)
+                    // A better approach involves Promises and waiting for all images
+                    // console.log("Image loaded:", url.substring(0, 30));
+                    // For simplicity, we don't force redraw here, relying on initial render
                 };
                 img.onerror = () => {
                     console.warn("Failed to load image:", url.substring(0, 30));
@@ -481,7 +483,7 @@
 
         // --- PlayerForm (Un-minified) ---
         function PlayerForm({ onSave, editingPlayer, onCancelEdit }) {
-            const initialFormData = React.useMemo(() => ({ nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5, velocita: 5, scatto: 5, pressing: 5, determinazione: 5, peso: 75, altezza: 175, robustezza: 5, photoUrl: null }), []);
+            const initialFormData = { nome: '', ruolo: 'Centrocampista', abilitaDifensiva: 5, abilitaOffensiva: 5, velocita: 5, scatto: 5, pressing: 5, determinazione: 5, peso: 75, altezza: 175, robustezza: 5, photoUrl: null };
             const [formData, setFormData] = useState(initialFormData);
             const [isVisible, setIsVisible] = useState(false);
             const [photoPreview, setPhotoPreview] = useState(null);
@@ -498,7 +500,7 @@
                      setFormData(initialFormData);
                      setPhotoPreview(null);
                 }
-            }, [editingPlayer, initialFormData]);
+            }, [editingPlayer]);
 
             const handleChange = (e) => {
                 const { name, value, type } = e.target;
